@@ -1,0 +1,1549 @@
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import {
+  FarmEntity,
+  ItemId,
+  TileType,
+  BuildingType,
+  AnimalType,
+} from '../types/game';
+import { CROPS, BUILDINGS, ANIMAL_PENS, ITEMS, DECORATIONS, RECIPES } from '../constants/gameData';
+import { IsoFarmhouse } from './isometric/IsoFarmhouse';
+import { IsoBarn } from './isometric/IsoBarn';
+import { IsoSilo } from './isometric/IsoSilo';
+import { IsoBakery } from './isometric/IsoBakery';
+import { IsoFeedMill } from './isometric/IsoFeedMill';
+import { IsoDairy } from './isometric/IsoDairy';
+import { IsoSugarMill } from './isometric/IsoSugarMill';
+import { IsoPopcornPot } from './isometric/IsoPopcornPot';
+import { IsoBBQGrill } from './isometric/IsoBBQGrill';
+import { IsoCropPlot } from './isometric/IsoCropPlot';
+import { IsoAnimalPen } from './isometric/IsoAnimalPen';
+import { IsoOrderBoard } from './isometric/IsoOrderBoard';
+import { IsoRoadsideShop } from './isometric/IsoRoadsideShop';
+import { IsoLuckyWheel } from './isometric/IsoLuckyWheel';
+import { IsoTruck } from './isometric/IsoTruck';
+import { IsoScenery } from './isometric/IsoScenery';
+import { IsoLushGrass } from './isometric/IsoLushGrass';
+import { Iso3DSpriteBuilding } from './isometric/Iso3DSpriteBuilding';
+import { IsoDecoration } from './isometric/IsoDecoration';
+import { HD_BUILDING_SPRITES } from '../constants/buildingSprites';
+import {
+  gridToScreen,
+  screenToGrid,
+  TILE_WIDTH,
+  TILE_HEIGHT,
+  calculateIsoPlacement,
+  getEntityAnchorDef,
+  ISO_DECORATION_ANCHORS,
+} from '../utils/isometricCoords';
+
+interface FarmCanvasProps {
+  entities: FarmEntity[];
+  selectedEntity: FarmEntity | null;
+  onSelectEntity: (entity: FarmEntity | null) => void;
+  onQuickHarvestCrop: (entityId: string) => void;
+  onQuickPlantCrop?: (entityId: string, cropId: string) => void;
+  inventory?: Record<string, number>;
+  onQuickCollectAnimal: (entityId: string, animalIndex: number) => void;
+  onQuickCollectBuilding: (entityId: string) => void;
+  isMovingMode: boolean;
+  onMoveEntityPosition?: (entityId: string, newX: number, newY: number) => void;
+  truckDeliveringUntil: number | null;
+  activeVisitor: any;
+  onOpenVisitor: () => void;
+  graphicsStyle?: '3d_rendered' | 'vector';
+
+  // Live Structure HUD & Storage Gauges
+  siloUsed?: number;
+  siloCap?: number;
+  siloLevel?: number;
+  barnUsed?: number;
+  barnCap?: number;
+  barnLevel?: number;
+  playerLevel?: number;
+  farmName?: string;
+  hasFulfillableOrders?: boolean;
+  availableOrdersCount?: number;
+  hasRoadsideCoinsToCollect?: boolean;
+  canSpinWheel?: boolean;
+
+  // Direct modal callbacks for quick taps
+  onOpenSilo?: () => void;
+  onOpenBarn?: () => void;
+  onOpenFarmhouse?: () => void;
+  onOpenOrderBoard?: () => void;
+  onOpenRoadsideShop?: () => void;
+  onOpenLuckyWheel?: () => void;
+}
+
+const MAP_SIZE = 14;
+
+export const FarmCanvas: React.FC<FarmCanvasProps> = ({
+  entities,
+  selectedEntity,
+  onSelectEntity,
+  onQuickHarvestCrop,
+  onQuickCollectAnimal,
+  onQuickCollectBuilding,
+  isMovingMode,
+  onMoveEntityPosition,
+  truckDeliveringUntil,
+  activeVisitor,
+  onOpenVisitor,
+  graphicsStyle = 'vector',
+  siloUsed = 0,
+  siloCap = 50,
+  siloLevel = 1,
+  barnUsed = 0,
+  barnCap = 50,
+  barnLevel = 1,
+  playerLevel = 1,
+  farmName = 'Fazenda',
+  hasFulfillableOrders = false,
+  availableOrdersCount = 0,
+  hasRoadsideCoinsToCollect = false,
+  canSpinWheel = false,
+  onOpenSilo,
+  onOpenBarn,
+  onOpenFarmhouse,
+  onOpenOrderBoard,
+  onOpenRoadsideShop,
+  onOpenLuckyWheel,
+  inventory = {},
+  onQuickPlantCrop,
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState<number>(1);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [movingEntityId, setMovingEntityId] = useState<string | null>(null);
+  const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  // 2 seconds long press drag-and-drop state/refs
+  const [draggingEntityId, setDraggingEntityId] = useState<string | null>(null);
+  const [isLongPressDragging, setIsLongPressDragging] = useState(false);
+  const longPressTimerRef = useRef<any>(null);
+  const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
+  const pressedEntityRef = useRef<any>(null);
+  const pointerDownTimeRef = useRef<number>(0);
+  const wasMapDraggedRef = useRef<boolean>(false);
+  const touchStartDistRef = useRef<number | null>(null);
+  const touchStartZoomRef = useRef<number>(1);
+
+  // Dragging tools state
+  const [activeDragTool, setActiveDragTool] = useState<string | null>(null);
+  const [dragCursorPos, setDragCursorPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // 4 progressive loading bars hold-to-drag state
+  const [holdingEntityId, setHoldingEntityId] = useState<string | null>(null);
+  const [holdingProgress, setHoldingProgress] = useState<number>(0);
+
+  const isCropPlotReady = useCallback((entity: FarmEntity) => {
+    if (entity.type !== 'crop_plot' || !entity.cropData) return false;
+    const cropData = entity.cropData;
+    if (!cropData.cropId || !cropData.plantedAt) return false;
+    const elapsed = (Date.now() - cropData.plantedAt) / 1000;
+    return elapsed >= cropData.growDuration;
+  }, []);
+
+  const cancelHoldGesture = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearInterval(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    setHoldingEntityId(null);
+    setHoldingProgress(0);
+  }, []);
+
+  // Floating notifications / animations ticker
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 500);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Center the map on initial load
+  useEffect(() => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setPan({
+        x: rect.width / 2,
+        y: rect.height / 3.5,
+      });
+    }
+  }, []);
+
+  // Touch distance helper for pinch-to-zoom
+  const getTouchDistance = (t1: Touch | React.Touch, t2: Touch | React.Touch) => {
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  // Central Grid to Screen coordinates (Isometric Projection)
+  const gridToIso = useCallback((gx: number, gy: number) => {
+    return gridToScreen(gx, gy);
+  }, []);
+
+  // Central Screen to Grid coordinates (Accounting for camera pan & zoom)
+  const isoToGrid = useCallback((screenX: number, screenY: number) => {
+    return screenToGrid(screenX, screenY, pan, zoom);
+  }, [pan, zoom]);
+
+  // Pointer events for dragging entity (Hold 2s to drag)
+  const handleEntityPointerDown = (entity: any, e: React.PointerEvent) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    
+    pointerDownTimeRef.current = Date.now();
+    wasMapDraggedRef.current = false;
+    touchStartPosRef.current = { x: e.clientX, y: e.clientY };
+    pressedEntityRef.current = entity;
+
+    // Start 4-segment hold progress interval
+    cancelHoldGesture();
+
+    setHoldingEntityId(entity.id);
+    setHoldingProgress(0);
+
+    const startTime = Date.now();
+    longPressTimerRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(100, (elapsed / 2000) * 100);
+      setHoldingProgress(progress);
+
+      if (elapsed >= 2000) {
+        clearInterval(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+        sound.playDing();
+        setDraggingEntityId(entity.id);
+        setIsLongPressDragging(true);
+        onSelectEntity(entity);
+        setHoldingEntityId(null);
+        setHoldingProgress(0);
+      }
+    }, 50);
+  };
+
+  const handleEntityPointerUp = (entity: any, e: React.PointerEvent) => {
+    cancelHoldGesture();
+
+    const clickDuration = Date.now() - pointerDownTimeRef.current;
+
+    if (isLongPressDragging && draggingEntityId === entity.id) {
+      e.stopPropagation();
+      if (hoveredTile && onMoveEntityPosition) {
+        onMoveEntityPosition(entity.id, hoveredTile.x, hoveredTile.y);
+      }
+      setDraggingEntityId(null);
+      setIsLongPressDragging(false);
+    } else {
+      // Normal short tap (must be rapid and not dragged)
+      if (clickDuration < 300 && !wasMapDraggedRef.current) {
+        handleTileClick(entity.x, entity.y, e as any);
+      }
+    }
+
+    pressedEntityRef.current = null;
+    touchStartPosRef.current = null;
+  };
+
+  // Handle Drag / Pan
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return; // Only left click
+    if (isLongPressDragging) return;
+    
+    pointerDownTimeRef.current = Date.now();
+    wasMapDraggedRef.current = false;
+    touchStartPosRef.current = { x: e.clientX, y: e.clientY };
+
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const tile = isoToGrid(e.clientX, e.clientY);
+    if (tile.x >= 0 && tile.x < MAP_SIZE && tile.y >= 0 && tile.y < MAP_SIZE) {
+      setHoveredTile((prev) => {
+        if (prev && prev.x === tile.x && prev.y === tile.y) return prev;
+        return tile;
+      });
+    } else {
+      setHoveredTile((prev) => (prev === null ? null : null));
+    }
+
+    if (activeDragTool) {
+      setDragCursorPos({ x: e.clientX, y: e.clientY });
+      
+      const currentTile = tile;
+      if (currentTile.x >= 0 && currentTile.x < MAP_SIZE && currentTile.y >= 0 && currentTile.y < MAP_SIZE) {
+        const hoveredPlot = entities.find(
+          (ent) =>
+            ent.type === 'crop_plot' &&
+            currentTile.x >= ent.x &&
+            currentTile.x < ent.x + ent.width &&
+            currentTile.y >= ent.y &&
+            currentTile.y < ent.y + ent.height
+        );
+        
+        if (hoveredPlot) {
+          if (activeDragTool === 'scythe') {
+            if (isCropPlotReady(hoveredPlot) && onQuickHarvestCrop) {
+              onQuickHarvestCrop(hoveredPlot.id);
+            }
+          } else if (activeDragTool.startsWith('plant_')) {
+            const seedId = activeDragTool.replace('plant_', '');
+            const isEmpty = !hoveredPlot.cropData || !hoveredPlot.cropData.cropId;
+            if (isEmpty && onQuickPlantCrop) {
+              onQuickPlantCrop(hoveredPlot.id, seedId);
+            }
+          }
+        }
+      }
+      return;
+    }
+
+    // If hold gesture is active, check if user moves too far
+    if (touchStartPosRef.current && !isLongPressDragging) {
+      const dx = e.clientX - touchStartPosRef.current.x;
+      const dy = e.clientY - touchStartPosRef.current.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist > 10) {
+        cancelHoldGesture();
+      }
+      if (isDragging && dist > 6) {
+        wasMapDraggedRef.current = true;
+      }
+    }
+
+    if (isDragging && !isLongPressDragging) {
+      setPan({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    cancelHoldGesture();
+    if (activeDragTool) {
+      setActiveDragTool(null);
+      onSelectEntity(null);
+    }
+    if (isLongPressDragging) {
+      if (pressedEntityRef.current && hoveredTile && onMoveEntityPosition) {
+        onMoveEntityPosition(pressedEntityRef.current.id, hoveredTile.x, hoveredTile.y);
+      }
+      setDraggingEntityId(null);
+      setIsLongPressDragging(false);
+      pressedEntityRef.current = null;
+    }
+  };
+
+  // Touch Support
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      // Pinch to zoom gesture starts
+      setIsDragging(false);
+      cancelHoldGesture();
+      const dist = getTouchDistance(e.touches[0], e.touches[1]);
+      touchStartDistRef.current = dist;
+      touchStartZoomRef.current = zoom;
+      return;
+    }
+
+    if (isLongPressDragging) return;
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      pointerDownTimeRef.current = Date.now();
+      wasMapDraggedRef.current = false;
+      touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+
+      setIsDragging(true);
+      setDragStart({
+        x: touch.clientX - pan.x,
+        y: touch.clientY - pan.y,
+      });
+      
+      // Mimic pointer down for touch
+      const clickedEntity = entities.find(
+        (ent) => {
+          const tile = isoToGrid(touch.clientX, touch.clientY);
+          return tile.x >= ent.x && tile.x < ent.x + ent.width && tile.y >= ent.y && tile.y < ent.y + ent.height;
+        }
+      );
+      if (clickedEntity) {
+        cancelHoldGesture();
+        pressedEntityRef.current = clickedEntity;
+        
+        setHoldingEntityId(clickedEntity.id);
+        setHoldingProgress(0);
+        const startTime = Date.now();
+        longPressTimerRef.current = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(100, (elapsed / 2000) * 100);
+          setHoldingProgress(progress);
+          
+          if (elapsed >= 2000) {
+            clearInterval(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+            sound.playDing();
+            setDraggingEntityId(clickedEntity.id);
+            setIsLongPressDragging(true);
+            onSelectEntity(clickedEntity);
+            setHoldingEntityId(null);
+            setHoldingProgress(0);
+          }
+        }, 50);
+      }
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (activeDragTool && e.touches.length === 1) {
+      const touch = e.touches[0];
+      setDragCursorPos({ x: touch.clientX, y: touch.clientY });
+
+      const tile = isoToGrid(touch.clientX, touch.clientY);
+      if (tile.x >= 0 && tile.x < MAP_SIZE && tile.y >= 0 && tile.y < MAP_SIZE) {
+        const hoveredPlot = entities.find(
+          (ent) =>
+            ent.type === 'crop_plot' &&
+            tile.x >= ent.x &&
+            tile.x < ent.x + ent.width &&
+            tile.y >= ent.y &&
+            tile.y < ent.y + ent.height
+        );
+        
+        if (hoveredPlot) {
+          if (activeDragTool === 'scythe') {
+            if (isCropPlotReady(hoveredPlot) && onQuickHarvestCrop) {
+              onQuickHarvestCrop(hoveredPlot.id);
+            }
+          } else if (activeDragTool.startsWith('plant_')) {
+            const seedId = activeDragTool.replace('plant_', '');
+            const isEmpty = !hoveredPlot.cropData || !hoveredPlot.cropData.cropId;
+            if (isEmpty && onQuickPlantCrop) {
+              onQuickPlantCrop(hoveredPlot.id, seedId);
+            }
+          }
+        }
+      }
+      return;
+    }
+
+    if (e.touches.length === 2 && touchStartDistRef.current !== null) {
+      const dist = getTouchDistance(e.touches[0], e.touches[1]);
+      const ratio = dist / touchStartDistRef.current;
+      const newZoom = Math.min(1.8, Math.max(0.6, touchStartZoomRef.current * ratio));
+      setZoom(newZoom);
+      return;
+    }
+
+    if (touchStartPosRef.current && !isLongPressDragging && e.touches.length === 1) {
+      const dx = e.touches[0].clientX - touchStartPosRef.current.x;
+      const dy = e.touches[0].clientY - touchStartPosRef.current.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist > 10) {
+        cancelHoldGesture();
+      }
+      if (isDragging && dist > 6) {
+        wasMapDraggedRef.current = true;
+      }
+    }
+
+    if (isDragging && e.touches.length === 1 && !isLongPressDragging) {
+      setPan({
+        x: e.touches[0].clientX - dragStart.x,
+        y: e.touches[0].clientY - dragStart.y,
+      });
+    }
+
+    if (e.touches.length === 1) {
+      const tile = isoToGrid(e.touches[0].clientX, e.touches[0].clientY);
+      if (tile.x >= 0 && tile.x < MAP_SIZE && tile.y >= 0 && tile.y < MAP_SIZE) {
+        setHoveredTile((prev) => {
+          if (prev && prev.x === tile.x && prev.y === tile.y) return prev;
+          return tile;
+        });
+      } else {
+        setHoveredTile((prev) => (prev === null ? null : null));
+      }
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    setIsDragging(false);
+    cancelHoldGesture();
+    if (activeDragTool) {
+      setActiveDragTool(null);
+      onSelectEntity(null);
+    }
+    if (e.touches.length < 2) {
+      touchStartDistRef.current = null;
+    }
+    if (isLongPressDragging) {
+      if (pressedEntityRef.current && hoveredTile && onMoveEntityPosition) {
+        onMoveEntityPosition(pressedEntityRef.current.id, hoveredTile.x, hoveredTile.y);
+      }
+      setDraggingEntityId(null);
+      setIsLongPressDragging(false);
+      pressedEntityRef.current = null;
+    }
+  };
+
+  // Zoom controls
+  const handleZoom = (delta: number) => {
+    setZoom((prev) => Math.min(1.8, Math.max(0.6, prev + delta)));
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const zoomDelta = e.deltaY < 0 ? 0.08 : -0.08;
+    handleZoom(zoomDelta);
+  };
+
+  // Sorted entities by render depth (isometric sorting: South-most front edge)
+  const sortedEntities = useMemo(() => {
+    return [...entities].sort((a, b) => {
+      const depthA = a.x + a.y + a.width + a.height;
+      const depthB = b.x + b.y + b.width + b.height;
+      if (Math.abs(depthA - depthB) > 0.001) {
+        return depthA - depthB;
+      }
+      return (a.x - a.y) - (b.x - b.y);
+    });
+  }, [entities]);
+
+  // Check if tile has an entity
+  const handleTileClick = (gx: number, gy: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    const clickDuration = Date.now() - pointerDownTimeRef.current;
+    if (wasMapDraggedRef.current || clickDuration > 300) {
+      return; // Ignore drag panning or long click wait gestures!
+    }
+
+    if (isMovingMode && movingEntityId && onMoveEntityPosition) {
+      // Move selected entity to this tile
+      onMoveEntityPosition(movingEntityId, gx, gy);
+      setMovingEntityId(null);
+      return;
+    }
+
+    const clickedEntity = entities.find(
+      (ent) =>
+        gx >= ent.x &&
+        gx < ent.x + ent.width &&
+        gy >= ent.y &&
+        gy < ent.y + ent.height
+    );
+
+    if (clickedEntity) {
+      if (isMovingMode) {
+        setMovingEntityId(clickedEntity.id);
+      } else {
+        onSelectEntity(clickedEntity);
+      }
+    } else {
+      onSelectEntity(null);
+    }
+  };
+
+  const isDeliveringTruck = truckDeliveringUntil !== null && currentTime < truckDeliveringUntil;
+
+  return (
+    <div
+      ref={containerRef}
+      id="farm-canvas-container"
+      className="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#87CEEB] via-[#9ad87d] to-[#71c356] select-none cursor-grab active:cursor-grabbing"
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onWheel={handleWheel}
+    >
+      {/* Sky clouds / Sun decoration */}
+      <div className="absolute top-4 left-6 pointer-events-none opacity-80 flex items-center gap-3">
+        <div className="w-14 h-14 rounded-full bg-yellow-300 shadow-[0_0_30px_#FACC15] animate-pulse"></div>
+        <div className="text-white/90 text-sm font-semibold tracking-wide bg-amber-900/40 px-3 py-1 rounded-full backdrop-blur-xs">
+          ☀️ Dia Ensolarado na Fazenda
+        </div>
+      </div>
+
+      {/* Cloud floats */}
+      <div className="absolute top-8 left-1/4 pointer-events-none opacity-40 text-4xl animate-bounce">
+        ☁️
+      </div>
+      <div className="absolute top-14 right-1/3 pointer-events-none opacity-30 text-5xl">
+        ☁️
+      </div>
+
+
+
+      {/* Moving Mode Banner */}
+      {isMovingMode && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 bg-amber-500 text-white font-bold px-5 py-2 rounded-full shadow-xl border-2 border-white animate-pulse text-sm">
+          {movingEntityId
+            ? '👉 Clique em um lote de terra para posicionar a estrutura!'
+            : '🛠️ Modo Edição: Toque na construção que deseja mover'}
+        </div>
+      )}
+
+      {/* Isometric Map Surface */}
+      <div
+        className="absolute origin-top-left"
+        style={{
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+        }}
+      >
+        {/* Scenery Environment (Lush Grass Base, Distant Hills, Country Trees, Fences, Dirt Road, Butterflies) */}
+        <svg
+          className="overflow-visible pointer-events-none"
+          style={{ width: 1, height: 1 }}
+        >
+          {/* Main 3D Lush Hay Day Continuous Grass Meadow & Scatter Details */}
+          <IsoLushGrass
+            mapSize={MAP_SIZE}
+            tileWidth={TILE_WIDTH}
+            tileHeight={TILE_HEIGHT}
+            gridToIso={gridToIso}
+          />
+
+          {/* Rich Iso Scenery Component (Pure Grass, Trees, Fences, Dirt Road, Hay Bales) */}
+          <IsoScenery
+            mapSize={MAP_SIZE}
+            tileWidth={TILE_WIDTH}
+            tileHeight={TILE_HEIGHT}
+            gridToIso={gridToIso}
+          />
+        </svg>
+
+        {/* Isometric Interactive Farm Grid (Seamless in normal mode, clean guides in move mode) */}
+        {Array.from({ length: MAP_SIZE }).map((_, gy) =>
+          Array.from({ length: MAP_SIZE }).map((_, gx) => {
+            const { x: isoX, y: isoY } = gridToIso(gx, gy);
+            const isHovered = hoveredTile?.x === gx && hoveredTile?.y === gy;
+
+            return (
+              <div
+                key={`tile_${gx}_${gy}`}
+                onClick={(e) => handleTileClick(gx, gy, e)}
+                style={{
+                  left: isoX,
+                  top: isoY,
+                  width: TILE_WIDTH,
+                  height: TILE_HEIGHT,
+                  position: 'absolute',
+                  transform: 'translate(-50%, 0)',
+                }}
+                className="group cursor-pointer pointer-events-auto select-none"
+              >
+                <svg
+                  viewBox="0 0 84 42"
+                  className="w-full h-full overflow-visible transition-colors"
+                >
+                  {isMovingMode ? (
+                    /* In Move Mode, show subtle placement grid lines and active target highlight */
+                    <polygon
+                      points="42,1 83,21 42,41 1,21"
+                      fill={isHovered ? 'rgba(163, 230, 53, 0.4)' : 'rgba(255, 255, 255, 0.04)'}
+                      stroke={isHovered ? '#FACC15' : 'rgba(255, 255, 255, 0.3)'}
+                      strokeWidth={isHovered ? '2' : '1'}
+                      strokeDasharray={isHovered ? 'none' : '3 3'}
+                    />
+                  ) : isHovered ? (
+                    /* In Normal Mode, show ONLY a soft subtle translucent highlight on hover - NO harsh borders or squares! */
+                    <polygon
+                      points="42,1 83,21 42,41 1,21"
+                      fill="rgba(255, 255, 255, 0.12)"
+                      stroke="rgba(255, 255, 255, 0.28)"
+                      strokeWidth="1"
+                    />
+                  ) : (
+                    /* Invisible hit-box: keeps clicks perfectly responsive without showing any ugly squares */
+                    <polygon
+                      points="42,1 83,21 42,41 1,21"
+                      fill="transparent"
+                      stroke="none"
+                    />
+                  )}
+                </svg>
+              </div>
+            );
+          })
+        )}
+
+        {/* Roadside Mailbox / Visitor Character */}
+        {activeVisitor && (() => {
+          const vPlacement = calculateIsoPlacement(
+            1, 6, 1, 1,
+            ISO_DECORATION_ANCHORS.visitor
+          );
+          return (
+            <React.Fragment>
+              {/* Visitor Ground Shadow */}
+              <div
+                id="visitor-shadow"
+                className="absolute pointer-events-none select-none"
+                style={{
+                  left: vPlacement.shadow.left,
+                  top: vPlacement.shadow.top,
+                  width: `${vPlacement.shadow.width}px`,
+                  height: `${vPlacement.shadow.height}px`,
+                  transform: vPlacement.shadow.transform,
+                  zIndex: vPlacement.shadow.zIndex,
+                  opacity: vPlacement.shadow.opacity,
+                }}
+              >
+                <div
+                  className="w-full h-full rounded-[50%] blur-[2px]"
+                  style={{
+                    background:
+                      'radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.2) 60%, transparent 90%)',
+                  }}
+                />
+              </div>
+
+              {/* Visitor Character */}
+              <div
+                id="visitor-character"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenVisitor();
+                }}
+                style={{
+                  left: vPlacement.left,
+                  top: vPlacement.top,
+                  position: 'absolute',
+                  zIndex: vPlacement.zIndex,
+                  transform: vPlacement.transform,
+                }}
+                className="cursor-pointer group flex flex-col items-center select-none hover:scale-105 transition-transform"
+              >
+                <div className="bg-white/95 px-2 py-0.5 rounded-full text-xs font-bold text-amber-900 border border-amber-400 shadow-md animate-bounce flex items-center gap-1 mb-1">
+                  💬 <span className="text-[11px]">{activeVisitor.name}</span>
+                </div>
+                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-3xl shadow-lg border-2 border-amber-500 hover:scale-110 transition-transform">
+                  {activeVisitor.avatar}
+                </div>
+              </div>
+            </React.Fragment>
+          );
+        })()}
+
+        {/* Delivery Truck on Road */}
+        {(() => {
+          const tPlacement = calculateIsoPlacement(
+            0, 3, 2, 1,
+            ISO_DECORATION_ANCHORS.truck
+          );
+          return (
+            <div
+              id="delivery-truck"
+              style={{
+                left: tPlacement.left,
+                top: tPlacement.top,
+                position: 'absolute',
+                zIndex: tPlacement.zIndex,
+                transform: tPlacement.transform,
+              }}
+              className={`pointer-events-none transition-all duration-1000 ${
+                isDeliveringTruck
+                  ? 'translate-x-[-120px] translate-y-[-100px] opacity-40 scale-75'
+                  : 'translate-x-0 translate-y-0 opacity-100 scale-100'
+              }`}
+            >
+              <div className="relative flex flex-col items-center">
+                {isDeliveringTruck && (
+                  <div className="absolute -top-6 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md animate-pulse">
+                    🚚 Entregando pedido...
+                  </div>
+                )}
+                <IsoTruck isDelivering={isDeliveringTruck} />
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Render Sorted Game Entities (Buildings, Plots, Animals, Decorations) */}
+        {sortedEntities.map((entity) => {
+          const isSelected = selectedEntity?.id === entity.id;
+          const isMovingThis = movingEntityId === entity.id || draggingEntityId === entity.id;
+          const isDraggingThis = draggingEntityId === entity.id;
+          const targetX = (isDraggingThis && hoveredTile) ? hoveredTile.x : entity.x;
+          const targetY = (isDraggingThis && hoveredTile) ? hoveredTile.y : entity.y;
+
+          // 1. Calculate structural placement and ground footpoint
+          const anchorDef = getEntityAnchorDef(
+            entity,
+            '3d_rendered'
+          );
+          const placement = calculateIsoPlacement(
+            targetX,
+            targetY,
+            entity.width,
+            entity.height,
+            anchorDef,
+            entity.anchorX,
+            entity.anchorY
+          );
+
+          const isHoldingThis = holdingEntityId === entity.id;
+
+          return (
+            <React.Fragment key={entity.id}>
+              {/* Ground Contact Shadow (Anchored to the exact ground footpoint) */}
+              <div
+                id={`entity-shadow-${entity.id}`}
+                className="absolute pointer-events-none select-none transition-opacity duration-200"
+                style={{
+                  left: placement.shadow.left,
+                  top: placement.shadow.top,
+                  width: `${placement.shadow.width}px`,
+                  height: `${placement.shadow.height}px`,
+                  transform: placement.shadow.transform,
+                  zIndex: placement.shadow.zIndex,
+                  opacity: isMovingThis ? 0.25 : placement.shadow.opacity,
+                }}
+                aria-hidden="true"
+              >
+                {/* Outer soft ambient ground shadow (2:1 isometric ratio) */}
+                <div
+                  className="w-full h-full rounded-[50%] blur-[4px]"
+                  style={{
+                    background:
+                      'radial-gradient(ellipse at 50% 50%, rgba(15, 23, 42, 0.44) 0%, rgba(15, 23, 42, 0.26) 45%, rgba(15, 23, 42, 0.08) 70%, transparent 95%)',
+                  }}
+                />
+
+                {/* Core contact occlusion shadow directly under the foundation */}
+                <div
+                  className="absolute inset-x-[15%] inset-y-[15%] rounded-[50%] blur-[2px]"
+                  style={{
+                    background:
+                      'radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.60) 0%, rgba(0, 0, 0, 0.25) 55%, transparent 85%)',
+                  }}
+                />
+
+                {/* Natural warm earth tint to blend subtly into the lawn grass */}
+                <div
+                  className="absolute inset-x-[8%] inset-y-[8%] rounded-[50%] blur-[3px] opacity-35 mix-blend-multiply"
+                  style={{
+                    background:
+                      'radial-gradient(ellipse at 50% 50%, #3E2723 0%, #5D4037 38%, transparent 78%)',
+                  }}
+                />
+              </div>
+
+              {/* Main Entity Visual Container anchored precisely at footpoint */}
+              <div
+                id={`entity-${entity.id}`}
+                onPointerDown={(e) => handleEntityPointerDown(entity, e)}
+                onPointerUp={(e) => handleEntityPointerUp(entity, e)}
+                style={{
+                  left: placement.left,
+                  top: placement.top,
+                  position: 'absolute',
+                  zIndex: isDraggingThis ? 10000 : placement.zIndex,
+                  transform: placement.transform,
+                  touchAction: 'none',
+                }}
+                className={`cursor-pointer group select-none transition-transform duration-150 relative ${
+                  isMovingThis ? 'opacity-60 scale-105 animate-pulse' : ''
+                } ${isSelected ? 'scale-105' : 'hover:scale-[1.02]'}`}
+              >
+                {/* 4 progressive loading bars while holding */}
+                {isHoldingThis && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '-40px',
+                      left: '50%',
+                      transform: 'translateX(-50%) scale(0.9)',
+                      zIndex: 21000,
+                    }}
+                    className="flex items-center gap-1.5 bg-amber-950/95 border-2 border-amber-400 p-2 rounded-2xl shadow-2xl pointer-events-none"
+                  >
+                    <div className={`w-2.5 h-6 rounded-md border-2 transition-colors duration-100 ${holdingProgress >= 25 ? 'bg-yellow-400 border-yellow-200 shadow-[0_0_8px_#FACC15]' : 'bg-amber-900 border-amber-950/50'}`}></div>
+                    <div className={`w-2.5 h-6 rounded-md border-2 transition-colors duration-100 ${holdingProgress >= 50 ? 'bg-yellow-400 border-yellow-200 shadow-[0_0_8px_#FACC15]' : 'bg-amber-900 border-amber-950/50'}`}></div>
+                    <div className={`w-2.5 h-6 rounded-md border-2 transition-colors duration-100 ${holdingProgress >= 75 ? 'bg-yellow-400 border-yellow-200 shadow-[0_0_8px_#FACC15]' : 'bg-amber-900 border-amber-950/50'}`}></div>
+                    <div className={`w-2.5 h-6 rounded-md border-2 transition-colors duration-100 ${holdingProgress >= 100 ? 'bg-yellow-400 border-yellow-200 shadow-[0_0_8px_#FACC15]' : 'bg-amber-900 border-amber-950/50'}`}></div>
+                  </div>
+                )}
+
+                {/* Selection Ring */}
+                {isSelected && (
+                  <div className="absolute inset-0 rounded-3xl border-3 border-amber-400 shadow-[0_0_15px_#F59E0B] pointer-events-none animate-pulse -m-2"></div>
+                )}
+
+                {/* Render Specific Entity Visuals */}
+                {renderEntityVisual({
+                  entity,
+                  currentTime,
+                  onHarvestCrop: onQuickHarvestCrop,
+                  onCollectAnimal: onQuickCollectAnimal,
+                  onCollectBuilding: onQuickCollectBuilding,
+                  isSelected,
+                  graphicsStyle: (graphicsStyle as '3d_rendered' | 'vector') || '3d_rendered',
+                  siloUsed,
+                  siloCap,
+                  siloLevel,
+                  barnUsed,
+                  barnCap,
+                  barnLevel,
+                  playerLevel,
+                  farmName,
+                  hasFulfillableOrders,
+                  availableOrdersCount,
+                  hasRoadsideCoinsToCollect,
+                  canSpinWheel,
+                  onOpenSilo,
+                  onOpenBarn,
+                  onOpenFarmhouse,
+                  onOpenOrderBoard,
+                  onOpenRoadsideShop,
+                  onOpenLuckyWheel,
+                })}
+              </div>
+            </React.Fragment>
+          );
+        })}
+
+        {/* CROP BUBBLE SELECTOR (Floating inline on top of selected plot) */}
+        {selectedEntity && selectedEntity.type === 'crop_plot' && (() => {
+          const isPlanted = selectedEntity.cropData && selectedEntity.cropData.cropId;
+          const now = currentTime;
+          const isReady = isPlanted && (now - selectedEntity.cropData!.plantedAt!) / 1000 >= selectedEntity.cropData!.growDuration;
+          const { x: isoX, y: isoY } = gridToIso(selectedEntity.x, selectedEntity.y);
+          
+          return (
+            <div
+              style={{
+                left: isoX,
+                top: isoY - 30,
+                transform: 'translate(-50%, -50%)',
+                pointerEvents: 'auto',
+              }}
+              className="absolute z-[20000] flex items-center justify-center select-none"
+            >
+              {isReady ? (
+                /* Scythe Bubble */
+                <div
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    sound.playClick();
+                    setActiveDragTool('scythe');
+                  }}
+                  className="w-14 h-14 bg-gradient-to-tr from-amber-600 to-yellow-400 hover:scale-110 active:scale-95 text-white border-4 border-amber-950 rounded-full shadow-2xl flex items-center justify-center text-3xl cursor-grab active:cursor-grabbing transition-transform animate-in zoom-in duration-150"
+                  title="Arraste para colher!"
+                >
+                  🪓
+                </div>
+              ) : !isPlanted ? (
+                /* Seed Bags Row */
+                <div className="bg-gradient-to-r from-amber-900/95 to-amber-950/95 border-4 border-amber-400 p-2 rounded-3xl shadow-2xl flex items-center gap-2.5 animate-in zoom-in duration-150">
+                  {[
+                    { id: 'wheat', name: 'Trigo', icon: '🌾', level: 1 },
+                    { id: 'corn', name: 'Milho', icon: '🌽', level: 2 },
+                    { id: 'cane', name: 'Cana', icon: '🎋', level: 3 },
+                    { id: 'carrot', name: 'Cenoura', icon: '🥕', level: 4 },
+                    { id: 'soy', name: 'Soja', icon: '🌱', level: 5 },
+                  ].map((seed) => {
+                    const isUnlocked = playerLevel >= seed.level;
+                    if (!isUnlocked) return null;
+                    
+                    const seedQty = inventory[seed.id] || 0;
+                    
+                    return (
+                      <div
+                        key={seed.id}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          if (seedQty <= 0) {
+                            sound.playClick();
+                            alert(`Você não tem sementes de ${seed.name} suficientes no Silo!`);
+                            return;
+                          }
+                          sound.playClick();
+                          setActiveDragTool(`plant_${seed.id}`);
+                        }}
+                        className={`relative flex flex-col items-center justify-center w-12 h-12 bg-amber-100 hover:scale-110 active:scale-95 rounded-2xl border-2 border-amber-800 shadow cursor-grab active:cursor-grabbing transition-all ${
+                          seedQty <= 0 ? 'opacity-50 grayscale' : ''
+                        }`}
+                        title={`Arraste para plantar! (${seedQty})`}
+                      >
+                        <span className="text-2xl">{seed.icon}</span>
+                        <span className="absolute -bottom-1.5 -right-1 bg-amber-950 text-yellow-100 font-extrabold text-[8px] px-1 rounded-full border border-amber-400">
+                          {seedQty}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* Growing state info bubble */
+                <div className="bg-amber-950/90 text-amber-200 border-2 border-amber-400 px-3 py-1.5 rounded-2xl shadow-xl text-center flex flex-col gap-1 text-[10px] font-bold animate-in fade-in duration-150">
+                  <span className="text-yellow-400 uppercase text-[8px] tracking-wider font-black">Crescendo</span>
+                  <div className="w-16 h-1.5 bg-amber-900 rounded-full overflow-hidden border border-amber-600/30">
+                    <div
+                      className="h-full bg-cyan-400 transition-all duration-500"
+                      style={{
+                        width: `${Math.min(100, Math.round(((now - selectedEntity.cropData!.plantedAt!) / 1000) / selectedEntity.cropData!.growDuration * 100))}%`
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+      </div>
+
+      {activeDragTool && (
+        <div
+          style={{
+            position: 'fixed',
+            left: dragCursorPos.x,
+            top: dragCursorPos.y,
+            transform: 'translate(-50%, -100%)',
+            pointerEvents: 'none',
+            zIndex: 99999,
+          }}
+          className="text-4xl filter drop-shadow-2xl select-none"
+        >
+          {activeDragTool === 'scythe' ? '🪓' : (() => {
+            const seed = activeDragTool.replace('plant_', '');
+            if (seed === 'wheat') return '🌾';
+            if (seed === 'corn') return '🌽';
+            if (seed === 'cane') return '🎋';
+            if (seed === 'carrot') return '🥕';
+            return '🌱';
+          })()}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface VisualContext {
+  entity: FarmEntity;
+  currentTime: number;
+  onHarvestCrop: (id: string) => void;
+  onCollectAnimal: (id: string, idx: number) => void;
+  onCollectBuilding: (id: string) => void;
+  isSelected?: boolean;
+  graphicsStyle: '3d_rendered' | 'vector';
+  siloUsed: number;
+  siloCap: number;
+  siloLevel: number;
+  barnUsed: number;
+  barnCap: number;
+  barnLevel: number;
+  playerLevel: number;
+  farmName: string;
+  hasFulfillableOrders: boolean;
+  availableOrdersCount: number;
+  hasRoadsideCoinsToCollect: boolean;
+  canSpinWheel: boolean;
+  onOpenSilo?: () => void;
+  onOpenBarn?: () => void;
+  onOpenFarmhouse?: () => void;
+  onOpenOrderBoard?: () => void;
+  onOpenRoadsideShop?: () => void;
+  onOpenLuckyWheel?: () => void;
+}
+
+// Sub-renderer for rich realistic Hay Day isometric entity graphics
+function renderEntityVisual(ctx: VisualContext) {
+  const {
+    entity,
+    currentTime,
+    onHarvestCrop,
+    onCollectAnimal,
+    onCollectBuilding,
+    isSelected,
+    graphicsStyle,
+    siloUsed,
+    siloCap,
+    siloLevel,
+    barnUsed,
+    barnCap,
+    barnLevel,
+    playerLevel,
+    farmName,
+    hasFulfillableOrders,
+    availableOrdersCount,
+    hasRoadsideCoinsToCollect,
+    canSpinWheel,
+    onOpenSilo,
+    onOpenBarn,
+    onOpenFarmhouse,
+    onOpenOrderBoard,
+    onOpenRoadsideShop,
+    onOpenLuckyWheel,
+  } = ctx;
+
+  const is3D = graphicsStyle === '3d_rendered';
+
+  switch (entity.type) {
+    case 'crop_plot': {
+      const cropData = entity.cropData;
+      return (
+        <IsoCropPlot
+          cropId={cropData?.cropId}
+          plantedAt={cropData?.plantedAt}
+          growDuration={cropData?.growDuration}
+          currentTime={currentTime}
+          onHarvest={() => onHarvestCrop(entity.id)}
+        />
+      );
+    }
+
+    case 'animal_pen': {
+      const pen = entity.animalData;
+      if (!pen) return null;
+      return (
+        <IsoAnimalPen
+          animalType={pen.animalType}
+          animals={pen.animals}
+          currentTime={currentTime}
+          onCollectAnimal={(idx) => onCollectAnimal(entity.id, idx)}
+        />
+      );
+    }
+
+    case 'building': {
+      const bData = entity.buildingData;
+      if (!bData) return null;
+      const bDef = BUILDINGS[bData.buildingType];
+      const completedItems = Array.isArray(bData.completedItems) ? bData.completedItems : [];
+      const queue = Array.isArray(bData.queue) ? bData.queue : [];
+      const hasCompleted = completedItems.length > 0;
+      const isWorking = queue.length > 0;
+
+      // Calculate Building Mastery Stars
+      const crafts = (bData.totalCrafted || 0) + completedItems.length;
+      const stars = crafts >= 50 ? 3 : crafts >= 25 ? 2 : crafts >= 10 ? 1 : 0;
+
+      return (
+        <div className="relative flex flex-col items-center justify-center">
+          {/* Specific Realistic Building Graphic: 3D Pre-rendered Models vs Vector */}
+          {is3D && HD_BUILDING_SPRITES[bData.buildingType as keyof typeof HD_BUILDING_SPRITES] ? (
+            <Iso3DSpriteBuilding
+              src={HD_BUILDING_SPRITES[bData.buildingType as keyof typeof HD_BUILDING_SPRITES]}
+              alt={bDef?.name || bData.buildingType}
+              widthPx={176}
+              heightPx={176}
+              isWorking={isWorking}
+              isSelected={isSelected}
+              baseType={
+                bData.buildingType === 'bakery' || bData.buildingType === 'bbq_grill'
+                  ? 'cobblestone'
+                  : bData.buildingType === 'dairy' || bData.buildingType === 'popcorn_pot'
+                  ? 'wood'
+                  : 'dirt'
+              }
+            />
+          ) : (
+            <>
+              {bData.buildingType === 'bakery' && <IsoBakery isWorking={isWorking} />}
+              {bData.buildingType === 'feed_mill' && <IsoFeedMill isWorking={isWorking} />}
+              {bData.buildingType === 'dairy' && <IsoDairy isWorking={isWorking} />}
+              {bData.buildingType === 'sugar_mill' && <IsoSugarMill isWorking={isWorking} />}
+              {bData.buildingType === 'popcorn_pot' && <IsoPopcornPot isWorking={isWorking} />}
+              {bData.buildingType === 'bbq_grill' && <IsoBBQGrill isWorking={isWorking} />}
+            </>
+          )}
+
+          {/* 1. Live Production Progress Badge with Circular Progress & Countdown */}
+          {isWorking && !hasCompleted && queue.length > 0 && (() => {
+            const activeItem = queue[0];
+            if (!activeItem) return null;
+            const activeRecipe = RECIPES.find((r) => r.id === activeItem.recipeId);
+            const duration = activeItem.durationSeconds || 1;
+            const elapsed = Math.max(0, (currentTime - (activeItem.startedAt || currentTime)) / 1000);
+            const remaining = Math.max(0, Math.ceil(duration - elapsed));
+            const progressPct = Math.min(100, Math.max(0, (elapsed / duration) * 100));
+            const mm = Math.floor(remaining / 60);
+            const ss = remaining % 60;
+            const timeStr = mm > 0 ? `${mm}:${ss < 10 ? '0' : ''}${ss}` : `${ss}s`;
+
+            return (
+              <div className="absolute -top-8 z-20 flex items-center gap-1.5 bg-linear-to-r from-amber-950/95 via-amber-900/95 to-amber-950/95 text-amber-100 px-2.5 py-1 rounded-full border border-amber-400/80 shadow-xl backdrop-blur-xs select-none pointer-events-none">
+                {/* Mini Circular Progress Ring */}
+                <div className="relative w-5 h-5 flex items-center justify-center">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="4" />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="14"
+                      fill="none"
+                      stroke="#F59E0B"
+                      strokeWidth="4"
+                      strokeDasharray="88"
+                      strokeDashoffset={88 - (88 * progressPct) / 100}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span className="absolute text-[10px]">
+                    {activeRecipe?.id ? ITEMS[activeRecipe.id]?.icon : '⚙️'}
+                  </span>
+                </div>
+
+                <span className="text-[10px] font-black text-amber-200">{timeStr}</span>
+
+                {/* Additional Queued Items Count */}
+                {queue.length > 1 && (
+                  <span className="bg-amber-700 text-amber-100 text-[9px] font-bold px-1.5 py-0.2 rounded-full">
+                    +{queue.length - 1}
+                  </span>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* 2. Floating 3D Golden Harvest Bubbles (Direct Tap-to-Collect) */}
+          {hasCompleted && completedItems.length > 0 && (
+            <div className="absolute -top-11 z-30 flex items-center justify-center animate-bubble-float pointer-events-auto">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCollectBuilding(entity.id);
+                }}
+                className="group relative flex items-center justify-center cursor-pointer transition-transform duration-200 active:scale-90 hover:scale-110"
+                title="Toque para coletar produtos prontos!"
+              >
+                {/* Ambient Golden Glow */}
+                <div className="absolute inset-0 rounded-full bg-amber-400/50 blur-md animate-pulse pointer-events-none" />
+
+                {/* Bubble Shell */}
+                <div className="relative w-12 h-12 rounded-full bg-linear-to-b from-amber-200 via-amber-400 to-amber-600 border-2 border-yellow-100 shadow-xl flex items-center justify-center ring-2 ring-amber-500/50">
+                  <span className="text-2xl filter drop-shadow-md select-none transform transition-transform group-hover:scale-115">
+                    {ITEMS[completedItems[0]]?.icon || '📦'}
+                  </span>
+
+                  {/* Multiple Items Count Badge */}
+                  {completedItems.length > 1 && (
+                    <div className="absolute -top-1.5 -right-1.5 bg-emerald-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border border-white shadow-md">
+                      x{completedItems.length}
+                    </div>
+                  )}
+                </div>
+
+                {/* Tap Hint on Hover */}
+                <div className="absolute -bottom-4 bg-black/80 text-amber-200 text-[9px] font-bold px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-md">
+                  Coletar!
+                </div>
+              </button>
+            </div>
+          )}
+
+          {/* 3. Building Header Badge with Mastery Stars */}
+          <div className="absolute -top-3.5 z-10 bg-linear-to-r from-amber-950 via-amber-900 to-amber-950 text-amber-100 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-amber-400/70 shadow-md flex items-center gap-1.5 backdrop-blur-xs select-none">
+            <span>{bDef?.icon}</span>
+            <span>{bDef?.name}</span>
+            <span className="text-[9px] tracking-tighter" title={`Maestria: ${stars}/3 estrelas`}>
+              {stars >= 1 ? '⭐' : '☆'}
+              {stars >= 2 ? '⭐' : '☆'}
+              {stars >= 3 ? '⭐' : '☆'}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    case 'farmhouse': {
+      return (
+        <div
+          onClick={(e) => {
+            if (onOpenFarmhouse) {
+              e.stopPropagation();
+              onOpenFarmhouse();
+            }
+          }}
+          className="relative flex flex-col items-center justify-center cursor-pointer"
+        >
+          {is3D ? (
+            <Iso3DSpriteBuilding
+              src={HD_BUILDING_SPRITES.farmhouse}
+              alt="Casa Principal"
+              widthPx={208}
+              heightPx={208}
+              isSelected={isSelected}
+              baseType="cobblestone"
+            />
+          ) : (
+            <IsoFarmhouse isSelected={isSelected} />
+          )}
+
+          {/* Farmhouse Trophy Crest */}
+          <div className="absolute -top-4 z-20 bg-linear-to-r from-red-900 via-red-800 to-red-900 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full border border-amber-300 shadow-md flex items-center gap-1.5 select-none">
+            <span>🏆 Nv. {playerLevel || 1}</span>
+            <span className="text-amber-200 font-bold">• {farmName || 'Fazenda'}</span>
+          </div>
+        </div>
+      );
+    }
+
+    case 'silo': {
+      const used = siloUsed || 0;
+      const cap = siloCap || 50;
+      const pct = Math.round((used / cap) * 100);
+      const isCritical = pct >= 90;
+      const isWarning = pct >= 70;
+
+      return (
+        <div
+          onClick={(e) => {
+            if (onOpenSilo) {
+              e.stopPropagation();
+              onOpenSilo();
+            }
+          }}
+          className="relative flex flex-col items-center justify-center cursor-pointer"
+        >
+          {is3D ? (
+            <Iso3DSpriteBuilding
+              src={HD_BUILDING_SPRITES.silo}
+              alt="Silo de Grãos"
+              widthPx={160}
+              heightPx={208}
+              isSelected={isSelected}
+              baseType="dirt"
+            />
+          ) : (
+            <IsoSilo isSelected={isSelected} />
+          )}
+
+          {/* Silo Title & Live Fill Gauge Badge */}
+          <div className="absolute -top-4 z-20 flex flex-col items-center gap-0.5">
+            <div
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-md border flex items-center gap-1.5 select-none ${
+                isCritical
+                  ? 'bg-red-950/90 text-red-200 border-red-400 animate-pulse'
+                  : isWarning
+                  ? 'bg-amber-950/90 text-amber-200 border-amber-400'
+                  : 'bg-emerald-950/90 text-emerald-200 border-emerald-400'
+              }`}
+            >
+              <span>🌾 Silo:</span>
+              <span className="font-extrabold">
+                {used}/{cap}
+              </span>
+              <span className="text-[9px] opacity-75">Nv.{siloLevel || 1}</span>
+            </div>
+
+            {/* In-world Mini Fill Bar */}
+            <div className="w-16 h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/20">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${
+                  isCritical ? 'bg-red-500' : isWarning ? 'bg-amber-400' : 'bg-emerald-400'
+                }`}
+                style={{ width: `${Math.min(100, pct)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    case 'barn': {
+      const used = barnUsed || 0;
+      const cap = barnCap || 50;
+      const pct = Math.round((used / cap) * 100);
+      const isCritical = pct >= 90;
+      const isWarning = pct >= 70;
+
+      return (
+        <div
+          onClick={(e) => {
+            if (onOpenBarn) {
+              e.stopPropagation();
+              onOpenBarn();
+            }
+          }}
+          className="relative flex flex-col items-center justify-center cursor-pointer"
+        >
+          {is3D ? (
+            <Iso3DSpriteBuilding
+              src={HD_BUILDING_SPRITES.barn}
+              alt="Celeiro"
+              widthPx={208}
+              heightPx={208}
+              isSelected={isSelected}
+              baseType="dirt"
+            />
+          ) : (
+            <IsoBarn isSelected={isSelected} />
+          )}
+
+          {/* Barn Title & Live Fill Gauge Badge */}
+          <div className="absolute -top-4 z-20 flex flex-col items-center gap-0.5">
+            <div
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-md border flex items-center gap-1.5 select-none ${
+                isCritical
+                  ? 'bg-red-950/90 text-red-200 border-red-400 animate-pulse'
+                  : isWarning
+                  ? 'bg-amber-950/90 text-amber-200 border-amber-400'
+                  : 'bg-emerald-950/90 text-emerald-200 border-emerald-400'
+              }`}
+            >
+              <span>🛖 Celeiro:</span>
+              <span className="font-extrabold">
+                {used}/{cap}
+              </span>
+              <span className="text-[9px] opacity-75">Nv.{barnLevel || 1}</span>
+            </div>
+
+            {/* In-world Mini Fill Bar */}
+            <div className="w-16 h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/20">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${
+                  isCritical ? 'bg-red-500' : isWarning ? 'bg-amber-400' : 'bg-emerald-400'
+                }`}
+                style={{ width: `${Math.min(100, pct)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    case 'order_board': {
+      return (
+        <div
+          onClick={(e) => {
+            if (onOpenOrderBoard) {
+              e.stopPropagation();
+              onOpenOrderBoard();
+            }
+          }}
+          className="relative flex flex-col items-center justify-center cursor-pointer"
+        >
+          {is3D ? (
+            <Iso3DSpriteBuilding
+              src={HD_BUILDING_SPRITES.order_board}
+              alt="Quadro de Pedidos"
+              widthPx={144}
+              heightPx={144}
+              isSelected={isSelected}
+              baseType="dirt"
+            />
+          ) : (
+            <IsoOrderBoard />
+          )}
+
+          {/* Order Board Status Pill */}
+          {hasFulfillableOrders ? (
+            <div className="absolute -top-5 z-20 bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs px-2.5 py-0.5 rounded-full border-2 border-white shadow-xl flex items-center gap-1 animate-bounce select-none">
+              <span>📋 Pedido Pronto! ✨</span>
+            </div>
+          ) : (
+            <div className="absolute -top-3.5 z-10 bg-amber-950/90 text-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-500/70 shadow-md flex items-center gap-1 select-none">
+              <span>📋 {availableOrdersCount || 3} Pedidos</span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    case 'roadside_shop': {
+      return (
+        <div
+          onClick={(e) => {
+            if (onOpenRoadsideShop) {
+              e.stopPropagation();
+              onOpenRoadsideShop();
+            }
+          }}
+          className="relative flex flex-col items-center justify-center cursor-pointer"
+        >
+          {is3D ? (
+            <Iso3DSpriteBuilding
+              src={HD_BUILDING_SPRITES.roadside_shop}
+              alt="Banca de Vendas"
+              widthPx={176}
+              heightPx={176}
+              isSelected={isSelected}
+              baseType="wood"
+            />
+          ) : (
+            <IsoRoadsideShop isSelected={isSelected} />
+          )}
+
+          {/* Roadside Shop Coins Notification */}
+          {hasRoadsideCoinsToCollect ? (
+            <div className="absolute -top-5 z-20 bg-yellow-400 hover:bg-yellow-300 text-yellow-950 font-black text-xs px-2.5 py-0.5 rounded-full border-2 border-white shadow-xl flex items-center gap-1 animate-bounce select-none">
+              <span>🪙 Pegar Moedas!</span>
+            </div>
+          ) : (
+            <div className="absolute -top-3.5 z-10 bg-amber-950/90 text-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-500/70 shadow-md select-none">
+              🏪 Banca Aberta
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    case 'lucky_wheel': {
+      return (
+        <div
+          onClick={(e) => {
+            if (onOpenLuckyWheel) {
+              e.stopPropagation();
+              onOpenLuckyWheel();
+            }
+          }}
+          className="relative flex flex-col items-center justify-center cursor-pointer"
+        >
+          {is3D ? (
+            <Iso3DSpriteBuilding
+              src={HD_BUILDING_SPRITES.lucky_wheel}
+              alt="Caminhão da Roleta"
+              widthPx={176}
+              heightPx={176}
+              isSelected={isSelected}
+              baseType="dirt"
+            />
+          ) : (
+            <IsoLuckyWheel isSelected={isSelected} />
+          )}
+
+          {/* Lucky Wheel Free Spin Notification */}
+          {canSpinWheel ? (
+            <div className="absolute -top-5 z-20 bg-linear-to-r from-purple-600 to-indigo-600 text-white font-black text-xs px-2.5 py-0.5 rounded-full border-2 border-white shadow-xl flex items-center gap-1 animate-bounce select-none">
+              <span>🎡 Giro Grátis!</span>
+            </div>
+          ) : (
+            <div className="absolute -top-3.5 z-10 bg-purple-950/90 text-purple-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-400/60 shadow-md select-none">
+              🎡 Roleta Diária
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    case 'decoration': {
+      return (
+        <div className="relative flex flex-col items-center justify-center">
+          <IsoDecoration
+            type={entity.decorationType || 'scarecrow'}
+            isSelected={isSelected}
+          />
+        </div>
+      );
+    }
+
+    default:
+      return null;
+  }
+}

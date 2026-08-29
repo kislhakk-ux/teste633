@@ -1,0 +1,232 @@
+import React from 'react';
+import { FarmEntity, ItemId, AnimalType } from '../types/game';
+import { CROPS, ANIMAL_PENS, ITEMS } from '../constants/gameData';
+import { sound } from '../utils/sound';
+
+interface ActionRadialProps {
+  selectedEntity: FarmEntity | null;
+  level: number;
+  inventory: Record<ItemId, number>;
+  gems: number;
+  onClose: () => void;
+  onPlantCrop: (entityId: string, cropId: ItemId) => void;
+  onHarvestCrop: (entityId: string) => void;
+  onFeedAnimals: (entityId: string) => void;
+  onCollectAnimal: (entityId: string, idx: number) => void;
+  onSpeedUpCrop: (entityId: string, gemsCost: number) => void;
+  onSpeedUpAnimal: (entityId: string, gemsCost: number) => void;
+  onOpenBuildingModal: (entity: FarmEntity) => void;
+  onOpenOrderBoard: () => void;
+  onOpenRoadsideShop: () => void;
+  onOpenLuckyWheel: () => void;
+  onOpenSilo: () => void;
+  onOpenBarn: () => void;
+  onOpenFarmhouse: () => void;
+}
+
+export const ActionRadial: React.FC<ActionRadialProps> = ({
+  selectedEntity,
+  level,
+  inventory,
+  gems,
+  onClose,
+  onPlantCrop,
+  onHarvestCrop,
+  onFeedAnimals,
+  onCollectAnimal,
+  onSpeedUpCrop,
+  onSpeedUpAnimal,
+  onOpenBuildingModal,
+  onOpenOrderBoard,
+  onOpenRoadsideShop,
+  onOpenLuckyWheel,
+  onOpenSilo,
+  onOpenBarn,
+  onOpenFarmhouse,
+}) => {
+  if (!selectedEntity) return null;
+
+  // Auto-route special buildings directly
+  if (selectedEntity.type === 'building') {
+    return (
+      <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center p-4">
+        <div className="bg-amber-950/90 border-2 border-amber-400 p-4 rounded-3xl shadow-2xl pointer-events-auto flex flex-col items-center gap-3">
+          <h3 className="text-white font-black text-sm">
+            {ITEMS[selectedEntity.buildingData?.buildingType as ItemId]?.name || 'Edifício'}
+          </h3>
+          <button
+            onClick={() => onOpenBuildingModal(selectedEntity)}
+            className="bg-amber-500 hover:bg-amber-400 text-amber-950 font-black px-6 py-2 rounded-2xl shadow-lg border-2 border-white flex items-center gap-2 text-sm active:scale-95"
+          >
+            🏭 Abrir Produção
+          </button>
+          <button
+            onClick={onClose}
+            className="text-amber-300 text-xs hover:underline mt-1"
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedEntity.type === 'order_board') {
+    onOpenOrderBoard();
+    return null;
+  }
+  if (selectedEntity.type === 'roadside_shop') {
+    onOpenRoadsideShop();
+    return null;
+  }
+  if (selectedEntity.type === 'lucky_wheel') {
+    onOpenLuckyWheel();
+    return null;
+  }
+  if (selectedEntity.type === 'silo') {
+    onOpenSilo();
+    return null;
+  }
+  if (selectedEntity.type === 'barn') {
+    onOpenBarn();
+    return null;
+  }
+  if (selectedEntity.type === 'farmhouse') {
+    onOpenFarmhouse();
+    return null;
+  }
+
+  // CROP PLOT ACTIONS
+  if (selectedEntity.type === 'crop_plot') {
+    return null;
+  }
+
+  // ANIMAL PEN ACTIONS
+  if (selectedEntity.type === 'animal_pen') {
+    const pen = selectedEntity.animalData;
+    if (!pen) return null;
+    const penDef = ANIMAL_PENS[pen.animalType];
+    const feedItem = ITEMS[penDef.feedId];
+    const feedCount = inventory[penDef.feedId] || 0;
+    const now = Date.now();
+
+    return (
+      <div
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <div
+          className="bg-gradient-to-b from-[#fff8e1] to-[#ffecb3] border-4 border-[#ff8f00] rounded-3xl p-5 shadow-2xl max-w-sm w-full relative flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-150"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between w-full">
+            <h3 className="text-amber-950 font-black text-lg flex items-center gap-2">
+              <span>{penDef.icon}</span> {penDef.penName}
+            </h3>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white font-bold flex items-center justify-center shadow"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Animals List in Pen */}
+          <div className="w-full flex flex-col gap-2">
+            <p className="text-xs font-bold text-amber-900">
+              Estado dos animais ({pen.animals.length}/{penDef.maxAnimalsPerPen}):
+            </p>
+            <div className="flex flex-col gap-2">
+              {pen.animals.map((animal, idx) => {
+                const isFed = animal.fedAt !== null;
+                const elapsed = animal.fedAt ? (now - animal.fedAt) / 1000 : 0;
+                const isReady = isFed && elapsed >= penDef.produceTimeSeconds;
+
+                return (
+                  <div
+                    key={animal.id}
+                    className="flex items-center justify-between bg-white/90 p-2.5 rounded-2xl border border-amber-300 shadow-xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{penDef.icon}</span>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-amber-950">
+                          {penDef.name} #{idx + 1}
+                        </span>
+                        <span className="text-[10px] text-amber-800">
+                          {isReady
+                            ? '✨ Pronto para coleta!'
+                            : isFed
+                            ? `Produzindo: ${Math.max(0, Math.ceil(penDef.produceTimeSeconds - elapsed))}s`
+                            : 'Com fome'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {isReady ? (
+                      <button
+                        onClick={() => {
+                          onCollectAnimal(selectedEntity.id, idx);
+                        }}
+                        className="bg-green-500 hover:bg-green-400 text-white text-xs font-black px-3 py-1.5 rounded-xl shadow border border-white flex items-center gap-1 active:scale-95"
+                      >
+                        {ITEMS[penDef.produceId]?.icon} Coletar
+                      </button>
+                    ) : isFed ? (
+                      <button
+                        onClick={() => {
+                          if (gems >= 1) {
+                            onSpeedUpAnimal(selectedEntity.id, 1);
+                          }
+                        }}
+                        className="bg-teal-600 hover:bg-teal-500 text-white text-[11px] font-bold px-2 py-1 rounded-xl shadow flex items-center gap-1 active:scale-95"
+                      >
+                        ⚡ 1 💎
+                      </button>
+                    ) : (
+                      <span className="text-[11px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200">
+                        Alimentar 🥣
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Feed Button */}
+          <div className="w-full flex flex-col gap-1.5 pt-2 border-t border-amber-300/60">
+            <div className="flex items-center justify-between text-xs font-bold text-amber-950">
+              <span>{feedItem?.icon} {feedItem?.name}</span>
+              <span className={feedCount > 0 ? 'text-green-700' : 'text-red-600'}>
+                Em estoque: {feedCount}
+              </span>
+            </div>
+            <button
+              id="btn-feed-animals"
+              disabled={feedCount <= 0}
+              onClick={() => {
+                onFeedAnimals(selectedEntity.id);
+              }}
+              className={`w-full py-3 rounded-2xl font-black text-sm shadow-lg border-2 border-white flex items-center justify-center gap-2 transition-all ${
+                feedCount > 0
+                  ? 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-amber-950 active:scale-95'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <span>🥣</span> Alimentar Animais Famintos
+            </button>
+            {feedCount <= 0 && (
+              <p className="text-[11px] text-red-700 text-center font-semibold">
+                Produza mais ração no Moinho de Ração!
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};

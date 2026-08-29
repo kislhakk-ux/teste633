@@ -1,0 +1,16 @@
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'com.harvest.horizon',
+  appName: 'Harvest Horizon',
+  webDir: 'dist',
+  plugins: {
+    GoogleAuth: {
+      scopes: ['profile', 'email'],
+      serverClientId: '1091471592373-3rlulsf8dqeqovfg6kghp01tu00avpf4.apps.googleusercontent.com', // Web Client ID from google-services.json
+      forceCodeForRefreshToken: true,
+    }
+  }
+};
+
+export default config;
