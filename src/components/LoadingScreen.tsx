@@ -6,6 +6,7 @@ interface LoadingScreenProps {
   errorMessage?: string | null;
   onRetry?: () => void;
   onCancel?: () => void;
+  onPlayOffline?: () => void;
   isFadingOut?: boolean;
 }
 
