@@ -1804,26 +1804,80 @@ function renderEntityVisual(ctx: VisualContext) {
     }
 
     case 'bee_tree': {
+      const data = entity.beeTreeData || { stage: 1, beesCount: 5, nectarCount: 0, maxNectar: 100 };
+      const isFull = data.nectarCount >= data.maxNectar;
       return (
-        <div className="relative flex flex-col items-center justify-center cursor-pointer">
-          <IsoBeeTree
-            entity={entity}
-            isSelected={isSelected}
-            onOpenModal={() => {
-              if (onOpenBeeTree) onOpenBeeTree(entity);
-            }}
-          />
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onOpenBeeTree) onOpenBeeTree(entity);
+          }}
+          className="relative flex flex-col items-center justify-center cursor-pointer"
+        >
+          {/* Nectar Status Bubble */}
+          <div
+            className={`absolute -top-3 left-1/2 -translate-x-1/2 z-35 flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-lg border-2 transition-all ${
+              isFull
+                ? 'bg-amber-500 text-white border-yellow-200 animate-bounce shadow-yellow-400/50'
+                : data.nectarCount > 0
+                ? 'bg-amber-950/90 text-yellow-300 border-amber-400'
+                : 'bg-amber-900/60 text-amber-200 border-amber-600/40'
+            }`}
+          >
+            <span>🍯</span>
+            <span>{data.nectarCount}/100</span>
+            {isFull && <span className="text-[9px] text-yellow-200 uppercase font-extrabold ml-0.5">CHEIO!</span>}
+          </div>
+
+          {is3D && HD_BUILDING_SPRITES.bee_tree ? (
+            <Iso3DSpriteBuilding
+              src={HD_BUILDING_SPRITES.bee_tree}
+              alt="Árvore de Abelhas"
+              widthPx={180}
+              heightPx={180}
+              isSelected={isSelected}
+              baseType="dirt"
+            />
+          ) : (
+            <IsoBeeTree
+              entity={entity}
+              isSelected={isSelected}
+              onOpenModal={() => {
+                if (onOpenBeeTree) onOpenBeeTree(entity);
+              }}
+            />
+          )}
         </div>
       );
     }
 
     case 'nectar_bush': {
+      const data = entity.nectarBushData || { nectarLeft: 200, maxNectar: 200, isWilted: false };
+      const spriteKey = data.nectarLeft <= 0 || data.isWilted ? 'nectar_bush_wilted' : 'nectar_bush';
+      const sprite = HD_BUILDING_SPRITES[spriteKey];
+
       return (
         <div className="relative flex flex-col items-center justify-center cursor-pointer">
-          <IsoNectarBush
-            entity={entity}
-            isSelected={isSelected}
-          />
+          {/* Nectar left status bubble */}
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-30 bg-amber-950/90 text-yellow-300 px-2 py-0.5 rounded-full text-[9px] font-black border border-amber-400 shadow-md">
+            {data.nectarLeft <= 0 ? '🥀 Seco' : `🌸 ${data.nectarLeft}/${data.maxNectar}`}
+          </div>
+
+          {is3D && sprite ? (
+            <Iso3DSpriteBuilding
+              src={sprite}
+              alt="Arbusto de Néctar"
+              widthPx={110}
+              heightPx={110}
+              isSelected={isSelected}
+              baseType="none"
+            />
+          ) : (
+            <IsoNectarBush
+              entity={entity}
+              isSelected={isSelected}
+            />
+          )}
         </div>
       );
     }
