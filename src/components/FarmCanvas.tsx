@@ -1003,51 +1003,112 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
           return (
             <div
               key={bee.id}
-              className="absolute pointer-events-none z-40 transition-transform duration-100 ease-linear"
+              className="absolute pointer-events-none z-40 flex flex-col items-center justify-center transition-transform duration-100 ease-linear"
               style={{
                 left: bx,
                 top: by,
-                transform: `translate(-50%, -50%) scale(${isFacingRight ? 0.95 : -0.95}, 0.95)`,
               }}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" className="overflow-visible filter drop-shadow-md">
-                {/* Wings Left/Right */}
-                <ellipse
-                  cx="8"
-                  cy="6"
-                  rx="6"
-                  ry="2.8"
-                  fill="rgba(255, 255, 255, 0.92)"
-                  stroke="#cbd5e1"
-                  strokeWidth="0.8"
-                  transform="rotate(-28 8 6)"
-                  className="animate-pulse"
-                />
-                <ellipse
-                  cx="16"
-                  cy="6"
-                  rx="6"
-                  ry="2.8"
-                  fill="rgba(255, 255, 255, 0.92)"
-                  stroke="#cbd5e1"
-                  strokeWidth="0.8"
-                  transform="rotate(28 16 6)"
-                  className="animate-pulse"
-                />
-                {/* Bee Striped Body */}
-                <ellipse cx="12" cy="12" rx="7" ry="5" fill="#facc15" stroke="#1e293b" strokeWidth="1" />
-                <path d="M 10 7.5 L 10 16.5" stroke="#1e293b" strokeWidth="1.6" />
-                <path d="M 14 7.5 L 14 16.5" stroke="#1e293b" strokeWidth="1.6" />
-                {/* Stinger */}
-                <polygon points="5,12 2.5,11 2.5,13" fill="#1e293b" />
-                {/* Head */}
-                <circle cx="18" cy="12" r="3" fill="#1e293b" />
-                <circle cx="19.2" cy="11.2" r="0.7" fill="#ffffff" />
-                {/* Yellow pollen ball carrying indicator */}
-                {bee.hasNectar && (
-                  <circle cx="12" cy="17.5" r="3.2" fill="#fbbf24" stroke="#d97706" strokeWidth="0.8" className="animate-ping" />
-                )}
-              </svg>
+              {/* Timer indicator for harvesting or resting */}
+              {(bee.state === 'harvesting' || (bee.state === 'idle' && bee.idleStart)) && (() => {
+                const elapsed = currentTime - (bee.state === 'harvesting' ? bee.harvestStart : bee.idleStart);
+                const remaining = 300000 - elapsed;
+                if (remaining <= 0) return null;
+                const totalSecs = Math.ceil(remaining / 1000);
+                const mm = Math.floor(totalSecs / 60);
+                const ss = totalSecs % 60;
+                const timerStr = `${mm}:${ss < 10 ? '0' : ''}${ss}`;
+
+                return (
+                  <div
+                    style={{
+                      transform: 'scale(0.85)',
+                    }}
+                    className={`mb-1 px-1.8 py-0.5 rounded-full text-[9px] font-black shadow-lg border-2 flex items-center gap-0.5 whitespace-nowrap select-none animate-pulse ${
+                      bee.state === 'harvesting'
+                        ? 'bg-amber-600 text-yellow-100 border-yellow-300'
+                        : 'bg-slate-700 text-slate-100 border-slate-400'
+                    }`}
+                  >
+                    <span>{bee.state === 'harvesting' ? '⏳ Coletando ' : '💤 Descanso '}</span>
+                    <span>{timerStr}</span>
+                  </div>
+                );
+              })()}
+
+              <div
+                style={{
+                  transform: `scale(${isFacingRight ? 1.0 : -1.0}, 1.0)`,
+                }}
+              >
+                <svg width="32" height="32" viewBox="0 0 32 32" className="overflow-visible filter drop-shadow-md">
+                  <defs>
+                    <radialGradient id={`wing-grad-${bee.id}`} cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+                      <stop offset="70%" stopColor="#e2e8f0" stopOpacity="0.8" />
+                      <stop offset="100%" stopColor="#94a3b8" stopOpacity="0" />
+                    </radialGradient>
+                    <linearGradient id={`body-grad-${bee.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#fbbf24" />
+                      <stop offset="40%" stopColor="#f59e0b" />
+                      <stop offset="85%" stopColor="#d97706" />
+                      <stop offset="100%" stopColor="#7c2d12" />
+                    </linearGradient>
+                  </defs>
+                  
+                  {/* Glossy wings flapping */}
+                  <ellipse
+                    cx="10"
+                    cy="8"
+                    rx="8"
+                    ry="4.5"
+                    fill={`url(#wing-grad-${bee.id})`}
+                    stroke="#cbd5e1"
+                    strokeWidth="0.8"
+                    transform="rotate(-28 10 8)"
+                    className="animate-pulse"
+                  />
+                  <ellipse
+                    cx="22"
+                    cy="8"
+                    rx="8"
+                    ry="4.5"
+                    fill={`url(#wing-grad-${bee.id})`}
+                    stroke="#cbd5e1"
+                    strokeWidth="0.8"
+                    transform="rotate(28 22 8)"
+                    className="animate-pulse"
+                  />
+                  
+                  {/* Stinger */}
+                  <polygon points="6,16 1.5,14.5 1.5,17.5" fill="#1e293b" />
+                  
+                  {/* Chubby 3D Body */}
+                  <ellipse cx="16" cy="16" rx="9" ry="7" fill={`url(#body-grad-${bee.id})`} stroke="#1e293b" strokeWidth="1.2" />
+                  
+                  {/* Velvet Stripes */}
+                  <path d="M 13.5 9.5 C 13.5 9.5 14.5 16 13.5 22.5" stroke="#1e293b" strokeWidth="2.2" strokeLinecap="round" />
+                  <path d="M 18.5 9.5 C 18.5 9.5 19.5 16 18.5 22.5" stroke="#1e293b" strokeWidth="2.2" strokeLinecap="round" />
+                  
+                  {/* Head & cute face */}
+                  <circle cx="23.5" cy="16" r="4.5" fill="#1e293b" />
+                  
+                  {/* Antennae */}
+                  <path d="M 23.5 12 Q 25 8 28 9" stroke="#1e293b" strokeWidth="1" fill="none" />
+                  <circle cx="28" cy="9" r="1" fill="#1e293b" />
+                  
+                  {/* Eye */}
+                  <circle cx="25.5" cy="14.5" r="1" fill="#ffffff" />
+                  
+                  {/* Yellow pollen ball carrying indicator */}
+                  {bee.hasNectar && (
+                    <g>
+                      <circle cx="16" cy="24" r="6" fill="#fbbf24" opacity="0.65" className="animate-ping" />
+                      <circle cx="16" cy="24" r="5" fill="#fbbf24" stroke="#d97706" strokeWidth="1.2" />
+                    </g>
+                  )}
+                </svg>
+              </div>
             </div>
           );
         })}

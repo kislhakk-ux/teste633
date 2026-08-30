@@ -176,7 +176,7 @@ export function getInitialGameState(): GameState {
     },
     soundEnabled: true,
     musicEnabled: false,
-    graphicsStyle: 'vector',
+    graphicsStyle: '3d_rendered',
   };
 }
 
@@ -193,7 +193,7 @@ export function loadGameState(): GameState {
 
       // Ensure graphics style
       if (!parsed.graphicsStyle) {
-        parsed.graphicsStyle = 'vector';
+        parsed.graphicsStyle = '3d_rendered';
       }
 
       // Ensure entities have proper arrays

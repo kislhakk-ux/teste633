@@ -2066,7 +2066,7 @@ export default function App() {
       <FarmCanvas
         entities={visitingFarm ? (visitingFarm.entities || []) : gameState.entities}
         selectedEntity={selectedEntity}
-        graphicsStyle={gameState.graphicsStyle || 'vector'}
+        graphicsStyle={gameState.graphicsStyle || '3d_rendered'}
         inventory={gameState.inventory}
         onQuickPlantCrop={handleQuickPlantCrop}
         onSelectEntity={(ent) => {
