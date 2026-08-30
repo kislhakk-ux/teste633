@@ -1090,8 +1090,17 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                   transform: `scale(${isFacingRight ? 1.0 : -1.0}, 1.0) rotate(${isFacingRight ? leanAngle : -leanAngle}deg)`,
                   transition: 'transform 0.15s ease-out',
                 }}
+                className="relative"
               >
-                <svg width="32" height="32" viewBox="0 0 32 32" className="overflow-visible filter drop-shadow-md">
+                {/* Trailing honey sparkles when carrying nectar */}
+                {bee.hasNectar && (
+                  <div className="absolute -left-3 top-2 flex flex-col items-center pointer-events-none select-none z-50">
+                    <span className="text-[8px] text-yellow-300 animate-ping opacity-80 leading-none">✨</span>
+                    <span className="text-[6px] text-amber-500 animate-bounce opacity-60 delay-75 mt-0.5 leading-none">💧</span>
+                  </div>
+                )}
+
+                <svg width="18" height="18" viewBox="0 0 32 32" className="overflow-visible filter drop-shadow-md">
                   <defs>
                     <style>{`
                       @keyframes flap-left-${bee.id} {
@@ -1151,9 +1160,17 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                   {/* Stinger */}
                   <polygon points="6,16 1.5,14.5 1.5,17.5" fill="#1e293b" />
                   
+                  {/* Tiny Insect Legs */}
+                  <path d="M 12 22 Q 11 25 9 25" stroke="#1e293b" strokeWidth="0.85" strokeLinecap="round" fill="none" />
+                  <path d="M 16 22.5 Q 16 26 14 26" stroke="#1e293b" strokeWidth="0.85" strokeLinecap="round" fill="none" />
+                  <path d="M 20 22 Q 21 25 20 25" stroke="#1e293b" strokeWidth="0.85" strokeLinecap="round" fill="none" />
+
                   {/* Chubby 3D Body */}
                   <ellipse cx="16" cy="16" rx="9" ry="7" fill={`url(#body-grad-${bee.id})`} stroke="#1e293b" strokeWidth="1.2" />
                   
+                  {/* Body Gloss Highlight */}
+                  <path d="M 11 13 A 6 4 0 0 1 21 13" stroke="#ffffff" strokeWidth="0.85" strokeLinecap="round" fill="none" opacity="0.45" />
+
                   {/* Velvet Stripes */}
                   <path d="M 13.5 9.5 C 13.5 9.5 14.5 16 13.5 22.5" stroke="#1e293b" strokeWidth="2.2" strokeLinecap="round" />
                   <path d="M 18.5 9.5 C 18.5 9.5 19.5 16 18.5 22.5" stroke="#1e293b" strokeWidth="2.2" strokeLinecap="round" />
@@ -1161,6 +1178,9 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                   {/* Head & cute face */}
                   <circle cx="23.5" cy="16" r="4.5" fill="#1e293b" />
                   
+                  {/* Rosy blush cheeks */}
+                  <circle cx="23" cy="17.8" r="0.8" fill="#f43f5e" opacity="0.8" />
+
                   {/* Antennae */}
                   <path d="M 23.5 12 Q 25 8 28 9" stroke="#1e293b" strokeWidth="1" fill="none" />
                   <circle cx="28" cy="9" r="1" fill="#1e293b" />
