@@ -21,6 +21,7 @@ interface TopBarProps {
   onOpenBarn: () => void;
   onOpenAchievements: () => void;
   onOpenSettings: () => void;
+  onOpenFreeGems?: () => void;
   isVisiting?: boolean;
   visitingFarmName?: string;
   visitingLevel?: number;
@@ -43,6 +44,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenBarn,
   onOpenAchievements,
   onOpenSettings,
+  onOpenFreeGems,
   isVisiting = false,
   visitingFarmName = '',
   visitingLevel = 1,
@@ -193,13 +195,26 @@ export const TopBar: React.FC<TopBarProps> = ({
               <span className="text-xs sm:text-sm">🪙</span>
             </div>
 
-            {/* Gems */}
-            <div className="flex items-center gap-1 bg-emerald-950/90 border-2 border-emerald-400 px-2 py-0.5 rounded-xl shadow-md justify-end min-w-[80px] sm:min-w-[100px]">
+            {/* Gems (Clickable to open AdMob Rewarded Free Gems Modal) */}
+            <button
+              id="btn-open-free-gems"
+              onClick={() => {
+                sound.playClick();
+                if (onOpenFreeGems) onOpenFreeGems();
+              }}
+              className="flex items-center gap-1 bg-emerald-950/90 hover:bg-emerald-900 border-2 border-emerald-400 px-2 py-0.5 rounded-xl shadow-md justify-between min-w-[85px] sm:min-w-[105px] cursor-pointer active:scale-95 transition-all group"
+              title="Ganhar Diamantes Grátis (Assistir Anúncio)"
+            >
               <span className="text-emerald-300 font-black text-xs sm:text-sm tracking-wide">
                 {gems.toLocaleString()}
               </span>
-              <span className="text-xs sm:text-sm">💎</span>
-            </div>
+              <div className="flex items-center gap-0.5">
+                <span className="text-xs sm:text-sm">💎</span>
+                <span className="text-[10px] font-black text-yellow-300 bg-emerald-800 group-hover:bg-emerald-700 w-3.5 h-3.5 rounded-full flex items-center justify-center border border-yellow-400 shadow-xs">
+                  +
+                </span>
+              </div>
+            </button>
           </div>
 
           {/* Settings Menu Gear Button */}

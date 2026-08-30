@@ -48,6 +48,7 @@ import { MultiplayerModal } from './components/MultiplayerModal';
 import { multiplayerClient } from './utils/multiplayerClient';
 import { MultiplayerOffer, OnlineFarm } from './types/multiplayer';
 import { SettingsModal } from './components/SettingsModal';
+import { FreeGemsModal } from './components/FreeGemsModal';
 import { LoadingScreen } from './components/LoadingScreen';
 import { googleSignIn, googleSignOut, loadFarmFromFirestore, saveFarmToFirestore } from './utils/firebase';
 
@@ -72,6 +73,7 @@ export default function App() {
   const [isRoadsideOpen, setIsRoadsideOpen] = useState(false);
   const [roadsideInitialTab, setRoadsideInitialTab] = useState<'stand' | 'newspaper'>('stand');
   const [isMultiplayerModalOpen, setIsMultiplayerModalOpen] = useState(false);
+  const [isFreeGemsModalOpen, setIsFreeGemsModalOpen] = useState(false);
   const [onlineCount, setOnlineCount] = useState<number>(1);
   const [onlineFarms, setOnlineFarms] = useState<OnlineFarm[]>([]);
   const [newspaperOffers, setNewspaperOffers] = useState<MultiplayerOffer[]>([]);
@@ -1753,6 +1755,7 @@ export default function App() {
         onOpenBarn={() => setStorageModalType('barn')}
         onOpenAchievements={() => setIsAchievementsOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenFreeGems={() => setIsFreeGemsModalOpen(true)}
       />
 
       {/* Floating Action Toast */}
@@ -2050,6 +2053,21 @@ export default function App() {
         onUpdateProfile={handleUpdateProfile}
         onVisitFarm={handleVisitFarm}
       />
+
+      {/* Google AdMob Free Gems Cinema Modal */}
+      {isFreeGemsModalOpen && (
+        <FreeGemsModal
+          currentGems={gameState.gems}
+          onClose={() => setIsFreeGemsModalOpen(false)}
+          onEarnGems={(amount) => {
+            setGameState((prev) => ({
+              ...prev,
+              gems: prev.gems + amount,
+            }));
+            showToast(`💎 +${amount} Diamantes adicionados!`);
+          }}
+        />
+      )}
     </div>
   );
 }
