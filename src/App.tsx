@@ -58,10 +58,14 @@ export default function App() {
   });
   // UID do usuário autenticado (null = ninguém logado)
   const [currentUid, setCurrentUid] = useState<string | null>(null);
-  // Mostra loading enquanto busca a fazenda no Firestore
+  
+  // Loading screen states
   const [isLoadingFarm, setIsLoadingFarm] = useState<boolean>(false);
+  const [loadingStatusText, setLoadingStatusText] = useState<string>('Carregando sua fazenda');
+  const [loadingSubMessage, setLoadingSubMessage] = useState<string>('Buscando seu progresso na nuvem ☁️');
   const [loadingError, setLoadingError] = useState<string | null>(null);
-  const [isFadingOutLoading, setIsFadingOutLoading] = useState<boolean>(false);
+  const [isLoadingFadingOut, setIsLoadingFadingOut] = useState<boolean>(false);
+
   const [selectedEntity, setSelectedEntity] = useState<FarmEntity | null>(null);
   const [activeBuildingModalEntity, setActiveBuildingModalEntity] = useState<FarmEntity | null>(null);
   const [isOrderBoardOpen, setIsOrderBoardOpen] = useState(false);
@@ -96,11 +100,54 @@ export default function App() {
     return localStorage.getItem('hayday_google_logged_in') !== 'true';
   });
 
+  // Initial cloud restore if session exists in localStorage
+  useEffect(() => {
+    const isLogged = localStorage.getItem('hayday_google_logged_in') === 'true';
+    const savedUserData = localStorage.getItem('hayday_google_user_data');
+    if (isLogged && savedUserData) {
+      try {
+        const parsed = JSON.parse(savedUserData);
+        if (parsed.uid) {
+          setCurrentUid(parsed.uid);
+          setIsLoadingFarm(true);
+          setLoadingStatusText('Sincronizando fazenda...');
+          setLoadingSubMessage('Carregando seu progresso na nuvem ☁️');
+          loadFarmFromFirestore(parsed.uid)
+            .then((cloudFarm) => {
+              if (cloudFarm) {
+                setGameState({ ...cloudFarm, graphicsStyle: '3d_rendered' });
+              }
+              setIsLoadingFadingOut(true);
+              setTimeout(() => {
+                setIsLoadingFarm(false);
+                setIsLoadingFadingOut(false);
+              }, 400);
+            })
+            .catch(() => {
+              // Graceful fallback to local cached state
+              setIsLoadingFarm(false);
+            });
+        }
+      } catch (_) {
+        // ignore
+      }
+    }
+  }, []);
+
   // Google Login flow handler — carrega/cria fazenda no Firestore pelo UID
   const handleGoogleLogin = async () => {
     sound.playClick();
     setLoadingError(null);
-    setIsFadingOutLoading(false);
+    setLoadingStatusText('Conectando ao Google...');
+    setLoadingSubMessage('Aguardando autenticação segura');
+    setIsLoadingFarm(true);
+    setIsLoadingFadingOut(false);
+
+    // Timeout guard (20s) to prevent infinite waiting
+    const timeoutId = setTimeout(() => {
+      setLoadingError('O carregamento demorou mais que o esperado. Verifique sua conexão e tente novamente.');
+    }, 20000);
+
     try {
       const firebaseUser = await googleSignIn();
 
@@ -109,26 +156,12 @@ export default function App() {
       const avatar = firebaseUser.photoURL || '👨‍🌾';
       const email = firebaseUser.email || '';
 
-      // Mostrar loading enquanto busca no Firestore
-      setIsLoadingFarm(true);
+      // Atualizar status enquanto busca no Firestore
+      setLoadingStatusText('Carregando sua fazenda...');
+      setLoadingSubMessage('Buscando progresso no Firestore ☁️');
 
-      // Timeout safety: se passar de 15s sem resposta do Firestore, tratar com erro amigável
-      const fetchWithTimeout = Promise.race([
-        loadFarmFromFirestore(uid),
-        new Promise<null>((_, reject) =>
-          setTimeout(() => reject(new Error('TIMEOUT')), 15000)
-        ),
-      ]);
-
-      let farmState: GameState | null = null;
-      try {
-        farmState = await fetchWithTimeout;
-      } catch (loadErr: any) {
-        if (loadErr?.message === 'TIMEOUT') {
-          throw new Error('A conexão com a nuvem demorou muito. Verifique sua internet.');
-        }
-        console.warn('Firestore load fallback to local/init:', loadErr);
-      }
+      // Buscar fazenda no Firestore pelo UID
+      let farmState = await loadFarmFromFirestore(uid);
 
       if (farmState) {
         // Fazenda existente — carrega dados do Firestore
@@ -144,12 +177,10 @@ export default function App() {
         setGameState(newState);
         setPlayerAvatar(avatar);
         // Persiste a fazenda nova no Firestore imediatamente
-        try {
-          await saveFarmToFirestore(uid, newState);
-        } catch (saveErr) {
-          console.warn('Initial save warning:', saveErr);
-        }
+        await saveFarmToFirestore(uid, newState);
       }
+
+      clearTimeout(timeoutId);
 
       // Registrar UID no state (fonte de verdade para o save)
       setCurrentUid(uid);
@@ -169,22 +200,33 @@ export default function App() {
         farmState?.roadsideBoxes ?? []
       );
 
-      // Transição suave (fade out da tela de loading)
-      setIsFadingOutLoading(true);
+      setLoadingStatusText('Tudo pronto!');
+      setLoadingSubMessage('Entrando na sua fazenda...');
+      setIsLoadingFadingOut(true);
+
       setTimeout(() => {
         setIsLoadingFarm(false);
-        setIsFadingOutLoading(false);
         setIsAuthRequired(false);
+        setIsLoadingFadingOut(false);
         showToast(`🌾 Bem-vindo, ${farmState?.farmName ?? defaultName}!`);
-      }, 600);
+      }, 450);
     } catch (err: any) {
+      clearTimeout(timeoutId);
       console.error('Google Sign In Error:', err);
-      setIsLoadingFarm(true); // Manter tela com mensagem amigável e botões
-      setLoadingError(
-        err?.message && !err.message.includes('popup_closed') && !err.message.includes('cancelled')
-          ? 'Não conseguimos carregar sua fazenda. Verifique sua conexão e tente novamente.'
-          : 'Autenticação cancelada ou não concluída. Tente novamente.'
-      );
+
+      if (err?.code === 'auth/popup-closed-by-user') {
+        // Usuário apenas fechou o popup do Google
+        setIsLoadingFarm(false);
+        setLoadingError(null);
+        return;
+      }
+
+      let friendlyMsg = 'Não conseguimos carregar sua fazenda. Verifique sua conexão e tente novamente.';
+      if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('unauthorized-domain')) {
+        friendlyMsg = `Domínio não autorizado no Firebase (${window.location.hostname}). Adicione este domínio no Firebase Console > Authentication > Settings > Authorized domains.`;
+      }
+
+      setLoadingError(friendlyMsg);
     }
   };
 
@@ -1572,18 +1614,18 @@ export default function App() {
     showToast(`🏆 Conquista resgatada! +${ach.rewardGems} 💎 +${ach.rewardCoins} 🪙`);
   };
 
-  // Loading screen animada enquanto Firestore carrega a fazenda
+  // Loading screen enquanto Firestore carrega a fazenda
   if (isLoadingFarm) {
     return (
       <LoadingScreen
-        statusText="Carregando sua fazenda..."
+        statusText={loadingStatusText}
+        subMessage={loadingSubMessage}
         errorMessage={loadingError}
-        isFadingOut={isFadingOutLoading}
-        onRetry={() => handleGoogleLogin()}
+        isFadingOut={isLoadingFadingOut}
+        onRetry={handleGoogleLogin}
         onCancel={() => {
           setIsLoadingFarm(false);
           setLoadingError(null);
-          setIsFadingOutLoading(false);
         }}
       />
     );

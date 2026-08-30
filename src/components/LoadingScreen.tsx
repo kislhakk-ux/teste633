@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 interface LoadingScreenProps {
   statusText?: string;
+  subMessage?: string;
   errorMessage?: string | null;
   onRetry?: () => void;
   onCancel?: () => void;
@@ -9,107 +10,88 @@ interface LoadingScreenProps {
 }
 
 export const LoadingScreen: React.FC<LoadingScreenProps> = ({
-  statusText = 'Preparando sua fazenda...',
+  statusText = 'Carregando sua fazenda',
+  subMessage = 'Buscando seu progresso na nuvem ☁️',
   errorMessage = null,
   onRetry,
   onCancel,
   isFadingOut = false,
 }) => {
   const [dots, setDots] = useState('');
-  const [subMessage, setSubMessage] = useState('Sincronizando com a nuvem...');
 
+  // Pulsating / cycling dots animation
   useEffect(() => {
-    const dotTimer = setInterval(() => {
+    if (errorMessage) return;
+    const interval = setInterval(() => {
       setDots((prev) => (prev.length >= 3 ? '' : prev + '.'));
     }, 450);
-
-    const msgs = [
-      'Sincronizando com a nuvem...',
-      'Alimentando os bichinhos...',
-      'Regando as plantações...',
-      'Polindo o trator...',
-      'Abrindo as portas do celeiro...',
-    ];
-    let idx = 0;
-    const msgTimer = setInterval(() => {
-      idx = (idx + 1) % msgs.length;
-      setSubMessage(msgs[idx]);
-    }, 2400);
-
-    return () => {
-      clearInterval(dotTimer);
-      clearInterval(msgTimer);
-    };
-  }, []);
+    return () => clearInterval(interval);
+  }, [errorMessage]);
 
   return (
     <div
-      id="farm-loading-screen"
-      className={`fixed inset-0 z-[50000] flex flex-col items-center justify-between overflow-hidden select-none transition-opacity duration-700 ${
-        isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
+      id="harvest-loading-screen"
+      className={`fixed inset-0 z-[50000] flex flex-col items-center justify-between overflow-hidden font-sans select-none transition-opacity duration-500 ${
+        isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
       }`}
       style={{
-        background: 'linear-gradient(180deg, #70c5ff 0%, #a2dd6f 65%, #66a836 100%)',
+        background: 'linear-gradient(180deg, #7ecafc 0%, #a4e082 55%, #60a838 100%)',
       }}
     >
-      {/* ── Sun & Morning Sky Radiance ── */}
-      <div className="absolute top-[-80px] left-1/2 -translate-x-1/2 w-[340px] h-[340px] rounded-full bg-gradient-to-b from-yellow-200 to-amber-300 opacity-60 blur-2xl pointer-events-none" />
+      {/* ── Sun & Rays Background ── */}
+      <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-gradient-to-b from-yellow-100 via-yellow-200/50 to-transparent blur-2xl pointer-events-none opacity-80" />
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 w-28 h-28 rounded-full bg-yellow-300 shadow-[0_0_60px_rgba(250,204,21,0.8)] pointer-events-none opacity-90 animate-pulse" />
 
-      {/* ── Animated Slow Moving Clouds ── */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Cloud 1 */}
-        <div
-          className="absolute top-[8%] text-6xl opacity-75"
-          style={{
-            animation: 'driftCloud 32s linear infinite',
-            left: '-10%',
-          }}
-        >
-          ☁️
-        </div>
-        {/* Cloud 2 */}
-        <div
-          className="absolute top-[18%] text-7xl opacity-60"
-          style={{
-            animation: 'driftCloud 44s linear infinite',
-            animationDelay: '-16s',
-            left: '-15%',
-          }}
-        >
-          ☁️
-        </div>
-        {/* Cloud 3 */}
-        <div
-          className="absolute top-[12%] text-5xl opacity-70"
-          style={{
-            animation: 'driftCloud 28s linear infinite',
-            animationDelay: '-8s',
-            left: '-10%',
-          }}
-        >
-          ⛅
-        </div>
+      {/* ── Floating Animated Clouds ── */}
+      <div
+        className="absolute top-12 pointer-events-none opacity-85 text-4xl sm:text-5xl"
+        style={{
+          animation: 'driftCloud 26s linear infinite',
+          left: '-20%',
+        }}
+      >
+        ☁️
+      </div>
+      <div
+        className="absolute top-28 pointer-events-none opacity-70 text-5xl sm:text-6xl"
+        style={{
+          animation: 'driftCloud 38s linear infinite',
+          animationDelay: '-14s',
+          left: '-20%',
+        }}
+      >
+        ☁️
+      </div>
+      <div
+        className="absolute top-44 pointer-events-none opacity-60 text-3xl sm:text-4xl"
+        style={{
+          animation: 'driftCloud 48s linear infinite',
+          animationDelay: '-26s',
+          left: '-20%',
+        }}
+      >
+        ☁️
       </div>
 
-      {/* ── Top Header Brand ── */}
-      <div className="relative z-10 pt-10 sm:pt-14 flex flex-col items-center gap-1.5 px-4 text-center">
-        <div className="flex items-center gap-2 bg-amber-950/40 backdrop-blur-md px-4 py-1.5 rounded-full border border-amber-300/30 shadow-lg">
-          <span className="text-xl">🌾</span>
-          <span className="text-xs sm:text-sm font-black text-amber-100 uppercase tracking-wider">
+      {/* ── Header Badge ── */}
+      <div className="relative z-10 pt-8 sm:pt-12 flex flex-col items-center gap-1">
+        <div className="flex items-center gap-2 bg-amber-950/40 backdrop-blur-md px-4 py-1.5 rounded-full border border-yellow-300/40 shadow-lg">
+          <span className="text-base sm:text-lg">🌾</span>
+          <span className="text-xs sm:text-sm font-black text-amber-100 tracking-wider uppercase drop-shadow-sm">
             Harvest Horizon
           </span>
         </div>
       </div>
 
-      {/* ── Center Content: Animated Farm Chicken ── */}
-      <div className="relative z-10 flex flex-col items-center justify-center my-auto px-4 max-w-sm w-full">
-        {/* Chicken Card Container */}
-        <div className="relative flex flex-col items-center justify-center w-40 h-40 sm:w-48 sm:h-48">
-          {/* Animated Ground Shadow */}
+      {/* ── Center Stage: Animated Chicken & Message / Error ── */}
+      <div className="relative z-10 flex flex-col items-center justify-center max-w-sm w-full px-6 py-2">
+        {/* Chicken Character Stage */}
+        <div className="relative flex flex-col items-center justify-center">
+          {/* Ground Contact Shadow (pulses inversely with hop) */}
           <div
-            className="absolute bottom-2 w-28 h-7 rounded-[50%] bg-amber-950/30 blur-[3px]"
+            className="absolute bottom-1 w-24 h-6 rounded-full bg-amber-950/30 blur-[2px]"
             style={{
-              animation: 'shadowPulse 1.6s ease-in-out infinite',
+              animation: errorMessage ? 'none' : 'shadowPulse 1.6s ease-in-out infinite',
             }}
           />
 

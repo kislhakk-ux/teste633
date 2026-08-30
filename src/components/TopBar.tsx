@@ -16,11 +16,6 @@ interface TopBarProps {
   onOpenBarn: () => void;
   onOpenAchievements: () => void;
   onOpenSettings: () => void;
-  soundEnabled?: boolean;
-  musicEnabled?: boolean;
-  graphicsStyle?: string;
-  onlineCount?: number;
-  onOpenMultiplayer?: () => void;
   isVisiting?: boolean;
   visitingFarmName?: string;
   visitingLevel?: number;

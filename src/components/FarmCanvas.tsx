@@ -36,8 +36,6 @@ import {
   getEntityAnchorDef,
   ISO_DECORATION_ANCHORS,
 } from '../utils/isometricCoords';
-import { sound } from '../utils/sound';
-import { PlantingPanel, SeedEntry } from './PlantingPanel';
 
 interface FarmCanvasProps {
   entities: FarmEntity[];
@@ -885,26 +883,6 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                   <div className="absolute inset-0 rounded-3xl border-3 border-amber-400 shadow-[0_0_15px_#F59E0B] pointer-events-none animate-pulse -m-2"></div>
                 )}
 
-                {/* Drag-over Planting Feedback (Green for valid empty plot, Red for occupied) */}
-                {activeDragTool?.startsWith('plant_') && entity.type === 'crop_plot' && hoveredTile && (
-                  hoveredTile.x >= entity.x &&
-                  hoveredTile.x < entity.x + entity.width &&
-                  hoveredTile.y >= entity.y &&
-                  hoveredTile.y < entity.y + entity.height
-                ) && (
-                  <div
-                    className={`absolute inset-0 rounded-3xl pointer-events-none -m-1 transition-all duration-150 flex items-center justify-center ${
-                      !entity.cropData?.cropId
-                        ? 'border-3 border-green-400 shadow-[0_0_18px_#4ADE80] bg-green-500/20'
-                        : 'border-3 border-red-400 shadow-[0_0_18px_#F87171] bg-red-500/20'
-                    }`}
-                  >
-                    <span className="text-xl drop-shadow-md">
-                      {!entity.cropData?.cropId ? '✨' : '🚫'}
-                    </span>
-                  </div>
-                )}
-
                 {/* Render Specific Entity Visuals */}
                 {renderEntityVisual({
                   entity,
@@ -1029,25 +1007,6 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
 
       </div>
 
-      {/* Modern Mobile Bottom Sheet: Planting Panel */}
-      {selectedEntity && selectedEntity.type === 'crop_plot' && (!selectedEntity.cropData || !selectedEntity.cropData.cropId) && (
-        <PlantingPanel
-          seeds={Object.entries(CROPS).map(([cId, def]) => ({
-            cropId: cId as ItemId,
-            def: def!,
-            qty: inventory[cId] || 0,
-            unlocked: playerLevel >= (def?.minLevel || 1),
-          }))}
-          sourcePlotId={selectedEntity.id}
-          onClose={() => onSelectEntity(null)}
-          onStartDrag={(cropId, startPos) => {
-            sound.playClick();
-            setActiveDragTool(`plant_${cropId}`);
-            setDragCursorPos(startPos);
-          }}
-        />
-      )}
-
       {activeDragTool && (
         <div
           style={{
@@ -1064,11 +1023,8 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             const seed = activeDragTool.replace('plant_', '');
             if (seed === 'wheat') return '🌾';
             if (seed === 'corn') return '🌽';
-            if (seed === 'sugarcane' || seed === 'cane') return '🎋';
+            if (seed === 'cane') return '🎋';
             if (seed === 'carrot') return '🥕';
-            if (seed === 'soybean' || seed === 'soy') return '🌱';
-            if (seed === 'pumpkin') return '🎃';
-            if (seed === 'apple') return '🍎';
             return '🌱';
           })()}
         </div>
