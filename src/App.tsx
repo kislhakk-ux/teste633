@@ -2231,6 +2231,10 @@ export default function App() {
             setSelectedEntity(null);
             setIsAchievementsOpen(true);
           }}
+          onRemoveDeadEntity={(entityId) => {
+            handleRemoveDeadEntity(entityId);
+            setSelectedEntity(null);
+          }}
         />
       )}
 
