@@ -52,7 +52,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onLeaveVisiting,
   onLikeVisitingFarm,
 }) => {
-  const currentLevelXpReq = LEVEL_XP_REQUIREMENTS[level] || 99999;
+  const currentLevelXpReq = LEVEL_XP_REQUIREMENTS[level] || Math.round(1000 + level * 1500);
   const progressPercent = Math.min(100, Math.round((xp / currentLevelXpReq) * 100));
 
   // If in visitor mode, show special neighbor visitation banner

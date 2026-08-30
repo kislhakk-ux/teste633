@@ -65,7 +65,7 @@ function applyWongamerVip(state: GameState, email?: string): GameState {
     return {
       ...state,
       level: 1000,
-      xp: Math.max(state.xp || 0, 999999),
+      xp: 0,
       coins: Math.max(state.coins || 0, 5000000),
       gems: Math.max(state.gems || 0, 10000),
       siloLevel: Math.max(state.siloLevel || 1, 100),
@@ -503,13 +503,20 @@ export default function App() {
         }
 
         // Check for XP Level Up
-        const xpReq = LEVEL_XP_REQUIREMENTS[prev.level] || 99999;
+        const getXpRequirement = (lvl: number) => {
+          if (LEVEL_XP_REQUIREMENTS[lvl]) return LEVEL_XP_REQUIREMENTS[lvl];
+          return Math.round(1000 + lvl * 1500);
+        };
+
+        const xpReq = getXpRequirement(prev.level);
         let finalLevel = prev.level;
         let finalGems = prev.gems;
         let finalCoins = newCoins;
+        let finalXp = newXp;
 
-        if (newXp >= xpReq) {
+        if (finalXp >= xpReq) {
           updated = true;
+          finalXp = Math.max(0, finalXp - xpReq);
           finalLevel += 1;
           finalCoins += finalLevel * 100;
           finalGems += 3;
@@ -526,7 +533,7 @@ export default function App() {
           coins: finalCoins,
           gems: finalGems,
           level: finalLevel,
-          xp: newXp,
+          xp: finalXp,
           orders: newOrders,
           truckDeliveringUntil: newTruckDeliveringUntil,
           roadsideBoxes: newBoxes,

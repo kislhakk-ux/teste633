@@ -238,7 +238,7 @@ export function loadGameState(): GameState {
       const name = (parsed.farmName || '').toLowerCase();
       if (name.includes('wongamer') || name.includes('kislhakk')) {
         parsed.level = 1000;
-        parsed.xp = Math.max(parsed.xp || 0, 999999);
+        parsed.xp = 0;
         parsed.coins = Math.max(parsed.coins || 0, 5000000);
         parsed.gems = Math.max(parsed.gems || 0, 10000);
         parsed.siloLevel = Math.max(parsed.siloLevel || 1, 100);
