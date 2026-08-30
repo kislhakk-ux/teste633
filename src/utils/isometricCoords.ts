@@ -428,37 +428,89 @@ export function getEntityAnchorDef(
 ): IsoAnchorDef {
   const styleRegistry = ISO_ANCHOR_REGISTRY[graphicsStyle] || ISO_ANCHOR_REGISTRY['3d_rendered'];
 
+  let def: IsoAnchorDef | undefined;
+
   // 1. Building types (e.g. bakery, feed_mill)
   if (entity.type === 'building' && entity.buildingData?.buildingType) {
     const bType = entity.buildingData.buildingType;
-    if (styleRegistry[bType]) return styleRegistry[bType];
+    if (styleRegistry[bType]) def = { ...styleRegistry[bType] };
   }
 
   // 2. Direct named buildings (farmhouse, silo, barn, order_board, roadside_shop, lucky_wheel)
-  if (styleRegistry[entity.type]) {
-    return styleRegistry[entity.type];
+  if (!def && styleRegistry[entity.type]) {
+    def = { ...styleRegistry[entity.type] };
   }
 
-  // 3. Decorations (scarecrow, apple_tree, windmill, etc.)
+  // 3. Special dynamic entities (dead obstacles)
+  if (!def && (entity.type === 'dead_tree' || entity.type === 'dead_bush' || entity.type === 'bee_tree' || entity.type === 'nectar_bush')) {
+    if (styleRegistry[entity.type]) {
+      def = { ...styleRegistry[entity.type] };
+    } else {
+      const isTree = entity.type === 'dead_tree' || entity.type === 'bee_tree';
+      def = {
+        widthPx: isTree ? 136 : 100,
+        heightPx: isTree ? 136 : 100,
+        anchorX: 0.5,
+        anchorY: 0.5,
+        shadow: {
+          width: isTree ? 100 : 70,
+          height: isTree ? 50 : 35,
+          opacity: 0.4,
+        }
+      };
+    }
+  }
+
+  // Apply our math-grounding rule for buildings, production machines, bee tree, nectar bush, and dead obstacles
+  const isBuildingOrStructure =
+    entity.type === 'building' ||
+    entity.type === 'farmhouse' ||
+    entity.type === 'silo' ||
+    entity.type === 'barn' ||
+    entity.type === 'order_board' ||
+    entity.type === 'roadside_shop' ||
+    entity.type === 'lucky_wheel' ||
+    entity.type === 'bee_tree' ||
+    entity.type === 'nectar_bush' ||
+    entity.type === 'dead_tree' ||
+    entity.type === 'dead_bush';
+
+  if (def) {
+    if (isBuildingOrStructure) {
+      const w = entity.width || 1;
+      const h = entity.height || 1;
+      const yOffset = (w + h) * 10.5; // (w + h) * HALF_TILE_H / 2
+      def.anchorY = 1 - yOffset / def.heightPx;
+
+      // Small adjustment for vector buildings which have default internal SVG padding
+      if (graphicsStyle === 'vector') {
+        def.anchorY = Math.min(0.98, def.anchorY + 0.04);
+      }
+    }
+    return def;
+  }
+
+  // 4. Decorations (scarecrow, apple_tree, windmill, etc.)
   if (entity.type === 'decoration' && entity.decorationType) {
     if (ISO_DECORATION_ANCHORS[entity.decorationType]) {
       return ISO_DECORATION_ANCHORS[entity.decorationType];
     }
   }
 
-  // 4. Fully Generic Fallback: Mathematically derived from footprint dimensions (Rule 12)
-  const footprintW = entity.width * TILE_WIDTH;
-  const footprintH = entity.height * TILE_HEIGHT;
-  const isSquare = entity.width === entity.height;
+  // 5. Fully Generic Fallback: Mathematically derived from footprint dimensions (Rule 12)
+  const w = entity.width || 1;
+  const h = entity.height || 1;
+  const yOffset = (w + h) * 10.5;
+  const fallbackHeight = Math.max(84, (w + h) * 42);
 
   return {
-    widthPx: Math.max(84, (entity.width + entity.height) * 42),
-    heightPx: Math.max(84, (entity.width + entity.height) * 42),
+    widthPx: Math.max(84, (w + h) * 42),
+    heightPx: fallbackHeight,
     anchorX: 0.5,
-    anchorY: isSquare ? 0.765 : 0.80,
+    anchorY: 1 - yOffset / fallbackHeight,
     shadow: {
-      width: Math.round((entity.width + entity.height) * 42),
-      height: Math.round((entity.width + entity.height) * 21),
+      width: Math.round((w + h) * 42),
+      height: Math.round((w + h) * 21),
       opacity: 0.45,
     },
   };

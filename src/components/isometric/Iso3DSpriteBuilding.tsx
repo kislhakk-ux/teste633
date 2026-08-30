@@ -49,7 +49,7 @@ export const Iso3DSpriteBuilding: React.FC<Iso3DSpriteBuildingProps> = React.mem
           ? { width: `${widthPx}px`, height: `${heightPx}px` }
           : undefined
       }
-      className={`relative ${!widthPx ? widthClass : ''} ${!heightPx ? heightClass : ''} flex items-center justify-center select-none pointer-events-none transition-transform duration-150`}
+      className={`relative ${!widthPx ? widthClass : ''} ${!heightPx ? heightClass : ''} flex items-end justify-center select-none pointer-events-none transition-transform duration-150`}
     >
       {/* 1. Authentic Dimetric 2:1 Isometric Foundation Curb - DEACTIVATED FOR SEAMLESS GRASS INTEGRATION */}
       {false && baseType !== 'none' && (
@@ -123,7 +123,7 @@ export const Iso3DSpriteBuilding: React.FC<Iso3DSpriteBuildingProps> = React.mem
 
       {/* 2. Main Building 3D Model anchored firmly */}
       <div
-        className={`relative z-10 w-full h-full flex items-center justify-center pb-2 pointer-events-none ${
+        className={`relative z-10 w-full h-full flex items-end justify-center pb-0 pointer-events-none ${
           isWorking ? 'animate-machine-pulse' : ''
         }`}
       >
@@ -132,7 +132,7 @@ export const Iso3DSpriteBuilding: React.FC<Iso3DSpriteBuildingProps> = React.mem
             src={cutoutSrc}
             alt={alt}
             referrerPolicy="no-referrer"
-            className="w-full h-full object-contain pointer-events-none transition-all duration-300 filter drop-shadow-[0_8px_14px_rgba(0,0,0,0.32)]"
+            className="max-w-full max-h-full w-auto h-auto pointer-events-none transition-all duration-300 filter drop-shadow-[0_8px_14px_rgba(0,0,0,0.32)]"
             style={{
               filter: 'contrast(1.04) saturate(1.08)',
             }}
@@ -142,7 +142,7 @@ export const Iso3DSpriteBuilding: React.FC<Iso3DSpriteBuildingProps> = React.mem
             src={src}
             alt={alt}
             referrerPolicy="no-referrer"
-            className="w-full h-full object-contain pointer-events-none mix-blend-multiply opacity-90 pb-2"
+            className="max-w-full max-h-full w-auto h-auto pointer-events-none mix-blend-multiply opacity-90"
           />
         )}
 
