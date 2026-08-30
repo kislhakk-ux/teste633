@@ -265,7 +265,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
               idleStart = Date.now();
             }
             const idleTime = Date.now() - idleStart;
-            if (idleTime >= 300000) { // 5 minutes rest time in tree
+            if (idleTime >= 5000) { // 5 seconds rest time in tree
               if (projectedNectar < 100 && activeBushes.length > 0) {
                 const chosenBush = activeBushes[Math.floor(Math.random() * activeBushes.length)];
                 state = 'flying_to_bush';
@@ -276,7 +276,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
               }
             }
           } else if (state === 'flying_to_bush') {
-            progress += deltaSec * 0.02 * bee.speed; // ultra slow visible flight (~40s)
+            progress += deltaSec * 0.16 * bee.speed; // moderate visible flight (~6s)
             if (progress >= 1) {
               progress = 1;
               state = 'harvesting';
@@ -284,7 +284,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             }
           } else if (state === 'harvesting') {
             const elapsed = Date.now() - harvestStart;
-            if (elapsed >= 300000) { // 5 minutes harvest time
+            if (elapsed >= 5000) { // 5 seconds harvest time
               const targetBush = entities.find((e) => e.id === targetBushId);
               if (targetBush && targetBush.nectarBushData && targetBush.nectarBushData.nectarLeft > 0) {
                 if (onHarvestNectarFromBush && targetBushId) {
@@ -308,7 +308,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
               }
             }
           } else if (state === 'flying_to_tree') {
-            progress += deltaSec * 0.02 * bee.speed; // ultra slow flight
+            progress += deltaSec * 0.16 * bee.speed; // moderate flight
             if (progress >= 1) {
               progress = 1;
               state = 'idle';
@@ -319,7 +319,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
               }
               hasNectar = false;
               targetBushId = null;
-              idleStart = Date.now(); // Start 5 minutes tree resting timer
+              idleStart = Date.now(); // Start 5 seconds tree resting timer
             }
           }
 
@@ -983,11 +983,10 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
           const bushCenter = bush ? gridToIso(bush.x + 0.5, bush.y + 0.5) : null;
 
           if (bee.state === 'idle') {
-            const angle = (currentTime / 1000) * bee.speed + bee.angleOffset;
-            bx = treeCenter.x + Math.cos(angle) * 35;
-            by = treeCenter.y - 45 + Math.sin(angle) * 18;
-            isFacingRight = Math.cos(angle + 0.1) > Math.cos(angle);
-            leanAngle = Math.sin(currentTime / 150) * 6; // gentle floating hover
+            bx = treeCenter.x + (Math.round(bee.id * 100) % 2 === 0 ? 12 : -12);
+            by = treeCenter.y - 48 + (Math.round(bee.id * 100) % 3 === 0 ? 5 : -5);
+            isFacingRight = (Math.round(bee.id * 100) % 2 === 0);
+            leanAngle = 0;
           } else if (bee.state === 'flying_to_bush' && bushCenter) {
             const startX = treeCenter.x;
             const startY = treeCenter.y - 45;
@@ -1010,10 +1009,10 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             isFacingRight = endX > startX;
             leanAngle = Math.cos(bee.progress * Math.PI * 6) * 16;
           } else if (bee.state === 'harvesting' && bushCenter) {
-            bx = bushCenter.x + Math.sin(currentTime / 80) * 2.5;
-            by = bushCenter.y - 25 + Math.cos(currentTime / 100) * 2.5;
-            isFacingRight = Math.sin(currentTime / 200) > 0;
-            leanAngle = Math.sin(currentTime / 100) * 8; // hovering sway
+            bx = bushCenter.x;
+            by = bushCenter.y - 25;
+            isFacingRight = true;
+            leanAngle = 0;
           } else if (bee.state === 'flying_to_tree' && bushCenter) {
             const startX = bushCenter.x;
             const startY = bushCenter.y - 25;
@@ -1045,33 +1044,6 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                 top: by,
               }}
             >
-              {/* Timer indicator for harvesting or resting */}
-              {(bee.state === 'harvesting' || (bee.state === 'idle' && bee.idleStart)) && (() => {
-                const elapsed = currentTime - (bee.state === 'harvesting' ? bee.harvestStart : bee.idleStart);
-                const remaining = 300000 - elapsed;
-                if (remaining <= 0) return null;
-                const totalSecs = Math.ceil(remaining / 1000);
-                const mm = Math.floor(totalSecs / 60);
-                const ss = totalSecs % 60;
-                const timerStr = `${mm}:${ss < 10 ? '0' : ''}${ss}`;
-
-                return (
-                  <div
-                    style={{
-                      transform: 'scale(0.85)',
-                    }}
-                    className={`mb-1 px-1.8 py-0.5 rounded-full text-[9px] font-black shadow-lg border-2 flex items-center gap-0.5 whitespace-nowrap select-none animate-pulse ${
-                      bee.state === 'harvesting'
-                        ? 'bg-amber-600 text-yellow-100 border-yellow-300'
-                        : 'bg-slate-700 text-slate-100 border-slate-400'
-                    }`}
-                  >
-                    <span>{bee.state === 'harvesting' ? '⏳ Coletando ' : '💤 Descanso '}</span>
-                    <span>{timerStr}</span>
-                  </div>
-                );
-              })()}
-
               <div
                 style={{
                   transform: `scale(${isFacingRight ? 1.0 : -1.0}, 1.0) rotate(${isFacingRight ? leanAngle : -leanAngle}deg)`,
