@@ -52,6 +52,7 @@ import { FreeGemsModal } from './components/FreeGemsModal';
 import { BeeTreeModal } from './components/BeeTreeModal';
 import { LoadingScreen } from './components/LoadingScreen';
 import { googleSignIn, googleSignOut, loadFarmFromFirestore, saveFarmToFirestore } from './utils/firebase';
+import { validatePlacement, findNextAvailablePosition } from './utils/buildingPlacement';
 
 function applyWongamerVip(state: GameState, email?: string): GameState {
   const name = (state.farmName || '').toLowerCase();
@@ -1494,31 +1495,13 @@ export default function App() {
     });
   };
 
-  // 14. Shop Buy & Place Entities
-  const findNextAvailablePosition = (width: number, height: number) => {
-    for (let gy = 4; gy < 12; gy++) {
-      for (let gx = 3; gx < 12; gx++) {
-        const isOccupied = gameState.entities.some(
-          (e) =>
-            gx < e.x + e.width &&
-            gx + width > e.x &&
-            gy < e.y + e.height &&
-            gy + height > e.y
-        );
-        if (!isOccupied) {
-          return { x: gx, y: gy };
-        }
-      }
-    }
-    return { x: 5, y: 5 };
-  };
-
+  // 14. Shop Buy & Place Entities (using centralized space occupation validator)
   const handleBuyCropPlot = () => {
     const currentPlots = gameState.entities.filter((e) => e.type === 'crop_plot').length;
     const cost = 20 + currentPlots * 10;
     if (gameState.coins < cost) return;
 
-    const pos = findNextAvailablePosition(1, 1);
+    const pos = findNextAvailablePosition(1, 1, gameState.entities);
     const newPlot: FarmEntity = {
       id: 'plot_' + Date.now(),
       x: pos.x,
@@ -1542,7 +1525,7 @@ export default function App() {
     const penDef = ANIMAL_PENS[animalType];
     if (gameState.coins < penDef.cost) return;
 
-    const pos = findNextAvailablePosition(2, 2);
+    const pos = findNextAvailablePosition(2, 2, gameState.entities);
     const newPen: FarmEntity = {
       id: `${animalType}_pen_` + Date.now(),
       x: pos.x,
@@ -1573,7 +1556,7 @@ export default function App() {
     const bDef = BUILDINGS[bType];
     if (gameState.coins < bDef.cost) return;
 
-    const pos = findNextAvailablePosition(2, 2);
+    const pos = findNextAvailablePosition(2, 2, gameState.entities);
     const newBuilding: FarmEntity = {
       id: `${bType}_` + Date.now(),
       x: pos.x,
@@ -1613,7 +1596,7 @@ export default function App() {
       return;
     }
 
-    const pos = findNextAvailablePosition(2, 2);
+    const pos = findNextAvailablePosition(2, 2, gameState.entities);
     const newTree: FarmEntity = {
       id: 'bee_tree_' + Date.now(),
       x: pos.x,
@@ -1652,7 +1635,7 @@ export default function App() {
       return;
     }
 
-    const pos = findNextAvailablePosition(1, 1);
+    const pos = findNextAvailablePosition(1, 1, gameState.entities);
     const newBush: FarmEntity = {
       id: 'nectar_bush_' + Date.now(),
       x: pos.x,
@@ -1892,7 +1875,7 @@ export default function App() {
     const decDef = DECORATIONS[decType];
     if (gameState.coins < decDef.cost) return;
 
-    const pos = findNextAvailablePosition(decDef.width, decDef.height);
+    const pos = findNextAvailablePosition(decDef.width, decDef.height, gameState.entities);
     const newDec: FarmEntity = {
       id: `dec_${decType}_` + Date.now(),
       x: pos.x,
@@ -1912,16 +1895,39 @@ export default function App() {
     showToast(`🌻 ${decDef.name} adicionada à fazenda!`);
   };
 
-  // 15. Move Entity Position on Grid
+  // 15. Move Entity Position on Grid (with centralized space occupation validation)
   const handleMoveEntityPosition = (entityId: string, newX: number, newY: number) => {
-    setGameState((prev) => ({
-      ...prev,
-      entities: prev.entities.map((e) =>
+    const ent = gameState.entities.find((e) => e.id === entityId);
+    if (!ent) return;
+
+    const validation = validatePlacement(
+      newX,
+      newY,
+      ent.width || 1,
+      ent.height || 1,
+      gameState.entities,
+      entityId
+    );
+
+    if (!validation.isValid) {
+      sound.playWoodHit();
+      showToast('⚠️ Posição inválida! Não é possível sobrepor outras construções.');
+      return;
+    }
+
+    setGameState((prev) => {
+      const updatedEntities = prev.entities.map((e) =>
         e.id === entityId ? { ...e, x: newX, y: newY } : e
-      ),
-    }));
-    sound.playPlant();
-    showToast('🛠️ Construção reposicionada com sucesso!');
+      );
+      const nextState = { ...prev, entities: updatedEntities };
+      if (currentUid) {
+        saveFarmToFirestore(currentUid, nextState);
+      }
+      return nextState;
+    });
+
+    sound.playDing();
+    showToast('✨ Construção reposicionada com sucesso!');
   };
 
   // 16. Claim Achievement Reward

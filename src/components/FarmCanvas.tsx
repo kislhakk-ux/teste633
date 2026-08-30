@@ -63,6 +63,7 @@ import { IsoLushGrass } from './isometric/IsoLushGrass';
 import { Iso3DSpriteBuilding } from './isometric/Iso3DSpriteBuilding';
 import { IsoDecoration } from './isometric/IsoDecoration';
 import { HD_BUILDING_SPRITES } from '../constants/buildingSprites';
+import { validatePlacement, MAP_SIZE } from '../utils/buildingPlacement';
 import {
   gridToScreen,
   screenToGrid,
@@ -112,8 +113,6 @@ interface FarmCanvasProps {
   onOpenLuckyWheel?: () => void;
   onOpenBeeTree?: (entity: FarmEntity) => void;
 }
-
-const MAP_SIZE = 14;
 
 export const FarmCanvas: React.FC<FarmCanvasProps> = ({
   entities,
@@ -178,6 +177,51 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
   // 4 progressive loading bars hold-to-drag state
   const [holdingEntityId, setHoldingEntityId] = useState<string | null>(null);
   const [holdingProgress, setHoldingProgress] = useState<number>(0);
+
+  // Currently actively moved or dragged building entity
+  const activeMovedEntity = useMemo(() => {
+    const id = draggingEntityId || movingEntityId;
+    if (!id) return null;
+    return entities.find((e) => e.id === id) || null;
+  }, [entities, draggingEntityId, movingEntityId]);
+
+  // Real-time space occupation validation
+  const placementValidation = useMemo(() => {
+    if (!activeMovedEntity || !hoveredTile) return null;
+    return validatePlacement(
+      hoveredTile.x,
+      hoveredTile.y,
+      activeMovedEntity.width || 1,
+      activeMovedEntity.height || 1,
+      entities,
+      activeMovedEntity.id
+    );
+  }, [activeMovedEntity, hoveredTile, entities]);
+
+  // Helper to validate and confirm movement safely
+  const tryConfirmMove = useCallback(
+    (entityId: string, targetX: number, targetY: number) => {
+      const ent = entities.find((e) => e.id === entityId);
+      if (!ent || !onMoveEntityPosition) return;
+
+      const validation = validatePlacement(
+        targetX,
+        targetY,
+        ent.width || 1,
+        ent.height || 1,
+        entities,
+        entityId
+      );
+
+      if (validation.isValid) {
+        sound.playDing();
+        onMoveEntityPosition(entityId, targetX, targetY);
+      } else {
+        sound.playWoodHit();
+      }
+    },
+    [entities, onMoveEntityPosition]
+  );
 
   const isCropPlotReady = useCallback((entity: FarmEntity) => {
     if (entity.type !== 'crop_plot' || !entity.cropData) return false;
@@ -275,8 +319,8 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
 
     if (wasLongPress) {
       e.stopPropagation();
-      if (hoveredTile && onMoveEntityPosition && draggingEntityId === entity.id) {
-        onMoveEntityPosition(entity.id, hoveredTile.x, hoveredTile.y);
+      if (hoveredTile && draggingEntityId === entity.id) {
+        tryConfirmMove(entity.id, hoveredTile.x, hoveredTile.y);
       }
       setDraggingEntityId(null);
       setIsLongPressDragging(false);
@@ -416,8 +460,8 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       onSelectEntity(null);
     }
     if (isLongPressDragging || longPressTriggeredRef.current) {
-      if (pressedEntityRef.current && hoveredTile && onMoveEntityPosition) {
-        onMoveEntityPosition(pressedEntityRef.current.id, hoveredTile.x, hoveredTile.y);
+      if (pressedEntityRef.current && hoveredTile) {
+        tryConfirmMove(pressedEntityRef.current.id, hoveredTile.x, hoveredTile.y);
       }
       setDraggingEntityId(null);
       setIsLongPressDragging(false);
@@ -537,8 +581,8 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       touchStartDistRef.current = null;
     }
     if (isLongPressDragging || longPressTriggeredRef.current) {
-      if (pressedEntityRef.current && hoveredTile && onMoveEntityPosition) {
-        onMoveEntityPosition(pressedEntityRef.current.id, hoveredTile.x, hoveredTile.y);
+      if (pressedEntityRef.current && hoveredTile) {
+        tryConfirmMove(pressedEntityRef.current.id, hoveredTile.x, hoveredTile.y);
       }
       setDraggingEntityId(null);
       setIsLongPressDragging(false);
@@ -579,9 +623,9 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       return; // Ignore drag panning or long click wait gestures!
     }
 
-    if (isMovingMode && movingEntityId && onMoveEntityPosition) {
-      // Move selected entity to this tile
-      onMoveEntityPosition(movingEntityId, gx, gy);
+    if (isMovingMode && movingEntityId) {
+      // Move selected entity to this tile safely
+      tryConfirmMove(movingEntityId, gx, gy);
       setMovingEntityId(null);
       return;
     }
@@ -683,6 +727,15 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             const { x: isoX, y: isoY } = gridToIso(gx, gy);
             const isHovered = hoveredTile?.x === gx && hoveredTile?.y === gy;
 
+            // Check if this tile is inside the actively moved entity footprint
+            const isInMovingFootprint =
+              activeMovedEntity &&
+              hoveredTile &&
+              gx >= hoveredTile.x &&
+              gx < hoveredTile.x + (activeMovedEntity.width || 1) &&
+              gy >= hoveredTile.y &&
+              gy < hoveredTile.y + (activeMovedEntity.height || 1);
+
             return (
               <div
                 key={`tile_${gx}_${gy}`}
@@ -701,7 +754,20 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                   viewBox="0 0 84 42"
                   className="w-full h-full overflow-visible transition-colors"
                 >
-                  {isMovingMode ? (
+                  {isInMovingFootprint ? (
+                    /* Real-time Space Occupation Footprint: Green if Valid, Red if Colliding / Out of Bounds */
+                    <polygon
+                      points="42,1 83,21 42,41 1,21"
+                      fill={
+                        placementValidation?.isValid
+                          ? 'rgba(34, 197, 94, 0.48)'
+                          : 'rgba(239, 68, 68, 0.58)'
+                      }
+                      stroke={placementValidation?.isValid ? '#22C55E' : '#EF4444'}
+                      strokeWidth="2.5"
+                      strokeDasharray={placementValidation?.isValid ? 'none' : '4 2'}
+                    />
+                  ) : isMovingMode ? (
                     /* In Move Mode, show subtle placement grid lines and active target highlight */
                     <polygon
                       points="42,1 83,21 42,41 1,21"
@@ -731,6 +797,40 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             );
           })
         )}
+
+        {/* Floating Space Occupation Status Indicator Badge above dragged building */}
+        {activeMovedEntity && hoveredTile && (() => {
+          const centerIso = gridToIso(
+            hoveredTile.x + (activeMovedEntity.width || 1) / 2,
+            hoveredTile.y + (activeMovedEntity.height || 1) / 2
+          );
+          const isValid = placementValidation?.isValid;
+
+          return (
+            <div
+              style={{
+                left: centerIso.x,
+                top: centerIso.y - 70,
+                position: 'absolute',
+                transform: 'translate(-50%, -50%)',
+              }}
+              className={`pointer-events-none z-50 px-3 py-1 rounded-full text-xs font-black shadow-2xl flex items-center gap-1.5 whitespace-nowrap border-2 transition-all backdrop-blur-sm ${
+                isValid
+                  ? 'bg-emerald-600/95 text-white border-emerald-300 animate-pulse'
+                  : 'bg-red-600/95 text-white border-red-300 animate-bounce'
+              }`}
+            >
+              <span>{isValid ? '🟢' : '🔴'}</span>
+              <span>
+                {isValid
+                  ? 'Posição Válida (Solte para fixar)'
+                  : placementValidation?.reason === 'out_of_bounds'
+                  ? 'Fora do Terreno!'
+                  : 'Bloqueado (Sobreposição com outra construção!)'}
+              </span>
+            </div>
+          );
+        })()}
 
         {/* Dynamic Animated Farm NPC Visitor Character waiting at the Farmhouse door */}
         {activeVisitor && (() => {
