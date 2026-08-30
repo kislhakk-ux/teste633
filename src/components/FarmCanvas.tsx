@@ -258,18 +258,25 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
         );
 
         return prevBees.map((bee) => {
-          let { state, progress, targetBushId, harvestStart, hasNectar } = bee;
+          let { state, progress, targetBushId, harvestStart, idleStart, hasNectar } = bee;
 
           if (state === 'idle') {
-            if (projectedNectar < 100 && activeBushes.length > 0) {
-              const chosenBush = activeBushes[Math.floor(Math.random() * activeBushes.length)];
-              state = 'flying_to_bush';
-              progress = 0;
-              targetBushId = chosenBush.id;
-              hasNectar = false;
+            if (!idleStart) {
+              idleStart = Date.now();
+            }
+            const idleTime = Date.now() - idleStart;
+            if (idleTime >= 300000) { // 5 minutes rest time in tree
+              if (projectedNectar < 100 && activeBushes.length > 0) {
+                const chosenBush = activeBushes[Math.floor(Math.random() * activeBushes.length)];
+                state = 'flying_to_bush';
+                progress = 0;
+                targetBushId = chosenBush.id;
+                hasNectar = false;
+                idleStart = undefined; // Reset
+              }
             }
           } else if (state === 'flying_to_bush') {
-            progress += deltaSec * 0.22 * bee.speed; // smooth flight speed
+            progress += deltaSec * 0.02 * bee.speed; // ultra slow visible flight (~40s)
             if (progress >= 1) {
               progress = 1;
               state = 'harvesting';
@@ -277,7 +284,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             }
           } else if (state === 'harvesting') {
             const elapsed = Date.now() - harvestStart;
-            if (elapsed >= 3500) { // 3.5s harvest time
+            if (elapsed >= 300000) { // 5 minutes harvest time
               const targetBush = entities.find((e) => e.id === targetBushId);
               if (targetBush && targetBush.nectarBushData && targetBush.nectarBushData.nectarLeft > 0) {
                 if (onHarvestNectarFromBush && targetBushId) {
@@ -301,7 +308,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
               }
             }
           } else if (state === 'flying_to_tree') {
-            progress += deltaSec * 0.22 * bee.speed;
+            progress += deltaSec * 0.02 * bee.speed; // ultra slow flight
             if (progress >= 1) {
               progress = 1;
               state = 'idle';
@@ -312,10 +319,11 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
               }
               hasNectar = false;
               targetBushId = null;
+              idleStart = Date.now(); // Start 5 minutes tree resting timer
             }
           }
 
-          return { ...bee, state, progress, targetBushId, harvestStart, hasNectar };
+          return { ...bee, state, progress, targetBushId, harvestStart, idleStart, hasNectar };
         });
       });
 
@@ -969,6 +977,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
           let bx = treeCenter.x;
           let by = treeCenter.y - 45;
           let isFacingRight = true;
+          let leanAngle = 0;
 
           const bush = bee.targetBushId ? entities.find((e) => e.id === bee.targetBushId) : null;
           const bushCenter = bush ? gridToIso(bush.x + 0.5, bush.y + 0.5) : null;
@@ -978,26 +987,53 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             bx = treeCenter.x + Math.cos(angle) * 35;
             by = treeCenter.y - 45 + Math.sin(angle) * 18;
             isFacingRight = Math.cos(angle + 0.1) > Math.cos(angle);
+            leanAngle = Math.sin(currentTime / 150) * 6; // gentle floating hover
           } else if (bee.state === 'flying_to_bush' && bushCenter) {
             const startX = treeCenter.x;
             const startY = treeCenter.y - 45;
             const endX = bushCenter.x;
             const endY = bushCenter.y - 25;
-            bx = startX + (endX - startX) * bee.progress;
-            by = startY + (endY - startY) * bee.progress + Math.sin(bee.progress * Math.PI) * -35 + Math.sin(currentTime / 120) * 3;
+
+            const baseLineX = startX + (endX - startX) * bee.progress;
+            const baseLineY = startY + (endY - startY) * bee.progress + Math.sin(bee.progress * Math.PI) * -35;
+
+            // Wobble perpendicular to path for organic flight feel
+            const dx = endX - startX;
+            const dy = endY - startY;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const nx = -dy / dist;
+            const ny = dx / dist;
+
+            const wobbleVal = Math.sin(bee.progress * Math.PI * 6) * 18;
+            bx = baseLineX + nx * wobbleVal;
+            by = baseLineY + ny * wobbleVal + Math.sin(currentTime / 120) * 3.5;
             isFacingRight = endX > startX;
+            leanAngle = Math.cos(bee.progress * Math.PI * 6) * 16;
           } else if (bee.state === 'harvesting' && bushCenter) {
-            bx = bushCenter.x + Math.sin(currentTime / 80) * 2;
-            by = bushCenter.y - 25 + Math.cos(currentTime / 100) * 2;
+            bx = bushCenter.x + Math.sin(currentTime / 80) * 2.5;
+            by = bushCenter.y - 25 + Math.cos(currentTime / 100) * 2.5;
             isFacingRight = Math.sin(currentTime / 200) > 0;
+            leanAngle = Math.sin(currentTime / 100) * 8; // hovering sway
           } else if (bee.state === 'flying_to_tree' && bushCenter) {
             const startX = bushCenter.x;
             const startY = bushCenter.y - 25;
             const endX = treeCenter.x;
             const endY = treeCenter.y - 45;
-            bx = startX + (endX - startX) * bee.progress;
-            by = startY + (endY - startY) * bee.progress + Math.sin(bee.progress * Math.PI) * -35 + Math.sin(currentTime / 120) * 3;
+
+            const baseLineX = startX + (endX - startX) * bee.progress;
+            const baseLineY = startY + (endY - startY) * bee.progress + Math.sin(bee.progress * Math.PI) * -35;
+
+            const dx = endX - startX;
+            const dy = endY - startY;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const nx = -dy / dist;
+            const ny = dx / dist;
+
+            const wobbleVal = Math.sin(bee.progress * Math.PI * 6) * 18;
+            bx = baseLineX + nx * wobbleVal;
+            by = baseLineY + ny * wobbleVal + Math.sin(currentTime / 120) * 3.5;
             isFacingRight = endX > startX;
+            leanAngle = Math.cos(bee.progress * Math.PI * 6) * 16;
           }
 
           return (
@@ -1038,11 +1074,32 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
 
               <div
                 style={{
-                  transform: `scale(${isFacingRight ? 1.0 : -1.0}, 1.0)`,
+                  transform: `scale(${isFacingRight ? 1.0 : -1.0}, 1.0) rotate(${isFacingRight ? leanAngle : -leanAngle}deg)`,
+                  transition: 'transform 0.15s ease-out',
                 }}
               >
                 <svg width="32" height="32" viewBox="0 0 32 32" className="overflow-visible filter drop-shadow-md">
                   <defs>
+                    <style>{`
+                      @keyframes flap-left-${bee.id} {
+                        0% { transform: rotate(-28deg) scaleY(1); }
+                        50% { transform: rotate(-8deg) scaleY(0.2); }
+                        100% { transform: rotate(-28deg) scaleY(1); }
+                      }
+                      @keyframes flap-right-${bee.id} {
+                        0% { transform: rotate(28deg) scaleY(1); }
+                        50% { transform: rotate(8deg) scaleY(0.2); }
+                        100% { transform: rotate(28deg) scaleY(1); }
+                      }
+                      .wing-left-${bee.id} {
+                        animation: flap-left-${bee.id} 0.08s infinite ease-in-out;
+                        transform-origin: 10px 8px;
+                      }
+                      .wing-right-${bee.id} {
+                        animation: flap-right-${bee.id} 0.08s infinite ease-in-out;
+                        transform-origin: 22px 8px;
+                      }
+                    `}</style>
                     <radialGradient id={`wing-grad-${bee.id}`} cx="50%" cy="50%" r="50%">
                       <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
                       <stop offset="70%" stopColor="#e2e8f0" stopOpacity="0.8" />
@@ -1056,7 +1113,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                     </linearGradient>
                   </defs>
                   
-                  {/* Glossy wings flapping */}
+                  {/* Glossy wings flapping rapidly */}
                   <ellipse
                     cx="10"
                     cy="8"
@@ -1065,8 +1122,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                     fill={`url(#wing-grad-${bee.id})`}
                     stroke="#cbd5e1"
                     strokeWidth="0.8"
-                    transform="rotate(-28 10 8)"
-                    className="animate-pulse"
+                    className={`wing-left-${bee.id}`}
                   />
                   <ellipse
                     cx="22"
@@ -1076,8 +1132,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                     fill={`url(#wing-grad-${bee.id})`}
                     stroke="#cbd5e1"
                     strokeWidth="0.8"
-                    transform="rotate(28 22 8)"
-                    className="animate-pulse"
+                    className={`wing-right-${bee.id}`}
                   />
                   
                   {/* Stinger */}
