@@ -14,7 +14,7 @@ export const IsoNpcVisitor: React.FC<IsoNpcVisitorProps> = ({
   visitor,
   gridToIso,
   onOpenVisitor,
-  targetPos = { x: 6.8, y: 4.1 }, // Default in front of the Farmhouse door
+  targetPos = { x: 7.65, y: 4.05 }, // Default in front of the Farmhouse door
   onVisitorLeaveComplete,
   isLeaving = false,
 }) => {

@@ -730,8 +730,8 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
         {/* Dynamic Animated Farm NPC Visitor Character waiting at the Farmhouse door */}
         {activeVisitor && (() => {
           const farmhouse = entities.find((e) => e.type === 'farmhouse');
-          const doorX = farmhouse ? farmhouse.x + 0.8 : 6.8;
-          const doorY = farmhouse ? farmhouse.y + 2.1 : 4.1;
+          const doorX = farmhouse ? farmhouse.x + 1.65 : 7.65;
+          const doorY = farmhouse ? farmhouse.y + 2.05 : 4.05;
           return (
             <IsoNpcVisitor
               visitor={activeVisitor}
