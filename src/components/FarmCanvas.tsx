@@ -980,7 +980,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
         })}
 
         {/* CROP BUBBLE SELECTOR (Floating inline on top of selected plot) */}
-        {selectedEntity && selectedEntity.type === 'crop_plot' && (() => {
+        {!activeDragTool && selectedEntity && selectedEntity.type === 'crop_plot' && (() => {
           const isPlanted = selectedEntity.cropData && selectedEntity.cropData.cropId;
           const now = currentTime;
           const isReady = isPlanted && (now - selectedEntity.cropData!.plantedAt!) / 1000 >= selectedEntity.cropData!.growDuration;

@@ -262,12 +262,6 @@ export const IsoCropPlot: React.FC<IsoCropPlotProps> = ({
         )}
       </svg>
 
-      {/* ── ACTION OVERLAY: timer while growing ── */}
-      {isPlanted && !isReady ? (
-        <div className="absolute -bottom-1 bg-black/75 backdrop-blur-xs text-white text-[10px] font-black px-2 py-0.5 rounded-full border border-white/20 shadow-md z-10 pointer-events-none">
-          ⏳ {Math.max(0, Math.ceil(growDuration - elapsed))}s
-        </div>
-      ) : null}
     </div>
   );
 };

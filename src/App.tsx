@@ -559,6 +559,10 @@ export default function App() {
     sound.playHarvest();
     const yieldCount = cropDef.harvestYield;
 
+    if (selectedEntity?.id === entityId) {
+      setSelectedEntity(null);
+    }
+
     setGameState((prev) => {
       const newEntities = prev.entities.map((e) => {
         if (e.id === entityId) {
@@ -1455,6 +1459,10 @@ export default function App() {
   const handleQuickPlantCrop = (plotId: string, cropId: string) => {
     const currentQty = gameState.inventory[cropId as ItemId] || 0;
     if (currentQty <= 0) return;
+
+    if (selectedEntity?.id === plotId) {
+      setSelectedEntity(null);
+    }
 
     setGameState((prev) => {
       const updatedEntities = prev.entities.map((ent) => {
