@@ -424,66 +424,6 @@ export default function App() {
           return ent;
         });
 
-        // 1.5 Process Bee Tree & Nectar Bush Gathering
-        // Active bees forage from available bushes (reducing bush by 1 each) and bring 1 nectar to the tree
-        const treeIdx = newEntities.findIndex((e) => e.type === 'bee_tree' && e.beeTreeData);
-        if (treeIdx !== -1) {
-          const treeEnt = newEntities[treeIdx];
-          const treeData = treeEnt.beeTreeData!;
-
-          if (treeData.nectarCount < treeData.maxNectar) {
-            const lastHarvest = treeData.lastHarvestAt || now;
-            const elapsedSec = (now - lastHarvest) / 1000;
-
-            // Every 4 seconds, each active bee completes a gathering trip
-            if (elapsedSec >= 4) {
-              let availableCapacity = treeData.maxNectar - treeData.nectarCount;
-              let beesReady = treeData.beesCount;
-              let totalGained = 0;
-
-              // Drain nectar 1-by-1 from available blooming bushes
-              for (let i = 0; i < newEntities.length; i++) {
-                const ent = newEntities[i];
-                if (
-                  ent.type === 'nectar_bush' &&
-                  ent.nectarBushData &&
-                  ent.nectarBushData.nectarLeft > 0
-                ) {
-                  const take = Math.min(ent.nectarBushData.nectarLeft, beesReady, availableCapacity);
-                  if (take > 0) {
-                    updated = true;
-                    const newLeft = ent.nectarBushData.nectarLeft - take;
-                    newEntities[i] = {
-                      ...ent,
-                      nectarBushData: {
-                        ...ent.nectarBushData,
-                        nectarLeft: newLeft,
-                        isWilted: newLeft <= 0,
-                      },
-                    };
-                    totalGained += take;
-                    beesReady -= take;
-                    availableCapacity -= take;
-                  }
-                }
-                if (beesReady <= 0 || availableCapacity <= 0) break;
-              }
-
-              // Update the Bee Tree with gathered nectar
-              if (totalGained > 0) {
-                newEntities[treeIdx] = {
-                  ...treeEnt,
-                  beeTreeData: {
-                    ...treeData,
-                    nectarCount: Math.min(treeData.maxNectar, treeData.nectarCount + totalGained),
-                    lastHarvestAt: now,
-                  },
-                };
-              }
-            }
-          }
-        }
-
         // 2. Process Truck Delivery Completion
         let newTruckDeliveringUntil = prev.truckDeliveringUntil;
         let newCoins = prev.coins;
@@ -1930,6 +1870,60 @@ export default function App() {
     showToast('✨ Construção reposicionada com sucesso!');
   };
 
+  const handleHarvestNectarFromBush = (bushId: string) => {
+    setGameState((prev) => {
+      const updatedEntities = prev.entities.map((ent) => {
+        if (
+          ent.id === bushId &&
+          ent.type === 'nectar_bush' &&
+          ent.nectarBushData &&
+          ent.nectarBushData.nectarLeft > 0
+        ) {
+          const newLeft = ent.nectarBushData.nectarLeft - 1;
+          return {
+            ...ent,
+            nectarBushData: {
+              ...ent.nectarBushData,
+              nectarLeft: newLeft,
+              isWilted: newLeft <= 0,
+            },
+          };
+        }
+        return ent;
+      });
+      const nextState = { ...prev, entities: updatedEntities };
+      if (currentUid) {
+        saveFarmToFirestore(currentUid, nextState);
+      }
+      return nextState;
+    });
+  };
+
+  const handleAddNectarToTree = () => {
+    setGameState((prev) => {
+      const treeIdx = prev.entities.findIndex((e) => e.type === 'bee_tree' && e.beeTreeData);
+      if (treeIdx === -1) return prev;
+      const treeEnt = prev.entities[treeIdx];
+      const tree = treeEnt.beeTreeData!;
+      if (tree.nectarCount >= tree.maxNectar) return prev;
+
+      const updatedEntities = [...prev.entities];
+      updatedEntities[treeIdx] = {
+        ...treeEnt,
+        beeTreeData: {
+          ...tree,
+          nectarCount: Math.min(tree.maxNectar, tree.nectarCount + 1),
+        },
+      };
+
+      const nextState = { ...prev, entities: updatedEntities };
+      if (currentUid) {
+        saveFarmToFirestore(currentUid, nextState);
+      }
+      return nextState;
+    });
+  };
+
   // 16. Claim Achievement Reward
   const handleClaimAchievement = (achId: string) => {
     const ach = gameState.achievements.find((a) => a.id === achId);
@@ -2131,6 +2125,8 @@ export default function App() {
         onOpenRoadsideShop={() => setIsRoadsideOpen(true)}
         onOpenLuckyWheel={() => setIsLuckyWheelOpen(true)}
         onOpenBeeTree={handleOpenBeeTree}
+        onHarvestNectarFromBush={handleHarvestNectarFromBush}
+        onAddNectarToTree={handleAddNectarToTree}
       />
 
       {/* Radial Tool Selector / Quick Plot Popups */}

@@ -112,6 +112,8 @@ interface FarmCanvasProps {
   onOpenRoadsideShop?: () => void;
   onOpenLuckyWheel?: () => void;
   onOpenBeeTree?: (entity: FarmEntity) => void;
+  onHarvestNectarFromBush?: (bushId: string) => void;
+  onAddNectarToTree?: () => void;
 }
 
 export const FarmCanvas: React.FC<FarmCanvasProps> = ({
@@ -146,6 +148,8 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
   onOpenRoadsideShop,
   onOpenLuckyWheel,
   onOpenBeeTree,
+  onHarvestNectarFromBush,
+  onAddNectarToTree,
   inventory = {},
   onQuickPlantCrop,
 }) => {
@@ -157,6 +161,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
   const [movingEntityId, setMovingEntityId] = useState<string | null>(null);
   const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [visualBees, setVisualBees] = useState<any[]>([]);
 
   // 2 seconds long press drag-and-drop state/refs
   const [draggingEntityId, setDraggingEntityId] = useState<string | null>(null);
@@ -197,6 +202,129 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       activeMovedEntity.id
     );
   }, [activeMovedEntity, hoveredTile, entities]);
+
+  // Sync visual bee count based on current Stage * 5
+  const beeTree = useMemo(() => entities.find((e) => e.type === 'bee_tree'), [entities]);
+  const maxBees = beeTree?.beeTreeData?.beesCount || 0;
+
+  useEffect(() => {
+    if (maxBees <= 0) {
+      setVisualBees([]);
+      return;
+    }
+    setVisualBees((prev) => {
+      if (prev.length === maxBees) return prev;
+      const nextBees = [...prev];
+      if (nextBees.length > maxBees) {
+        return nextBees.slice(0, maxBees);
+      }
+      while (nextBees.length < maxBees) {
+        nextBees.push({
+          id: Math.random(),
+          state: 'idle',
+          progress: 0,
+          targetBushId: null,
+          harvestStart: 0,
+          angleOffset: Math.random() * Math.PI * 2,
+          speed: 0.85 + Math.random() * 0.3,
+          hasNectar: false,
+        });
+      }
+      return nextBees;
+    });
+  }, [maxBees]);
+
+  // Bee Real-time Flight Simulation Loop
+  useEffect(() => {
+    if (maxBees <= 0) return;
+
+    let animId: number;
+    let lastTime = performance.now();
+
+    const loop = (now: number) => {
+      const deltaSec = (now - lastTime) / 1000;
+      lastTime = now;
+
+      setVisualBees((prevBees) => {
+        const tree = entities.find((e) => e.type === 'bee_tree');
+        if (!tree || !tree.beeTreeData) return prevBees;
+
+        const currentNectar = tree.beeTreeData.nectarCount;
+        const pendingNectar = prevBees.filter((b) => b.hasNectar || b.state === 'harvesting').length;
+        const projectedNectar = currentNectar + pendingNectar;
+
+        const activeBushes = entities.filter(
+          (e) => e.type === 'nectar_bush' && e.nectarBushData && e.nectarBushData.nectarLeft > 0
+        );
+
+        return prevBees.map((bee) => {
+          let { state, progress, targetBushId, harvestStart, hasNectar } = bee;
+
+          if (state === 'idle') {
+            if (projectedNectar < 100 && activeBushes.length > 0) {
+              const chosenBush = activeBushes[Math.floor(Math.random() * activeBushes.length)];
+              state = 'flying_to_bush';
+              progress = 0;
+              targetBushId = chosenBush.id;
+              hasNectar = false;
+            }
+          } else if (state === 'flying_to_bush') {
+            progress += deltaSec * 0.22 * bee.speed; // smooth flight speed
+            if (progress >= 1) {
+              progress = 1;
+              state = 'harvesting';
+              harvestStart = Date.now();
+            }
+          } else if (state === 'harvesting') {
+            const elapsed = Date.now() - harvestStart;
+            if (elapsed >= 3500) { // 3.5s harvest time
+              const targetBush = entities.find((e) => e.id === targetBushId);
+              if (targetBush && targetBush.nectarBushData && targetBush.nectarBushData.nectarLeft > 0) {
+                if (onHarvestNectarFromBush && targetBushId) {
+                  onHarvestNectarFromBush(targetBushId);
+                }
+                state = 'flying_to_tree';
+                progress = 0;
+                hasNectar = true;
+              } else {
+                if (activeBushes.length > 0) {
+                  const newBush = activeBushes[Math.floor(Math.random() * activeBushes.length)];
+                  state = 'flying_to_bush';
+                  progress = 0;
+                  targetBushId = newBush.id;
+                  hasNectar = false;
+                } else {
+                  state = 'flying_to_tree';
+                  progress = 0;
+                  hasNectar = false;
+                }
+              }
+            }
+          } else if (state === 'flying_to_tree') {
+            progress += deltaSec * 0.22 * bee.speed;
+            if (progress >= 1) {
+              progress = 1;
+              state = 'idle';
+              if (hasNectar) {
+                if (onAddNectarToTree) {
+                  onAddNectarToTree();
+                }
+              }
+              hasNectar = false;
+              targetBushId = null;
+            }
+          }
+
+          return { ...bee, state, progress, targetBushId, harvestStart, hasNectar };
+        });
+      });
+
+      animId = requestAnimationFrame(loop);
+    };
+
+    animId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId);
+  }, [maxBees, entities, onHarvestNectarFromBush, onAddNectarToTree]);
 
   // Helper to validate and confirm movement safely
   const tryConfirmMove = useCallback(
@@ -831,6 +959,98 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             </div>
           );
         })()}
+
+        {/* Real-time animated flying/gathering worker bees */}
+        {visualBees.map((bee) => {
+          const tree = entities.find((e) => e.type === 'bee_tree');
+          if (!tree) return null;
+
+          const treeCenter = gridToIso(tree.x + 1.0, tree.y + 1.0);
+          let bx = treeCenter.x;
+          let by = treeCenter.y - 45;
+          let isFacingRight = true;
+
+          const bush = bee.targetBushId ? entities.find((e) => e.id === bee.targetBushId) : null;
+          const bushCenter = bush ? gridToIso(bush.x + 0.5, bush.y + 0.5) : null;
+
+          if (bee.state === 'idle') {
+            const angle = (currentTime / 1000) * bee.speed + bee.angleOffset;
+            bx = treeCenter.x + Math.cos(angle) * 35;
+            by = treeCenter.y - 45 + Math.sin(angle) * 18;
+            isFacingRight = Math.cos(angle + 0.1) > Math.cos(angle);
+          } else if (bee.state === 'flying_to_bush' && bushCenter) {
+            const startX = treeCenter.x;
+            const startY = treeCenter.y - 45;
+            const endX = bushCenter.x;
+            const endY = bushCenter.y - 25;
+            bx = startX + (endX - startX) * bee.progress;
+            by = startY + (endY - startY) * bee.progress + Math.sin(bee.progress * Math.PI) * -35 + Math.sin(currentTime / 120) * 3;
+            isFacingRight = endX > startX;
+          } else if (bee.state === 'harvesting' && bushCenter) {
+            bx = bushCenter.x + Math.sin(currentTime / 80) * 2;
+            by = bushCenter.y - 25 + Math.cos(currentTime / 100) * 2;
+            isFacingRight = Math.sin(currentTime / 200) > 0;
+          } else if (bee.state === 'flying_to_tree' && bushCenter) {
+            const startX = bushCenter.x;
+            const startY = bushCenter.y - 25;
+            const endX = treeCenter.x;
+            const endY = treeCenter.y - 45;
+            bx = startX + (endX - startX) * bee.progress;
+            by = startY + (endY - startY) * bee.progress + Math.sin(bee.progress * Math.PI) * -35 + Math.sin(currentTime / 120) * 3;
+            isFacingRight = endX > startX;
+          }
+
+          return (
+            <div
+              key={bee.id}
+              className="absolute pointer-events-none z-40 transition-transform duration-100 ease-linear"
+              style={{
+                left: bx,
+                top: by,
+                transform: `translate(-50%, -50%) scale(${isFacingRight ? 0.95 : -0.95}, 0.95)`,
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" className="overflow-visible filter drop-shadow-md">
+                {/* Wings Left/Right */}
+                <ellipse
+                  cx="8"
+                  cy="6"
+                  rx="6"
+                  ry="2.8"
+                  fill="rgba(255, 255, 255, 0.92)"
+                  stroke="#cbd5e1"
+                  strokeWidth="0.8"
+                  transform="rotate(-28 8 6)"
+                  className="animate-pulse"
+                />
+                <ellipse
+                  cx="16"
+                  cy="6"
+                  rx="6"
+                  ry="2.8"
+                  fill="rgba(255, 255, 255, 0.92)"
+                  stroke="#cbd5e1"
+                  strokeWidth="0.8"
+                  transform="rotate(28 16 6)"
+                  className="animate-pulse"
+                />
+                {/* Bee Striped Body */}
+                <ellipse cx="12" cy="12" rx="7" ry="5" fill="#facc15" stroke="#1e293b" strokeWidth="1" />
+                <path d="M 10 7.5 L 10 16.5" stroke="#1e293b" strokeWidth="1.6" />
+                <path d="M 14 7.5 L 14 16.5" stroke="#1e293b" strokeWidth="1.6" />
+                {/* Stinger */}
+                <polygon points="5,12 2.5,11 2.5,13" fill="#1e293b" />
+                {/* Head */}
+                <circle cx="18" cy="12" r="3" fill="#1e293b" />
+                <circle cx="19.2" cy="11.2" r="0.7" fill="#ffffff" />
+                {/* Yellow pollen ball carrying indicator */}
+                {bee.hasNectar && (
+                  <circle cx="12" cy="17.5" r="3.2" fill="#fbbf24" stroke="#d97706" strokeWidth="0.8" className="animate-ping" />
+                )}
+              </svg>
+            </div>
+          );
+        })}
 
         {/* Dynamic Animated Farm NPC Visitor Character waiting at the Farmhouse door */}
         {activeVisitor && (() => {

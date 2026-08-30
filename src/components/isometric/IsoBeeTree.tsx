@@ -173,57 +173,7 @@ export const IsoBeeTree: React.FC<IsoBeeTreeProps> = ({
           </g>
         ))}
 
-        {/* Flying Worker Bees orbiting around the tree */}
-        {Array.from({ length: Math.min(6, data.beesCount) }).map((_, bIdx) => {
-          const speed = 1.2 + bIdx * 0.3;
-          const radiusX = 35 + (bIdx % 3) * 12;
-          const radiusY = 18 + (bIdx % 2) * 8;
-          const offset = (bIdx * Math.PI * 2) / 6;
-          const bx = 60 + Math.cos(beeAngle * speed + offset) * radiusX;
-          const by = 55 + Math.sin(beeAngle * speed + offset) * radiusY;
-          const isFacingRight = Math.cos(beeAngle * speed + offset + 0.1) > Math.cos(beeAngle * speed + offset);
-
-          return (
-            <g
-              key={`flying-bee-${bIdx}`}
-              transform={`translate(${bx}, ${by}) scale(${isFacingRight ? 0.75 : -0.75}, 0.75)`}
-              className="pointer-events-none select-none"
-            >
-              {/* Flapping Wings */}
-              <ellipse
-                cx="-2"
-                cy={-4 + Math.sin(beeAngle * 25 + bIdx) * 1.5}
-                rx="3.5"
-                ry="1.8"
-                fill="rgba(255, 255, 255, 0.85)"
-                stroke="#E2E8F0"
-                strokeWidth="0.4"
-                transform="rotate(-25)"
-              />
-              <ellipse
-                cx="2"
-                cy={-4 + Math.sin(beeAngle * 25 + bIdx) * 1.5}
-                rx="3.5"
-                ry="1.8"
-                fill="rgba(255, 255, 255, 0.85)"
-                stroke="#E2E8F0"
-                strokeWidth="0.4"
-                transform="rotate(25)"
-              />
-
-              {/* Bee Striped Body */}
-              <ellipse cx="0" cy="0" rx="4.5" ry="3.2" fill="#FACC15" stroke="#1E293B" strokeWidth="0.6" />
-              {/* Black Stripes */}
-              <path d="M -1.5 -2.8 L -1.5 2.8" stroke="#1E293B" strokeWidth="1.1" />
-              <path d="M 1.5 -2.8 L 1.5 2.8" stroke="#1E293B" strokeWidth="1.1" />
-              {/* Stinger */}
-              <polygon points="-4.5,0 -6,-0.6 -6,0.6" fill="#1E293B" />
-              {/* Head & Antennae */}
-              <circle cx="4" cy="0" r="2.2" fill="#1E293B" />
-              <circle cx="4.8" cy="-0.6" r="0.6" fill="#FFFFFF" />
-            </g>
-          );
-        })}
+        {/* Flying Worker Bees are now managed globally in FarmCanvas.tsx */}
       </svg>
     </div>
   );
