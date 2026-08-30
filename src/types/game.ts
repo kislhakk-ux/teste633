@@ -45,6 +45,9 @@ export type ItemId =
   | 'bolt'
   | 'axe'
   | 'saw'
+  | 'land_map'
+  | 'marker_stake'
+  | 'brick'
   // Bee Tree & Honey
   | 'nectar'
   | 'honey';
@@ -313,5 +316,6 @@ export interface GameState {
   stats: GameStats;
   soundEnabled: boolean;
   musicEnabled: boolean;
-  graphicsStyle?: '3d_rendered' | 'vector';
+  graphicsStyle?: '2d_flat' | '3d_rendered';
+  unlockedParcelIds?: string[]; // IDs of unlocked expansion parcels
 }

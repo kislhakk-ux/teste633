@@ -7,6 +7,7 @@ import {
   AnimalType,
 } from '../types/game';
 import { CROPS, BUILDINGS, ANIMAL_PENS, ITEMS, DECORATIONS, RECIPES } from '../constants/gameData';
+import { EXPANSION_PARCELS } from '../constants/expansionData';
 import { sound } from '../utils/sound';
 
 export const ScytheSvg: React.FC<{ size?: number; className?: string }> = ({ size = 36, className = '' }) => (
@@ -115,6 +116,10 @@ interface FarmCanvasProps {
   onHarvestNectarFromBush?: (bushId: string) => void;
   onAddNectarToTree?: () => void;
   onRemoveDeadEntity?: (entityId: string) => void;
+
+  // Expansion
+  unlockedParcelIds?: string[];
+  onOpenExpansionModal?: (parcelId: string) => void;
 }
 
 export const FarmCanvas: React.FC<FarmCanvasProps> = ({
@@ -154,6 +159,8 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
   onRemoveDeadEntity,
   inventory = {},
   onQuickPlantCrop,
+  unlockedParcelIds = [],
+  onOpenExpansionModal,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -886,6 +893,44 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             tileHeight={TILE_HEIGHT}
             gridToIso={gridToIso}
           />
+        </svg>
+
+        {/* Expansion Parcels Rendering (Locked ones only) */}
+        <svg className="absolute inset-0 overflow-visible pointer-events-none" style={{ width: 1, height: 1 }}>
+          {EXPANSION_PARCELS.map((parcel) => {
+            const isUnlocked = unlockedParcelIds.includes(parcel.id);
+            if (isUnlocked) return null;
+
+            const p1 = gridToIso(parcel.x, parcel.y); // Top
+            const p2 = gridToIso(parcel.x + parcel.width, parcel.y); // Right
+            const p3 = gridToIso(parcel.x + parcel.width, parcel.y + parcel.height); // Bottom
+            const p4 = gridToIso(parcel.x, parcel.y + parcel.height); // Left
+            const center = gridToIso(parcel.x + parcel.width / 2, parcel.y + parcel.height / 2);
+
+            return (
+              <g key={parcel.id} className="cursor-pointer pointer-events-auto group" onClick={() => onOpenExpansionModal?.(parcel.id)}>
+                {/* Darker untamed grass overlay */}
+                <polygon
+                  points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`}
+                  fill="rgba(0, 30, 0, 0.2)"
+                  stroke="white"
+                  strokeWidth="3"
+                  strokeDasharray="10 10"
+                  className="opacity-60 group-hover:opacity-100 transition-opacity"
+                />
+                
+                {/* Interactive Expansion Sign */}
+                <foreignObject x={center.x - 60} y={center.y - 60} width="120" height="120" className="pointer-events-none">
+                  <div className="w-full h-full flex flex-col items-center justify-center animate-bounce">
+                    <div className="bg-[#8D6E63] text-white font-black text-xs px-2 py-1 rounded shadow-lg border-2 border-[#4E342E] whitespace-nowrap group-hover:bg-[#5D4037] group-hover:scale-110 transition-transform">
+                      🔨 EXPANDIR
+                    </div>
+                    <div className="w-2 h-6 bg-[#4E342E] shadow-xl"></div>
+                  </div>
+                </foreignObject>
+              </g>
+            );
+          })}
         </svg>
 
         {/* Isometric Interactive Farm Grid (Seamless in normal mode, clean guides in move mode) */}

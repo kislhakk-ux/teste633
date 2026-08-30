@@ -422,6 +422,38 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     description: 'Ferramenta para cortar árvores grandes mortas.',
   },
 
+  // Expansion items
+  land_map: {
+    id: 'land_map',
+    name: 'Escritura de Terra',
+    category: 'material',
+    storage: 'barn',
+    icon: '🗺️',
+    basePrice: 400,
+    minLevel: 10,
+    description: 'Documento necessário para adquirir novos terrenos.',
+  },
+  marker_stake: {
+    id: 'marker_stake',
+    name: 'Estaca de Madeira',
+    category: 'material',
+    storage: 'barn',
+    icon: '📍',
+    basePrice: 400,
+    minLevel: 10,
+    description: 'Usada para demarcar os limites da fazenda.',
+  },
+  brick: {
+    id: 'brick',
+    name: 'Tijolos',
+    category: 'material',
+    storage: 'barn',
+    icon: '🧱',
+    basePrice: 400,
+    minLevel: 10,
+    description: 'Essencial para calçar os novos terrenos.',
+  },
+
   // Bee Tree & Honey
   nectar: {
     id: 'nectar',

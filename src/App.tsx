@@ -51,6 +51,8 @@ import { SettingsModal } from './components/SettingsModal';
 import { FreeGemsModal } from './components/FreeGemsModal';
 import { BeeTreeModal } from './components/BeeTreeModal';
 import { LoadingScreen } from './components/LoadingScreen';
+import { UnlockParcelModal } from './components/UnlockParcelModal';
+import { EXPANSION_PARCELS, ExpansionParcel } from './constants/expansionData';
 import { googleSignIn, googleSignOut, loadFarmFromFirestore, saveFarmToFirestore } from './utils/firebase';
 import { validatePlacement, findNextAvailablePosition } from './utils/buildingPlacement';
 
@@ -100,6 +102,7 @@ export default function App() {
   const [roadsideInitialTab, setRoadsideInitialTab] = useState<'stand' | 'newspaper'>('stand');
   const [isMultiplayerModalOpen, setIsMultiplayerModalOpen] = useState(false);
   const [isFreeGemsModalOpen, setIsFreeGemsModalOpen] = useState(false);
+  const [unlockModalParcelId, setUnlockModalParcelId] = useState<string | null>(null);
   const [onlineCount, setOnlineCount] = useState<number>(1);
   const [onlineFarms, setOnlineFarms] = useState<OnlineFarm[]>([]);
   const [newspaperOffers, setNewspaperOffers] = useState<MultiplayerOffer[]>([]);
@@ -1435,13 +1438,41 @@ export default function App() {
     });
   };
 
+  const handleUnlockParcel = (parcel: ExpansionParcel) => {
+    setGameState((prev) => {
+      const next = { ...prev };
+      
+      // Deduct coins
+      next.coins -= parcel.cost.coins;
+      
+      // Deduct items
+      const newInventory = { ...next.inventory };
+      Object.entries(parcel.cost.items).forEach(([itemId, qty]) => {
+        newInventory[itemId as ItemId] = Math.max(0, (newInventory[itemId as ItemId] || 0) - (qty as number));
+      });
+      next.inventory = newInventory;
+
+      // Add parcel to unlocked list
+      next.unlockedParcelIds = [...(next.unlockedParcelIds || []), parcel.id];
+
+      // Add a small XP reward for expanding
+      const xpReward = 50 * parcel.requiredLevel;
+      
+      sound.playLevelUp(); // Special sound effect
+      
+      setUnlockModalParcelId(null);
+      
+      return checkLevelUp({ ...next, xp: next.xp + xpReward });
+    });
+  };
+
   // 14. Shop Buy & Place Entities (using centralized space occupation validator)
   const handleBuyCropPlot = () => {
     const currentPlots = gameState.entities.filter((e) => e.type === 'crop_plot').length;
     const cost = 20 + currentPlots * 10;
     if (gameState.coins < cost) return;
 
-    const pos = findNextAvailablePosition(1, 1, gameState.entities);
+    const pos = findNextAvailablePosition(1, 1, gameState.entities, 0, gameState.unlockedParcelIds);
     const newPlot: FarmEntity = {
       id: 'plot_' + Date.now(),
       x: pos.x,
@@ -1465,7 +1496,7 @@ export default function App() {
     const penDef = ANIMAL_PENS[animalType];
     if (gameState.coins < penDef.cost) return;
 
-    const pos = findNextAvailablePosition(2, 2, gameState.entities);
+    const pos = findNextAvailablePosition(2, 2, gameState.entities, 0, gameState.unlockedParcelIds);
     const newPen: FarmEntity = {
       id: `${animalType}_pen_` + Date.now(),
       x: pos.x,
@@ -1496,7 +1527,7 @@ export default function App() {
     const bDef = BUILDINGS[bType];
     if (gameState.coins < bDef.cost) return;
 
-    const pos = findNextAvailablePosition(2, 2, gameState.entities);
+    const pos = findNextAvailablePosition(2, 2, gameState.entities, 0, gameState.unlockedParcelIds);
     const newBuilding: FarmEntity = {
       id: `${bType}_` + Date.now(),
       x: pos.x,
@@ -1536,7 +1567,7 @@ export default function App() {
       return;
     }
 
-    const pos = findNextAvailablePosition(2, 2, gameState.entities);
+    const pos = findNextAvailablePosition(2, 2, gameState.entities, 0, gameState.unlockedParcelIds);
     const newTree: FarmEntity = {
       id: 'bee_tree_' + Date.now(),
       x: pos.x,
@@ -1575,7 +1606,7 @@ export default function App() {
       return;
     }
 
-    const pos = findNextAvailablePosition(1, 1, gameState.entities);
+    const pos = findNextAvailablePosition(1, 1, gameState.entities, 0, gameState.unlockedParcelIds);
     const newBush: FarmEntity = {
       id: 'nectar_bush_' + Date.now(),
       x: pos.x,
@@ -1815,7 +1846,7 @@ export default function App() {
     const decDef = DECORATIONS[decType];
     if (gameState.coins < decDef.cost) return;
 
-    const pos = findNextAvailablePosition(decDef.width, decDef.height, gameState.entities);
+    const pos = findNextAvailablePosition(decDef.width, decDef.height, gameState.entities, 0, gameState.unlockedParcelIds);
     const newDec: FarmEntity = {
       id: `dec_${decType}_` + Date.now(),
       x: pos.x,
@@ -1846,7 +1877,9 @@ export default function App() {
       ent.width || 1,
       ent.height || 1,
       gameState.entities,
-      entityId
+      entityId,
+      0,
+      gameState.unlockedParcelIds
     );
 
     if (!validation.isValid) {
@@ -2235,8 +2268,22 @@ export default function App() {
             handleRemoveDeadEntity(entityId);
             setSelectedEntity(null);
           }}
+          unlockedParcelIds={gameState.unlockedParcelIds}
+          onOpenExpansionModal={(parcelId) => {
+            sound.playClick();
+            setUnlockModalParcelId(parcelId);
+            setSelectedEntity(null);
+          }}
         />
       )}
+
+      {/* Expansion Unlock Modal */}
+      <UnlockParcelModal
+        parcelId={unlockModalParcelId}
+        gameState={gameState}
+        onClose={() => setUnlockModalParcelId(null)}
+        onUnlock={handleUnlockParcel}
+      />
 
       {/* Bottom HUD Toolbar removed to support immersive building taps */}
 

@@ -1,4 +1,5 @@
 import { FarmEntity, GridPos } from '../types/game';
+import { EXPANSION_PARCELS, isTileInBaseFarm } from '../constants/expansionData';
 
 export const MAP_SIZE = 14;
 
@@ -15,16 +16,39 @@ export interface PlacementValidationResult {
 }
 
 /**
- * Checks whether a rectangular area [x, x+width) * [y, y+height) is completely within map bounds.
+ * Checks whether a rectangular area is completely within unlocked map bounds.
  */
 export function isWithinMapBounds(
   x: number,
   y: number,
   width: number,
   height: number,
-  mapSize = MAP_SIZE
+  unlockedParcelIds: string[] = []
 ): boolean {
-  return x >= 1 && y >= 1 && x + width <= mapSize && y + height <= mapSize;
+  // Check every single tile of the footprint
+  for (let cx = x; cx < x + width; cx++) {
+    for (let cy = y; cy < y + height; cy++) {
+      let tileUnlocked = false;
+
+      // 1) Base Farm is ALWAYS unlocked (Safe backward compatibility)
+      if (isTileInBaseFarm(cx, cy)) {
+        tileUnlocked = true;
+      } else {
+        // 2) Check if tile belongs to any UNLOCKED expansion parcel
+        for (const parcelId of unlockedParcelIds) {
+          const p = EXPANSION_PARCELS.find(exp => exp.id === parcelId);
+          if (p && cx >= p.x && cx < p.x + p.width && cy >= p.y && cy < p.y + p.height) {
+            tileUnlocked = true;
+            break;
+          }
+        }
+      }
+
+      // If any single tile of the footprint is NOT unlocked, the placement is out of bounds
+      if (!tileUnlocked) return false;
+    }
+  }
+  return true;
 }
 
 /**
@@ -68,10 +92,11 @@ export function validatePlacement(
   height: number,
   entities: FarmEntity[],
   movingEntityId?: string | null,
-  margin = 0
+  margin = 0,
+  unlockedParcelIds: string[] = []
 ): PlacementValidationResult {
   // 1. Boundary check: must be inside playable map limits
-  if (!isWithinMapBounds(targetX, targetY, width, height)) {
+  if (!isWithinMapBounds(targetX, targetY, width, height, unlockedParcelIds)) {
     return { isValid: false, reason: 'out_of_bounds' };
   }
 
@@ -121,9 +146,10 @@ export function isValidPlacement(
   height: number,
   entities: FarmEntity[],
   movingEntityId?: string | null,
-  margin = 0
+  margin = 0,
+  unlockedParcelIds: string[] = []
 ): boolean {
-  return validatePlacement(targetX, targetY, width, height, entities, movingEntityId, margin).isValid;
+  return validatePlacement(targetX, targetY, width, height, entities, movingEntityId, margin, unlockedParcelIds).isValid;
 }
 
 /**
@@ -133,11 +159,13 @@ export function findNextAvailablePosition(
   width: number,
   height: number,
   entities: FarmEntity[],
-  margin = 0
+  margin = 0,
+  unlockedParcelIds: string[] = []
 ): GridPos {
-  for (let gy = 2; gy <= MAP_SIZE - height; gy++) {
-    for (let gx = 1; gx <= MAP_SIZE - width; gx++) {
-      if (isValidPlacement(gx, gy, width, height, entities, null, margin)) {
+  // Since map size can vary based on expansions, let's search in a wider range
+  for (let gy = -10; gy <= MAP_SIZE - height; gy++) {
+    for (let gx = -10; gx <= MAP_SIZE - width; gx++) {
+      if (isValidPlacement(gx, gy, width, height, entities, null, margin, unlockedParcelIds)) {
         return { x: gx, y: gy };
       }
     }
