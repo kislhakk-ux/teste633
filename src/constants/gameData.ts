@@ -411,6 +411,16 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     minLevel: 1,
     description: 'Ferramenta para limpar árvores velhas.',
   },
+  saw: {
+    id: 'saw',
+    name: 'Serrote',
+    category: 'material',
+    storage: 'barn',
+    icon: '🪚',
+    basePrice: 150,
+    minLevel: 1,
+    description: 'Ferramenta para cortar árvores grandes mortas.',
+  },
 
   // Bee Tree & Honey
   nectar: {
@@ -1214,5 +1224,38 @@ export const INITIAL_ENTITIES: FarmEntity[] = [
     height: 1,
     type: 'decoration',
     decorationType: 'scarecrow',
+  },
+  // Starter Obstacles (dead trees and dead bushes to clear)
+  {
+    id: 'dead_tree_1',
+    x: 12,
+    y: 8,
+    width: 1,
+    height: 1,
+    type: 'dead_tree',
+  },
+  {
+    id: 'dead_tree_2',
+    x: 2,
+    y: 11,
+    width: 1,
+    height: 1,
+    type: 'dead_tree',
+  },
+  {
+    id: 'dead_bush_1',
+    x: 14,
+    y: 10,
+    width: 1,
+    height: 1,
+    type: 'dead_bush',
+  },
+  {
+    id: 'dead_bush_2',
+    x: 4,
+    y: 12,
+    width: 1,
+    height: 1,
+    type: 'dead_bush',
   },
 ];

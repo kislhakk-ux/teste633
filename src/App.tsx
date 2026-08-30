@@ -1870,6 +1870,65 @@ export default function App() {
     showToast('✨ Construção reposicionada com sucesso!');
   };
 
+  const handleRemoveDeadEntity = (entityId: string) => {
+    const ent = gameState.entities.find((e) => e.id === entityId);
+    if (!ent) return;
+
+    let toolNeeded: ItemId = 'axe';
+    if (ent.type === 'dead_tree') {
+      toolNeeded = 'saw';
+    } else if (ent.type === 'dead_bush') {
+      toolNeeded = 'axe';
+    } else if (ent.type === 'nectar_bush' && ent.nectarBushData && ent.nectarBushData.nectarLeft <= 0) {
+      toolNeeded = 'axe';
+    } else {
+      return; // Not a dead entity
+    }
+
+    const currentCount = gameState.inventory[toolNeeded] || 0;
+    if (currentCount <= 0) {
+      const toolName = toolNeeded === 'axe' ? 'Machadinha' : 'Serrote';
+      showToast(`⚠️ Você precisa de um ${toolName} para remover este obstáculo!`);
+      return;
+    }
+
+    const toolIcon = toolNeeded === 'axe' ? '🪓' : '🪚';
+
+    // 1. Play hit sound and consume tool immediately, set isCutting: true
+    sound.playWoodHit();
+    setGameState((prev) => {
+      const updatedInventory = {
+        ...prev.inventory,
+        [toolNeeded]: Math.max(0, currentCount - 1),
+      };
+      const updatedEntities = prev.entities.map((e) =>
+        e.id === entityId ? { ...e, isCutting: true } : e
+      );
+      return { ...prev, entities: updatedEntities, inventory: updatedInventory };
+    });
+
+    // 2. Play secondary chopping sounds
+    let count = 0;
+    const interval = setInterval(() => {
+      sound.playWoodHit();
+      count++;
+      if (count >= 2) clearInterval(interval);
+    }, 400);
+
+    // 3. Remove entity after 1.2 seconds animation
+    setTimeout(() => {
+      setGameState((prev) => {
+        const updatedEntities = prev.entities.filter((e) => e.id !== entityId);
+        const nextState = { ...prev, entities: updatedEntities };
+        if (currentUid) {
+          saveFarmToFirestore(currentUid, nextState);
+        }
+        return nextState;
+      });
+      showToast(`✨ ${toolIcon} Obstáculo removido com sucesso!`);
+    }, 1200);
+  };
+
   const handleHarvestNectarFromBush = (bushId: string) => {
     setGameState((prev) => {
       const updatedEntities = prev.entities.map((ent) => {
@@ -2127,6 +2186,7 @@ export default function App() {
         onOpenBeeTree={handleOpenBeeTree}
         onHarvestNectarFromBush={handleHarvestNectarFromBush}
         onAddNectarToTree={handleAddNectarToTree}
+        onRemoveDeadEntity={handleRemoveDeadEntity}
       />
 
       {/* Radial Tool Selector / Quick Plot Popups */}

@@ -114,6 +114,7 @@ interface FarmCanvasProps {
   onOpenBeeTree?: (entity: FarmEntity) => void;
   onHarvestNectarFromBush?: (bushId: string) => void;
   onAddNectarToTree?: () => void;
+  onRemoveDeadEntity?: (entityId: string) => void;
 }
 
 export const FarmCanvas: React.FC<FarmCanvasProps> = ({
@@ -150,6 +151,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
   onOpenBeeTree,
   onHarvestNectarFromBush,
   onAddNectarToTree,
+  onRemoveDeadEntity,
   inventory = {},
   onQuickPlantCrop,
 }) => {
@@ -801,6 +803,29 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       onTouchEnd={handleTouchEnd}
       onWheel={handleWheel}
     >
+      <style>{`
+        @keyframes entity-shake {
+          0% { transform: translate(0, 0) rotate(0deg); }
+          20% { transform: translate(-2px, 1px) rotate(-1deg); }
+          40% { transform: translate(1px, -1px) rotate(1deg); }
+          60% { transform: translate(-1px, -1px) rotate(-1deg); }
+          80% { transform: translate(1px, 1px) rotate(1deg); }
+          100% { transform: translate(0, 0) rotate(0deg); }
+        }
+        .animate-shake {
+          animation: entity-shake 0.18s infinite ease-in-out;
+        }
+        @keyframes chop-saw-float {
+          0% { transform: scale(0.9) rotate(0deg); opacity: 0.2; }
+          20% { transform: scale(1.2) rotate(-20deg); opacity: 1; }
+          80% { transform: scale(1.2) rotate(20deg); opacity: 1; }
+          100% { transform: scale(0.9) rotate(0deg); opacity: 0.2; }
+        }
+        .animate-chop-saw {
+          animation: chop-saw-float 0.4s infinite ease-in-out;
+        }
+      `}</style>
+
       {/* Sky clouds / Sun decoration */}
       <div className="absolute top-4 left-6 pointer-events-none opacity-80 flex items-center gap-3">
         <div className="w-14 h-14 rounded-full bg-yellow-300 shadow-[0_0_30px_#FACC15] animate-pulse"></div>
@@ -1274,7 +1299,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                 }}
                 className={`cursor-pointer group select-none transition-transform duration-150 relative ${
                   isMovingThis ? 'opacity-60 scale-105 animate-pulse' : ''
-                }`}
+                } ${entity.isCutting ? 'animate-shake' : ''}`}
               >
                 {/* 4 progressive loading bars while holding */}
                 {isHoldingThis && (
@@ -1292,6 +1317,18 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                     <div className={`w-2.5 h-6 rounded-md border-2 transition-colors duration-100 ${holdingProgress >= 50 ? 'bg-yellow-400 border-yellow-200 shadow-[0_0_8px_#FACC15]' : 'bg-amber-900 border-amber-950/50'}`}></div>
                     <div className={`w-2.5 h-6 rounded-md border-2 transition-colors duration-100 ${holdingProgress >= 75 ? 'bg-yellow-400 border-yellow-200 shadow-[0_0_8px_#FACC15]' : 'bg-amber-900 border-amber-950/50'}`}></div>
                     <div className={`w-2.5 h-6 rounded-md border-2 transition-colors duration-100 ${holdingProgress >= 100 ? 'bg-yellow-400 border-yellow-200 shadow-[0_0_8px_#FACC15]' : 'bg-amber-900 border-amber-950/50'}`}></div>
+                  </div>
+                )}
+
+                {/* Chopping/Sawing animation overlay */}
+                {entity.isCutting && (
+                  <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none select-none">
+                    <div className="text-4xl absolute animate-chop-saw top-0 left-1/2 -translate-x-1/2">
+                      {entity.type === 'dead_tree' ? '🪚' : '🪓'}
+                    </div>
+                    <div className="absolute text-xs animate-ping top-2 left-2 opacity-75">🪵</div>
+                    <div className="absolute text-xs animate-ping top-4 right-4 opacity-75">🍃</div>
+                    <div className="absolute text-xs animate-ping bottom-2 left-6 opacity-75">🍂</div>
                   </div>
                 )}
 
@@ -1323,6 +1360,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                   onOpenRoadsideShop,
                   onOpenLuckyWheel,
                   onOpenBeeTree,
+                  onRemoveDeadEntity,
                 })}
               </div>
             </React.Fragment>
@@ -1494,6 +1532,7 @@ interface VisualContext {
   onOpenRoadsideShop?: () => void;
   onOpenLuckyWheel?: () => void;
   onOpenBeeTree?: (entity: FarmEntity) => void;
+  onRemoveDeadEntity?: (entityId: string) => void;
 }
 
 // Sub-renderer for rich realistic Hay Day isometric entity graphics
@@ -1525,6 +1564,7 @@ function renderEntityVisual(ctx: VisualContext) {
     onOpenRoadsideShop,
     onOpenLuckyWheel,
     onOpenBeeTree,
+    onRemoveDeadEntity,
   } = ctx;
 
   const is3D = graphicsStyle === '3d_rendered';
@@ -1941,15 +1981,25 @@ function renderEntityVisual(ctx: VisualContext) {
 
     case 'nectar_bush': {
       const data = entity.nectarBushData || { nectarLeft: 200, maxNectar: 200, isWilted: false };
-      const spriteKey = data.nectarLeft <= 0 || data.isWilted ? 'nectar_bush_wilted' : 'nectar_bush';
+      const isWilted = data.nectarLeft <= 0 || data.isWilted;
+      const spriteKey = isWilted ? 'nectar_bush_wilted' : 'nectar_bush';
       const sprite = HD_BUILDING_SPRITES[spriteKey];
 
       return (
         <div className="relative flex flex-col items-center justify-center cursor-pointer">
           {/* Nectar left status bubble */}
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-30 bg-amber-950/90 text-yellow-300 px-2 py-0.5 rounded-full text-[9px] font-black border border-amber-400 shadow-md">
-            {data.nectarLeft <= 0 ? '🥀 Seco' : `🌸 ${data.nectarLeft}/${data.maxNectar}`}
+          <div className={`absolute -top-2 left-1/2 -translate-x-1/2 z-30 px-2 py-0.5 rounded-full text-[9px] font-black border shadow-md ${
+            isWilted ? 'bg-red-950/95 text-red-200 border-red-500/50' : 'bg-amber-950/90 text-yellow-300 border-amber-400'
+          }`}>
+            {isWilted ? '🥀 Seco' : `🌸 ${data.nectarLeft}/${data.maxNectar}`}
           </div>
+
+          {/* Tool label indicator above if selected & dry */}
+          {isSelected && isWilted && (
+            <div className="absolute -top-7 z-30 bg-amber-950/95 text-yellow-300 text-[10px] font-black px-2.5 py-0.5 rounded-full border-2 border-amber-400 shadow-md">
+              🪓 Machado
+            </div>
+          )}
 
           {is3D && sprite ? (
             <Iso3DSpriteBuilding
@@ -1965,6 +2015,78 @@ function renderEntityVisual(ctx: VisualContext) {
               entity={entity}
               isSelected={isSelected}
             />
+          )}
+        </div>
+      );
+    }
+
+    case 'dead_tree': {
+      return (
+        <div className="relative flex flex-col items-center justify-center cursor-pointer">
+          {/* Tool label indicator above */}
+          {isSelected && (
+            <div className="absolute -top-7 z-30 bg-amber-950/95 text-yellow-300 text-[10px] font-black px-2.5 py-0.5 rounded-full border-2 border-amber-400 shadow-md">
+              🪚 Serrote
+            </div>
+          )}
+
+          {is3D && HD_BUILDING_SPRITES.dead_tree ? (
+            <Iso3DSpriteBuilding
+              src={HD_BUILDING_SPRITES.dead_tree}
+              alt="Árvore Seca Grande"
+              widthPx={136}
+              heightPx={136}
+              isSelected={isSelected}
+              baseType="none"
+            />
+          ) : (
+            <div className={`relative flex flex-col items-center justify-center cursor-pointer ${isSelected ? 'scale-105 transition-transform' : ''}`}>
+              <svg width="64" height="80" viewBox="0 0 64 80" className="overflow-visible filter drop-shadow-md">
+                <path d="M 32 78 L 32 45 M 24 78 L 32 60 L 40 78" stroke="#5D4037" strokeWidth="6" strokeLinecap="round" />
+                <path d="M 32 50 C 26 40, 20 42, 14 38" stroke="#5D4037" strokeWidth="4" strokeLinecap="round" fill="none" />
+                <path d="M 32 45 C 38 35, 46 38, 52 32" stroke="#5D4037" strokeWidth="4" strokeLinecap="round" fill="none" />
+                <path d="M 32 58 Q 20 54 18 48" stroke="#5D4037" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+                <path d="M 32 55 Q 44 50 48 44" stroke="#5D4037" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+                <path d="M 14 38 Q 10 32 6 36 M 52 32 Q 58 26 62 30" stroke="#5D4037" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+              </svg>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    case 'dead_bush': {
+      return (
+        <div className="relative flex flex-col items-center justify-center cursor-pointer">
+          {/* Tool label indicator above */}
+          {isSelected && (
+            <div className="absolute -top-7 z-30 bg-amber-950/95 text-yellow-300 text-[10px] font-black px-2.5 py-0.5 rounded-full border-2 border-amber-400 shadow-md">
+              🪓 Machado
+            </div>
+          )}
+
+          {is3D && HD_BUILDING_SPRITES.nectar_bush_wilted ? (
+            <Iso3DSpriteBuilding
+              src={HD_BUILDING_SPRITES.nectar_bush_wilted}
+              alt="Arbusto Morto Pequeno"
+              widthPx={100}
+              heightPx={100}
+              isSelected={isSelected}
+              baseType="none"
+            />
+          ) : (
+            <div className={`relative flex flex-col items-center justify-center cursor-pointer ${isSelected ? 'scale-105 transition-transform' : ''}`}>
+              <svg width="48" height="48" viewBox="0 0 48 48" className="overflow-visible filter drop-shadow-md">
+                <path d="M 24 45 Q 12 30 10 24" stroke="#8D6E63" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+                <path d="M 24 45 Q 36 30 38 24" stroke="#8D6E63" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+                <path d="M 24 45 Q 24 24 22 18" stroke="#8D6E63" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+                <path d="M 18 36 Q 8 28 6 22" stroke="#8D6E63" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                <path d="M 30 36 Q 40 28 42 22" stroke="#8D6E63" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                <ellipse cx="6" cy="22" rx="3" ry="1.5" fill="#795548" transform="rotate(-15 6 22)" />
+                <ellipse cx="10" cy="24" rx="3" ry="1.5" fill="#795548" transform="rotate(30 10 24)" />
+                <ellipse cx="38" cy="24" rx="3" ry="1.5" fill="#795548" transform="rotate(-30 38 24)" />
+              </svg>
+            </div>
           )}
         </div>
       );

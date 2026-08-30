@@ -22,6 +22,7 @@ import imgBeeTree from '../assets/images/hayday_beetree_3d.jpg';
 import imgHoneyExtractor from '../assets/images/hayday_honeyextractor_3d.jpg';
 import imgNectarBush from '../assets/images/hayday_nectarbush_3d.jpg';
 import imgNectarBushWilted from '../assets/images/hayday_nectarbush_wilted_3d.jpg';
+import imgDeadTree from '../assets/images/hayday_deadtree_3d.jpg';
 
 export const HD_BUILDING_SPRITES = {
   farmhouse: imgFarmhouse,
@@ -42,6 +43,7 @@ export const HD_BUILDING_SPRITES = {
   honey_extractor: imgHoneyExtractor,
   nectar_bush: imgNectarBush,
   nectar_bush_wilted: imgNectarBushWilted,
+  dead_tree: imgDeadTree,
 
   // Ground Bases
   ground_tile: imgGroundTile,

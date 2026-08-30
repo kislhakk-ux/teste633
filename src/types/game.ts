@@ -44,6 +44,7 @@ export type ItemId =
   | 'screw'
   | 'bolt'
   | 'axe'
+  | 'saw'
   // Bee Tree & Honey
   | 'nectar'
   | 'honey';
@@ -134,7 +135,9 @@ export type TileType =
   | 'lucky_wheel'
   | 'decoration'
   | 'bee_tree'
-  | 'nectar_bush';
+  | 'nectar_bush'
+  | 'dead_tree'
+  | 'dead_bush';
 
 export interface GridPos {
   x: number;
@@ -228,6 +231,7 @@ export interface FarmEntity {
   };
   anchorX?: number;
   anchorY?: number;
+  isCutting?: boolean;
 }
 
 export interface OrderReq {
