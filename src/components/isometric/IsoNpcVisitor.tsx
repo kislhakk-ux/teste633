@@ -1,33 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { FarmVisitor } from '../../types/game';
 
 interface IsoNpcVisitorProps {
   visitor: FarmVisitor;
   gridToIso: (gx: number, gy: number) => { x: number; y: number };
   onOpenVisitor: () => void;
+  targetPos?: { x: number; y: number };
   onVisitorLeaveComplete?: () => void;
   isLeaving?: boolean;
 }
-
-// Pathway waypoints: from road entrance to front porch of farm
-const WAYPOINTS_IN = [
-  { x: 0.2, y: 7.2 }, // Entrance at the dirt road
-  { x: 1.0, y: 6.0 }, // Near the roadside shop & fence gate
-  { x: 2.0, y: 5.0 }, // Cobblestone path
-  { x: 3.2, y: 4.2 }, // Porch in front of the Farmhouse & Mailbox
-];
-
-const WAYPOINTS_OUT = [
-  { x: 3.2, y: 4.2 },
-  { x: 2.0, y: 5.0 },
-  { x: 1.0, y: 6.0 },
-  { x: 0.0, y: 7.8 }, // Leaving down the road
-];
 
 export const IsoNpcVisitor: React.FC<IsoNpcVisitorProps> = ({
   visitor,
   gridToIso,
   onOpenVisitor,
+  targetPos = { x: 6.8, y: 4.1 }, // Default in front of the Farmhouse door
   onVisitorLeaveComplete,
   isLeaving = false,
 }) => {
@@ -37,6 +24,23 @@ export const IsoNpcVisitor: React.FC<IsoNpcVisitorProps> = ({
   const [facingLeft, setFacingLeft] = useState(false);
   const animRef = useRef<number | null>(null);
   const progressRef = useRef(0);
+
+  // Compute dynamic pathway waypoints to the exact door of the Farmhouse
+  const waypointsIn = useMemo(() => {
+    const start = { x: 0.2, y: 7.2 }; // Road entrance
+    const p1 = { x: 1.8, y: 6.2 };   // Entrance gate
+    const p2 = { x: (targetPos.x + 1.8) / 2 + 0.2, y: (targetPos.y + 6.2) / 2 }; // Garden walkway
+    const door = { x: targetPos.x, y: targetPos.y }; // Right in front of the Farmhouse door
+    return [start, p1, p2, door];
+  }, [targetPos.x, targetPos.y]);
+
+  const waypointsOut = useMemo(() => {
+    const door = { x: targetPos.x, y: targetPos.y };
+    const p2 = { x: (targetPos.x + 1.8) / 2 + 0.2, y: (targetPos.y + 6.2) / 2 };
+    const p1 = { x: 1.8, y: 6.2 };
+    const exit = { x: 0.0, y: 7.8 };
+    return [door, p2, p1, exit];
+  }, [targetPos.x, targetPos.y]);
 
   // If isLeaving prop becomes true, switch to walking_out
   useEffect(() => {
@@ -55,11 +59,11 @@ export const IsoNpcVisitor: React.FC<IsoNpcVisitorProps> = ({
       lastTime = now;
 
       if (phase === 'walking_in') {
-        // Move along WAYPOINTS_IN over ~3.8 seconds
-        progressRef.current += delta / 3.8;
+        // Move along waypoints to the door over ~4.2 seconds
+        progressRef.current += delta / 4.2;
         const p = Math.min(1, progressRef.current);
 
-        const pos = interpolateWaypoints(WAYPOINTS_IN, p);
+        const pos = interpolateWaypoints(waypointsIn, p);
         setCurrentPos(pos.point);
         setFacingLeft(pos.dx < 0);
         setWalkFrame((prev) => (prev + delta * 8) % 1);
@@ -67,13 +71,14 @@ export const IsoNpcVisitor: React.FC<IsoNpcVisitorProps> = ({
         if (p >= 1) {
           setPhase('idle');
           progressRef.current = 0;
+          setFacingLeft(false); // Face front when waiting at the door
         }
       } else if (phase === 'walking_out') {
-        // Move along WAYPOINTS_OUT over ~3.2 seconds
-        progressRef.current += delta / 3.2;
+        // Move along waypoints to exit over ~3.6 seconds
+        progressRef.current += delta / 3.6;
         const p = Math.min(1, progressRef.current);
 
-        const pos = interpolateWaypoints(WAYPOINTS_OUT, p);
+        const pos = interpolateWaypoints(waypointsOut, p);
         setCurrentPos(pos.point);
         setFacingLeft(pos.dx < 0);
         setWalkFrame((prev) => (prev + delta * 8) % 1);
@@ -85,7 +90,7 @@ export const IsoNpcVisitor: React.FC<IsoNpcVisitorProps> = ({
           return; // Stop animation loop
         }
       } else {
-        // Idle animation frame
+        // Idle animation frame at the front door
         setWalkFrame((prev) => (prev + delta * 1.5) % 1);
       }
 
@@ -97,11 +102,11 @@ export const IsoNpcVisitor: React.FC<IsoNpcVisitorProps> = ({
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, [phase, onVisitorLeaveComplete]);
+  }, [phase, waypointsIn, waypointsOut, onVisitorLeaveComplete]);
 
   // Screen coordinates & Isometric sorting depth
   const screenPos = gridToIso(currentPos.x, currentPos.y);
-  const zIndex = Math.round((currentPos.x + currentPos.y) * 100 + 50);
+  const zIndex = Math.round((currentPos.x + currentPos.y) * 100 + 60);
 
   // Walk cycle bobbing & leg swing calculations
   const isWalking = phase === 'walking_in' || phase === 'walking_out';
@@ -157,7 +162,7 @@ export const IsoNpcVisitor: React.FC<IsoNpcVisitorProps> = ({
         />
       </div>
 
-      {/* Main Isometric NPC Character Entity */}
+      {/* Main Isometric NPC Character Entity waiting at the door */}
       <div
         id={`npc-visitor-${visitor.id}`}
         onClick={(e) => {
