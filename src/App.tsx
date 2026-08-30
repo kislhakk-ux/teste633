@@ -52,6 +52,10 @@ import { FreeGemsModal } from './components/FreeGemsModal';
 import { BeeTreeModal } from './components/BeeTreeModal';
 import { LoadingScreen } from './components/LoadingScreen';
 import { UnlockParcelModal } from './components/UnlockParcelModal';
+import { FishingBoatModal } from './components/FishingBoatModal';
+import { DeliveryBoatModal } from './components/DeliveryBoatModal';
+import { FishingLakeView } from './components/FishingLakeView';
+import { generateForestForParcel } from './utils/forestGen';
 import { EXPANSION_PARCELS, ExpansionParcel } from './constants/expansionData';
 import { googleSignIn, googleSignOut, loadFarmFromFirestore, saveFarmToFirestore } from './utils/firebase';
 import { validatePlacement, findNextAvailablePosition } from './utils/buildingPlacement';
@@ -73,6 +77,15 @@ function applyWongamerVip(state: GameState, email?: string): GameState {
       gems: Math.max(state.gems || 0, 10000),
       siloLevel: Math.max(state.siloLevel || 1, 100),
       barnLevel: Math.max(state.barnLevel || 1, 100),
+      inventory: {
+        ...state.inventory,
+        land_map: Math.max(state.inventory?.land_map || 0, 50),
+        marker_stake: Math.max(state.inventory?.marker_stake || 0, 50),
+        brick: Math.max(state.inventory?.brick || 0, 50),
+        axe: Math.max(state.inventory?.axe || 0, 50),
+        saw: Math.max(state.inventory?.saw || 0, 50),
+        dynamite: Math.max(state.inventory?.dynamite || 0, 50),
+      },
     };
   }
   return state;
@@ -102,6 +115,9 @@ export default function App() {
   const [roadsideInitialTab, setRoadsideInitialTab] = useState<'stand' | 'newspaper'>('stand');
   const [isMultiplayerModalOpen, setIsMultiplayerModalOpen] = useState(false);
   const [isFreeGemsModalOpen, setIsFreeGemsModalOpen] = useState(false);
+  const [isFishingBoatModalOpen, setIsFishingBoatModalOpen] = useState(false);
+  const [isDeliveryBoatModalOpen, setIsDeliveryBoatModalOpen] = useState(false);
+  const [isFishingLakeMode, setIsFishingLakeMode] = useState(false);
   const [unlockModalParcelId, setUnlockModalParcelId] = useState<string | null>(null);
   const [onlineCount, setOnlineCount] = useState<number>(1);
   const [onlineFarms, setOnlineFarms] = useState<OnlineFarm[]>([]);
@@ -484,6 +500,34 @@ export default function App() {
           }
         }
 
+        // 5. Process Delivery Boat
+        let newDeliveryBoat = prev.deliveryBoat ? { ...prev.deliveryBoat } : undefined;
+        if (newDeliveryBoat) {
+          if (newDeliveryBoat.status === 'away' && newDeliveryBoat.arrivesAt && now >= newDeliveryBoat.arrivesAt) {
+            updated = true;
+            newDeliveryBoat.status = 'docked';
+            newDeliveryBoat.arrivesAt = undefined;
+            newDeliveryBoat.leavesAt = now + 1000 * 60 * 60 * 15; // 15 horas para preencher
+            // Gerar caixas baseadas no nível (simples por enquanto)
+            const availableCrops: ItemId[] = ['wheat', 'corn', 'soybean', 'sugarcane'];
+            const randomItem = () => availableCrops[Math.floor(Math.random() * availableCrops.length)];
+            newDeliveryBoat.crates = [
+              { id: 'c1', itemId: randomItem(), count: 10 + prev.level * 2, isFilled: false },
+              { id: 'c2', itemId: randomItem(), count: 10 + prev.level * 2, isFilled: false },
+              { id: 'c3', itemId: randomItem(), count: 10 + prev.level * 2, isFilled: false },
+            ];
+            sound.playDing();
+            showToast('⛴️ O Barco Fluvial chegou! Prepare suas caixas de entrega!');
+          } else if (newDeliveryBoat.status === 'docked' && newDeliveryBoat.leavesAt && now >= newDeliveryBoat.leavesAt) {
+            updated = true;
+            newDeliveryBoat.status = 'away';
+            newDeliveryBoat.leavesAt = undefined;
+            newDeliveryBoat.arrivesAt = now + 1000 * 60 * 60 * 4; // Retorna em 4 horas
+            newDeliveryBoat.crates = [];
+            showToast('⛴️ O Barco partiu. Voltará em 4 horas!');
+          }
+        }
+
         // Check for XP Level Up
         const getXpRequirement = (lvl: number) => {
           if (LEVEL_XP_REQUIREMENTS[lvl]) return LEVEL_XP_REQUIREMENTS[lvl];
@@ -520,6 +564,7 @@ export default function App() {
           truckDeliveringUntil: newTruckDeliveringUntil,
           roadsideBoxes: newBoxes,
           activeVisitor: newVisitor,
+          deliveryBoat: newDeliveryBoat,
           stats: newStats,
         };
       });
@@ -1353,6 +1398,57 @@ export default function App() {
     showToast('🏡 De volta à sua fazenda!');
   };
 
+  // 14. Limpeza de Obstáculos e Árvores Mortas
+  const handleRemoveDeadEntity = (entityId: string) => {
+    const entity = gameState.entities.find((e) => e.id === entityId);
+    if (!entity) return;
+
+    let toolRequired: ItemId | null = null;
+    let toolName = '';
+
+    if (entity.type === 'dead_tree') {
+      toolRequired = 'saw'; toolName = 'Serrote';
+    } else if (entity.type === 'dead_bush') {
+      toolRequired = 'axe'; toolName = 'Machado';
+    } else if (entity.type === 'obstacle') {
+      const oType = entity.obstacleData?.type;
+      if (oType === 'pine' || oType === 'bush') { toolRequired = 'axe'; toolName = 'Machadinha'; }
+      if (oType === 'oak') { toolRequired = 'saw'; toolName = 'Serrote'; }
+      if (oType === 'rock') { toolRequired = 'dynamite'; toolName = 'Dinamite'; }
+    }
+
+    if (toolRequired) {
+      if ((gameState.inventory[toolRequired] || 0) < 1) {
+        showToast(`⚠️ Você precisa de 1x ${toolName} para limpar isso!`);
+        return;
+      }
+      
+      // Consume tool & animate
+      sound.playClick();
+      
+      setGameState((prev) => {
+        const newInv = { ...prev.inventory };
+        newInv[toolRequired!] = Math.max(0, (newInv[toolRequired!] || 0) - 1);
+        
+        return {
+          ...prev,
+          inventory: newInv,
+          entities: prev.entities.map(e => e.id === entityId ? { ...e, isCutting: true } : e)
+        };
+      });
+
+      // Remove after animation
+      setTimeout(() => {
+        sound.playDing();
+        setGameState(prev => ({
+          ...prev,
+          entities: prev.entities.filter(e => e.id !== entityId),
+          xp: prev.xp + 5 // Little XP reward for cleaning
+        }));
+      }, 1500);
+    }
+  };
+
   const handleLikeVisitingFarm = async () => {
     if (visitingFarm) {
       const newLikes = await multiplayerClient.likeFarm(visitingFarm.farmId);
@@ -1455,12 +1551,143 @@ export default function App() {
       // Add parcel to unlocked list
       next.unlockedParcelIds = [...(next.unlockedParcelIds || []), parcel.id];
 
+      // Convert the visual forest into real interactable FarmEntity obstacles
+      const forestItems = generateForestForParcel(parcel);
+      const newObstacles: FarmEntity[] = forestItems.map((item, index) => ({
+        id: `obstacle_${parcel.id}_${index}`,
+        x: item.x,
+        y: item.y,
+        width: 1,
+        height: 1,
+        type: 'obstacle',
+        obstacleData: { type: item.type },
+      }));
+
+      next.entities = [...next.entities, ...newObstacles];
+
       // Add a small XP reward for expanding
       const xpReward = 50 * parcel.requiredLevel;
       
       sound.playLevelUp(); // Special sound effect
       
       setUnlockModalParcelId(null);
+      
+      return checkLevelUp({ ...next, xp: next.xp + xpReward });
+    });
+  };
+
+  const handleStartBoatRepair = (costCoins: number) => {
+    setGameState((prev) => {
+      const next = { ...prev };
+      next.coins -= costCoins;
+      next.fishingBoat = {
+        status: 'repairing',
+        repairStartedAt: Date.now(),
+      };
+      setIsFishingBoatModalOpen(false);
+      showToast('🔨 O reparo do barco começou! Volte em 36 horas.');
+      return next;
+    });
+  };
+
+  const handleSpeedUpBoatRepair = (costGems: number) => {
+    setGameState((prev) => {
+      const next = { ...prev };
+      next.gems -= costGems;
+      next.fishingBoat = {
+        status: 'repaired',
+      };
+      setIsFishingBoatModalOpen(false);
+      showToast('⛵ Barco restaurado! A área de pesca está liberada!');
+      return next;
+    });
+  };
+
+  const handleFillDeliveryCrate = (crateId: string) => {
+    setGameState((prev) => {
+      const boat = prev.deliveryBoat;
+      if (!boat || boat.status !== 'docked') return prev;
+
+      const newCrates = [...boat.crates];
+      const crateIndex = newCrates.findIndex((c) => c.id === crateId);
+      if (crateIndex === -1) return prev;
+
+      const crate = newCrates[crateIndex];
+      const inventoryCount = prev.inventory[crate.itemId] || 0;
+
+      if (inventoryCount < crate.count) {
+        showToast('⚠️ Itens insuficientes para encher a caixa!');
+        return prev;
+      }
+
+      // Consume items
+      const newInv = { ...prev.inventory };
+      newInv[crate.itemId] -= crate.count;
+      
+      newCrates[crateIndex] = { ...crate, isFilled: true };
+
+      sound.playDing();
+      showToast(`📦 Caixa cheia! +${crate.count * 10} XP`);
+
+      return {
+        ...prev,
+        inventory: newInv,
+        deliveryBoat: {
+          ...boat,
+          crates: newCrates,
+        },
+        xp: prev.xp + crate.count * 10,
+      };
+    });
+  };
+
+  const handleSendDeliveryBoat = () => {
+    setGameState((prev) => {
+      const boat = prev.deliveryBoat;
+      if (!boat || boat.status !== 'docked') return prev;
+
+      const allFilled = boat.crates.every((c) => c.isFilled);
+      let bonusXp = 0;
+      let bonusCoins = 0;
+
+      if (allFilled) {
+        bonusXp = 500 * prev.level; // Big XP bonus
+        bonusCoins = 1000;
+        showToast(`🎉 Barco enviado com sucesso! +${bonusXp} XP, +${bonusCoins} Moedas!`);
+        sound.playLevelUp();
+      } else {
+        showToast('⛴️ O Barco partiu incompleto. Volte em 4 horas!');
+        sound.playDing();
+      }
+
+      setIsDeliveryBoatModalOpen(false);
+
+      return {
+        ...prev,
+        coins: prev.coins + bonusCoins,
+        xp: prev.xp + bonusXp,
+        deliveryBoat: {
+          status: 'away',
+          arrivesAt: Date.now() + 1000 * 60 * 60 * 4, // Volta em 4 horas
+          crates: [],
+        },
+      };
+    });
+  };
+
+  const handleCatchFish = (lureId: ItemId, fishId: ItemId) => {
+    setGameState((prev) => {
+      const next = { ...prev };
+      // Remove 1 lure
+      next.inventory[lureId] = (next.inventory[lureId] || 0) - 1;
+      if (next.inventory[lureId]! <= 0) {
+        delete next.inventory[lureId];
+      }
+      // Add 1 fish
+      next.inventory[fishId] = (next.inventory[fishId] || 0) + 1;
+      
+      // Some XP for catching fish
+      const xpReward = fishId === 'salmon' ? 25 : 15;
       
       return checkLevelUp({ ...next, xp: next.xp + xpReward });
     });
@@ -2116,6 +2343,16 @@ export default function App() {
     );
   }
 
+  if (isFishingLakeMode) {
+    return (
+      <FishingLakeView
+        gameState={gameState}
+        onReturnToFarm={() => setIsFishingLakeMode(false)}
+        onCatchFish={handleCatchFish}
+      />
+    );
+  }
+
   return (
     <div className="relative w-screen h-screen overflow-hidden font-sans bg-[#558b2f]">
       {/* Top Header Bar */}
@@ -2274,6 +2511,22 @@ export default function App() {
             setUnlockModalParcelId(parcelId);
             setSelectedEntity(null);
           }}
+          fishingBoatStatus={gameState.fishingBoat?.status}
+          onFishingBoatClick={() => {
+            sound.playClick();
+            if (gameState.fishingBoat?.status === 'broken' || gameState.fishingBoat?.status === 'repairing') {
+              setIsFishingBoatModalOpen(true);
+            } else if (gameState.fishingBoat?.status === 'repaired') {
+              setIsFishingLakeMode(true);
+            }
+          }}
+          deliveryBoatStatus={gameState.deliveryBoat?.status}
+          onDeliveryBoatClick={() => {
+            if (gameState.deliveryBoat?.status === 'docked') {
+              sound.playClick();
+              setIsDeliveryBoatModalOpen(true);
+            }
+          }}
         />
       )}
 
@@ -2284,6 +2537,24 @@ export default function App() {
         onClose={() => setUnlockModalParcelId(null)}
         onUnlock={handleUnlockParcel}
       />
+
+      {isFishingBoatModalOpen && (
+        <FishingBoatModal
+          gameState={gameState}
+          onClose={() => setIsFishingBoatModalOpen(false)}
+          onStartRepair={handleStartBoatRepair}
+          onSpeedUpRepair={handleSpeedUpBoatRepair}
+        />
+      )}
+
+      {isDeliveryBoatModalOpen && (
+        <DeliveryBoatModal
+          gameState={gameState}
+          onClose={() => setIsDeliveryBoatModalOpen(false)}
+          onFillCrate={handleFillDeliveryCrate}
+          onSendBoat={handleSendDeliveryBoat}
+        />
+      )}
 
       {/* Bottom HUD Toolbar removed to support immersive building taps */}
 

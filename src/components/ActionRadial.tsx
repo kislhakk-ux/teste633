@@ -297,5 +297,63 @@ export const ActionRadial: React.FC<ActionRadialProps> = ({
     );
   }
 
+  // Handle Obstacles and Dead Trees
+  if (
+    selectedEntity.type === 'obstacle' ||
+    selectedEntity.type === 'dead_tree' ||
+    selectedEntity.type === 'dead_bush'
+  ) {
+    let toolRequired: ItemId = 'axe';
+    let toolName = 'Machado';
+    let icon = '🪓';
+    let actionName = 'Cortar';
+
+    if (selectedEntity.type === 'dead_tree') {
+      toolRequired = 'saw'; toolName = 'Serrote'; icon = '🪚'; actionName = 'Serrar';
+    } else if (selectedEntity.type === 'obstacle') {
+      const oType = selectedEntity.obstacleData?.type;
+      if (oType === 'pine' || oType === 'bush') { toolRequired = 'axe'; toolName = 'Machado'; icon = '🪓'; }
+      if (oType === 'oak') { toolRequired = 'saw'; toolName = 'Serrote'; icon = '🪚'; actionName = 'Serrar'; }
+      if (oType === 'rock') { toolRequired = 'dynamite'; toolName = 'Dinamite'; icon = '🧨'; actionName = 'Explodir'; }
+    }
+
+    const toolCount = inventory[toolRequired] || 0;
+
+    return (
+      <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center p-4">
+        <div className="bg-amber-950/90 border-2 border-amber-400 p-4 rounded-3xl shadow-2xl pointer-events-auto flex flex-col items-center gap-3 w-48">
+          <div className="flex w-full justify-between items-center mb-1 border-b border-amber-700/50 pb-2">
+            <h3 className="text-white font-black text-sm">Limpar Terreno</h3>
+            <button onClick={onClose} className="text-amber-300 hover:text-white bg-amber-900/50 rounded-full w-6 h-6 flex items-center justify-center">
+              ✕
+            </button>
+          </div>
+
+          <div className="flex flex-col items-center gap-1">
+            <div className="text-4xl animate-bounce">{icon}</div>
+            <p className="text-amber-100 text-xs font-bold text-center">
+              Você precisa de 1x {toolName}
+            </p>
+            <p className={toolCount > 0 ? 'text-green-400 text-[10px] font-black' : 'text-red-400 text-[10px] font-black'}>
+              Em estoque: {toolCount}
+            </p>
+          </div>
+
+          <button
+            disabled={toolCount <= 0}
+            onClick={() => onRemoveDeadEntity?.(selectedEntity.id)}
+            className={`w-full py-2.5 rounded-2xl font-black text-sm shadow-lg border-2 flex items-center justify-center gap-2 transition-all mt-2 ${
+              toolCount > 0
+                ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-400 hover:to-orange-400 border-white text-white active:scale-95'
+                : 'bg-gray-400 border-gray-300 text-gray-100 cursor-not-allowed opacity-70'
+            }`}
+          >
+            {icon} {actionName}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return null;
 };

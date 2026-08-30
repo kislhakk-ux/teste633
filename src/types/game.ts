@@ -45,6 +45,7 @@ export type ItemId =
   | 'bolt'
   | 'axe'
   | 'saw'
+  | 'dynamite'
   | 'land_map'
   | 'marker_stake'
   | 'brick'
@@ -140,7 +141,8 @@ export type TileType =
   | 'bee_tree'
   | 'nectar_bush'
   | 'dead_tree'
-  | 'dead_bush';
+  | 'dead_bush'
+  | 'obstacle';
 
 export interface GridPos {
   x: number;
@@ -228,6 +230,7 @@ export interface FarmEntity {
   decorationType?: DecorationType;
   beeTreeData?: BeeTreeData;
   nectarBushData?: NectarBushData;
+  obstacleData?: { type: 'pine' | 'oak' | 'rock' | 'bush' };
   appleTreeData?: {
     harvestsLeft: number;
     readyAt: number;
@@ -318,4 +321,19 @@ export interface GameState {
   musicEnabled: boolean;
   graphicsStyle?: '2d_flat' | '3d_rendered';
   unlockedParcelIds?: string[]; // IDs of unlocked expansion parcels
+  fishingBoat?: {
+    status: 'broken' | 'repairing' | 'repaired';
+    repairStartedAt?: number;
+  };
+  deliveryBoat?: {
+    status: 'away' | 'docked';
+    arrivesAt?: number; // Time it will arrive (if away)
+    leavesAt?: number; // Time it leaves (if docked)
+    crates: {
+      id: string;
+      itemId: ItemId;
+      count: number;
+      isFilled: boolean;
+    }[];
+  };
 }

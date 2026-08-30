@@ -5,6 +5,10 @@ interface IsoSceneryProps {
   tileWidth: number;
   tileHeight: number;
   gridToIso: (gx: number, gy: number) => { x: number; y: number };
+  fishingBoatStatus?: 'broken' | 'repairing' | 'repaired';
+  deliveryBoatStatus?: 'away' | 'docked';
+  onBoatClick?: () => void;
+  onDeliveryBoatClick?: () => void;
 }
 
 export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
@@ -12,6 +16,10 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
   tileWidth,
   tileHeight,
   gridToIso,
+  fishingBoatStatus = 'broken',
+  deliveryBoatStatus = 'away',
+  onBoatClick,
+  onDeliveryBoatClick,
 }) => {
   // Key boundary points
   const pTop = gridToIso(0, 0);
@@ -234,8 +242,98 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
         );
       })()}
 
-      {/* 4. EASTERN GREEN MEADOW (Pura grama verdejante - sem rio) */}
-      {/* Gentle pasture scatter and meadow accents where the river used to be */}
+      {/* 4. RIVER (Along the South-West Edge: pLeft to pBottom) */}
+      <defs>
+        <linearGradient id="river-water-3d" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#29B6F6" />
+          <stop offset="50%" stopColor="#039BE5" />
+          <stop offset="100%" stopColor="#0277BD" />
+        </linearGradient>
+      </defs>
+      {(() => {
+        // Base of the SW Cliff
+        const rxTop = pLeft.x - tileWidth / 2;
+        const ryTop = pLeft.y + tileHeight / 2 + 25;
+        const rxBottom = pBottom.x;
+        const ryBottom = pBottom.y + tileHeight + 25;
+        
+        // Outward river bounds
+        const rOuterTop = { x: rxTop - 400, y: ryTop + 200 };
+        const rOuterBottom = { x: rxBottom - 400, y: ryBottom + 200 };
+
+        return (
+          <g id="river-system">
+            <polygon 
+              points={`${rxTop},${ryTop} ${rxBottom},${ryBottom} ${rOuterBottom.x},${rOuterBottom.y} ${rOuterTop.x},${rOuterTop.y}`} 
+              fill="url(#river-water-3d)" 
+            />
+            {/* Water Ripples */}
+            <path d={`M ${rxTop - 60} ${ryTop + 40} Q ${rxTop - 40} ${ryTop + 45} ${rxTop - 20} ${ryTop + 40}`} stroke="#81D4FA" strokeWidth="2" fill="none" opacity="0.6" />
+            <path d={`M ${rxBottom - 120} ${ryBottom + 20} Q ${rxBottom - 100} ${ryBottom + 25} ${rxBottom - 80} ${ryBottom + 20}`} stroke="#81D4FA" strokeWidth="2" fill="none" opacity="0.6" />
+            
+            {/* Fishing Pier */}
+            <g id="fishing-pier" transform={`translate(${rxTop + 140}, ${ryTop + 70})`} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); onBoatClick?.(); }} style={{ pointerEvents: 'auto' }}>
+              <polygon points="0,0 60,30 20,50 -40,20" fill="#8D6E63" stroke="#4E342E" strokeWidth="2" />
+              {/* Pier Posts */}
+              <circle cx="0" cy="0" r="4" fill="#5D4037" />
+              <circle cx="60" cy="30" r="4" fill="#5D4037" />
+              <circle cx="20" cy="50" r="4" fill="#5D4037" />
+              <circle cx="-40" cy="20" r="4" fill="#5D4037" />
+
+              {/* FISHING BOAT */}
+              <g transform="translate(40, 50)">
+                {fishingBoatStatus === 'broken' ? (
+                  <g id="boat-broken">
+                    <path d="M -30,-15 L 10,5 L 0,15 L -40,-5 Z" fill="#795548" stroke="#4E342E" strokeWidth="2" opacity="0.8" />
+                    <line x1="-15" y1="0" x2="-25" y2="10" stroke="#3E2723" strokeWidth="3" />
+                    <text x="-15" y="5" fontSize="18" className="animate-pulse pointer-events-none">🔨</text>
+                  </g>
+                ) : fishingBoatStatus === 'repairing' ? (
+                  <g id="boat-repairing">
+                    <path d="M -30,-15 L 10,5 L 0,15 L -40,-5 Z" fill="#8D6E63" stroke="#4E342E" strokeWidth="2" />
+                    <text x="-15" y="5" fontSize="18" className="animate-spin pointer-events-none">⚙️</text>
+                  </g>
+                ) : (
+                  <g id="boat-repaired">
+                    <path d="M -30,-15 L 10,5 L 0,15 L -40,-5 Z" fill="#FFC107" stroke="#FF8F00" strokeWidth="2" />
+                    <rect x="-20" y="-5" width="10" height="10" fill="#FFFFFF" stroke="#B0BEC5" />
+                    <text x="-15" y="5" fontSize="18" className="pointer-events-none">🎣</text>
+                  </g>
+                )}
+              </g>
+            </g>
+
+            {/* Delivery Boat Pier */}
+            <g id="delivery-pier" transform={`translate(${rxTop + 340}, ${ryTop + 170})`} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); onDeliveryBoatClick?.(); }} style={{ pointerEvents: 'auto' }}>
+              <polygon points="0,0 80,40 30,65 -50,25" fill="#795548" stroke="#3E2723" strokeWidth="2" />
+              <rect x="10" y="5" width="20" height="20" fill="#8D6E63" stroke="#4E342E" transform="skewX(-30)" />
+              {/* Pier Posts */}
+              <circle cx="0" cy="0" r="5" fill="#4E342E" />
+              <circle cx="80" cy="40" r="5" fill="#4E342E" />
+              <circle cx="30" cy="65" r="5" fill="#4E342E" />
+              <circle cx="-50" cy="25" r="5" fill="#4E342E" />
+
+              {/* DELIVERY BOAT */}
+              {deliveryBoatStatus === 'docked' && (
+                <g transform="translate(60, 60)">
+                  {/* Big Boat Hull */}
+                  <path d="M -60,-30 L 20,10 L 0,30 L -80,-10 Z" fill="#F44336" stroke="#B71C1C" strokeWidth="2" />
+                  {/* Boat Cabin */}
+                  <path d="M -40,-20 L 0,0 L -10,15 L -50,-5 Z" fill="#FFFFFF" stroke="#B0BEC5" strokeWidth="2" />
+                  <rect x="-30" y="-10" width="10" height="15" fill="#4FC3F7" transform="skewY(26)" />
+                  <rect x="-15" y="-3" width="10" height="15" fill="#4FC3F7" transform="skewY(26)" />
+                  {/* Smoke stack */}
+                  <rect x="-25" y="-35" width="8" height="20" fill="#424242" stroke="#212121" />
+                  <circle cx="-21" cy="-40" r="4" fill="#9E9E9E" opacity="0.6" className="animate-pulse" />
+                  <circle cx="-20" cy="-45" r="6" fill="#9E9E9E" opacity="0.4" className="animate-pulse" />
+                  <text x="-35" y="15" fontSize="24" className="pointer-events-none animate-bounce">📦</text>
+                </g>
+              )}
+            </g>
+
+          </g>
+        );
+      })()}
 
       {/* 5. ROLLED GOLDEN HAY BALES ON THE GRASS (Hay Day Detail) */}
       {[
@@ -304,18 +402,98 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
       <TreeOakCartoon x={pTop.x + 95} y={pTop.y - 30} scale={1.3} hasApples={true} />
       <TreePineCartoon x={pTop.x + 155} y={pTop.y - 15} scale={1.05} />
 
-      {/* Eastern Country Oak & Pine Trees (Onde antes ficava o rio, agora árvores e pura grama verdejante) */}
-      <TreeOakCartoon x={pRight.x + 30} y={pRight.y - 35} scale={1.25} hasApples={true} />
-      <TreePineCartoon x={pRight.x + 65} y={pRight.y + 5} scale={1.2} />
-      <TreeOakCartoon x={pRight.x + 25} y={pRight.y + 55} scale={1.3} hasApples={false} />
-      <TreePineCartoon x={pBottom.x + 45} y={pBottom.y + 38} scale={1.15} />
-      <TreeOakCartoon x={pBottom.x + 15} y={pBottom.y + 68} scale={1.2} hasApples={true} />
+      {/* 9. WIDE FISHING RIVER (Eastern Edge) */}
+      <polygon
+        points={`
+          ${pTop.x + 80},${pTop.y - 40}
+          ${pRight.x + 120},${pRight.y + 20}
+          ${pBottom.x + 120},${pBottom.y + 90}
+          ${pRight.x + 40},${pRight.y + 70}
+          ${pTop.x + 50},${pTop.y - 10}
+        `}
+        fill="#29B6F6"
+        stroke="#0288D1"
+        strokeWidth="2"
+        opacity="0.85"
+      />
+      {/* River Shore Sand/Dirt */}
+      <polygon
+        points={`
+          ${pTop.x + 50},${pTop.y - 10}
+          ${pRight.x + 40},${pRight.y + 70}
+          ${pBottom.x + 100},${pBottom.y + 85}
+          ${pBottom.x + 80},${pBottom.y + 95}
+          ${pRight.x + 20},${pRight.y + 80}
+          ${pTop.x + 30},${pTop.y - 5}
+        `}
+        fill="#D7CCC8"
+        stroke="#BCAAA4"
+        strokeWidth="1.5"
+      />
+      {/* Water Ripples / Waves */}
+      <path d={`M ${pRight.x + 60} ${pRight.y + 10} Q ${pRight.x + 70} ${pRight.y + 15} ${pRight.x + 80} ${pRight.y + 10}`} stroke="#81D4FA" strokeWidth="2" fill="none" opacity="0.6" strokeLinecap="round" />
+      <path d={`M ${pRight.x + 80} ${pRight.y + 40} Q ${pRight.x + 90} ${pRight.y + 45} ${pRight.x + 100} ${pRight.y + 40}`} stroke="#81D4FA" strokeWidth="2" fill="none" opacity="0.6" strokeLinecap="round" />
 
-      {/* South-West Trees along Road */}
-      <TreeOakCartoon x={pLeft.x - 90} y={pLeft.y - 20} scale={1.35} hasApples={false} />
-      <TreePineCartoon x={pLeft.x - 60} y={pLeft.y + 30} scale={1.15} />
-      <TreeOakCartoon x={pLeft.x - 20} y={pLeft.y + 50} scale={1.25} hasApples={true} />
-      <TreePineCartoon x={pBottom.x - 40} y={pBottom.y + 50} scale={1.25} />
+      {/* 10. WOODEN PIER & FISHING BOAT */}
+      <g transform={`translate(${pRight.x + 25}, ${pRight.y + 40})`} className="cursor-pointer pointer-events-auto" onClick={onBoatClick}>
+        {/* Pier Structure */}
+        <polygon points="0,0 20,-10 35,0 15,10" fill="#795548" stroke="#3E2723" strokeWidth="1.5" />
+        <line x1="5" y1="-2" x2="25" y2="8" stroke="#5D4037" strokeWidth="1" />
+        <line x1="10" y1="-7" x2="30" y2="3" stroke="#5D4037" strokeWidth="1" />
+        {/* Pier Pilings */}
+        <rect x="18" y="-10" width="3" height="15" fill="#4E342E" />
+        <rect x="33" y="0" width="3" height="15" fill="#4E342E" />
+        
+        {/* Fishing Boat */}
+        <g transform="translate(45, -5)">
+          {/* Boat Shadow */}
+          <ellipse cx="0" cy="8" rx="15" ry="6" fill="rgba(0,0,0,0.3)" />
+          
+          {fishingBoatStatus === 'broken' && (
+            <g>
+              {/* Broken hull */}
+              <path d="M -15 0 Q 0 10 15 0 L 10 -5 Q 0 -2 -10 -5 Z" fill="#8D6E63" stroke="#4E342E" strokeWidth="1" opacity="0.8" />
+              {/* Hole / broken planks */}
+              <circle cx="-5" cy="0" r="3" fill="#3E2723" />
+              <line x1="2" y1="-2" x2="8" y2="2" stroke="#4E342E" strokeWidth="1.5" />
+              <line x1="12" y1="-5" x2="5" y2="-8" stroke="#4E342E" strokeWidth="1.5" />
+              {/* Warning Sign */}
+              <rect x="-2" y="-15" width="4" height="10" fill="#795548" />
+              <rect x="-8" y="-20" width="16" height="10" fill="#FFCC80" stroke="#E65100" strokeWidth="1" />
+              <text x="0" y="-13" fontSize="8" fontWeight="bold" fill="#D84315" textAnchor="middle">?</text>
+            </g>
+          )}
+
+          {fishingBoatStatus === 'repairing' && (
+            <g>
+              {/* Half-repaired hull */}
+              <path d="M -15 0 Q 0 10 15 0 L 12 -8 Q 0 -4 -12 -8 Z" fill="#A1887F" stroke="#4E342E" strokeWidth="1.5" />
+              {/* Tarp / Cover over repairs */}
+              <polygon points="-8,-4 8,-4 10,-8 -10,-8" fill="#90CAF9" stroke="#1565C0" strokeWidth="1" />
+              {/* Tools / Sparkles indicating work */}
+              <circle cx="0" cy="-12" r="2" fill="#FFEB3B" className="animate-pulse" />
+              <circle cx="-6" cy="-10" r="1.5" fill="#FFEB3B" className="animate-ping" />
+              <circle cx="6" cy="-8" r="1" fill="#FFEB3B" className="animate-bounce" />
+            </g>
+          )}
+
+          {fishingBoatStatus === 'repaired' && (
+            <g>
+              {/* Pristine hull */}
+              <path d="M -15 0 Q 0 10 15 0 L 12 -8 Q 0 -4 -12 -8 Z" fill="#FAFAFA" stroke="#9E9E9E" strokeWidth="1.5" />
+              {/* Red Trim */}
+              <path d="M -14 -1 Q 0 8 14 -1" fill="none" stroke="#E53935" strokeWidth="1.5" />
+              {/* Outboard Motor */}
+              <rect x="-18" y="-4" width="4" height="8" fill="#424242" rx="1" />
+              <rect x="-17" y="4" width="2" height="6" fill="#757575" />
+              <path d="M -18 9 Q -19 11 -16 11" fill="none" stroke="#BDBDBD" strokeWidth="1" />
+              {/* Tiny Steering Wheel & Seats */}
+              <rect x="-2" y="-6" width="6" height="4" fill="#8D6E63" />
+              <circle cx="2" cy="-6" r="2" fill="#212121" />
+            </g>
+          )}
+        </g>
+      </g>
 
       {/* 8. ANIMATED BUTTERFLIES */}
       <g className="animate-bounce" style={{ animationDuration: '2.8s' }}>
@@ -325,12 +503,6 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
         <ButterflyCartoon x={pLeft.x + 80} y={pLeft.y - 40} wingColor="#FFD600" />
       </g>
       <g className="animate-bounce" style={{ animationDuration: '3.2s' }}>
-        <ButterflyCartoon x={pRight.x - 60} y={pRight.y + 60} wingColor="#00E5FF" />
-      </g>
-      <g className="animate-bounce" style={{ animationDuration: '3.0s' }}>
-        <ButterflyCartoon x={pRight.x + 20} y={pRight.y + 15} wingColor="#FF7043" />
-      </g>
-      <g className="animate-bounce" style={{ animationDuration: '2.5s' }}>
         <ButterflyCartoon x={pBottom.x + 30} y={pBottom.y + 18} wingColor="#76FF03" />
       </g>
     </g>
@@ -338,7 +510,7 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
 });
 
 // 3D Cartoon Volumetric Oak Tree with Glossy Apple Canopy
-const TreeOakCartoon: React.FC<{ x: number; y: number; scale?: number; hasApples?: boolean }> = ({
+export const TreeOakCartoon: React.FC<{ x: number; y: number; scale?: number; hasApples?: boolean }> = ({
   x,
   y,
   scale = 1,
@@ -387,7 +559,7 @@ const TreeOakCartoon: React.FC<{ x: number; y: number; scale?: number; hasApples
 };
 
 // 3D Cartoon Pine / Fir Tree
-const TreePineCartoon: React.FC<{ x: number; y: number; scale?: number }> = ({ x, y, scale = 1 }) => {
+export const TreePineCartoon: React.FC<{ x: number; y: number; scale?: number }> = ({ x, y, scale = 1 }) => {
   return (
     <g transform={`translate(${x}, ${y}) scale(${scale})`}>
       {/* Ground Shadow */}

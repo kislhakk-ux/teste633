@@ -45,6 +45,9 @@ export const HD_BUILDING_SPRITES = {
   nectar_bush_wilted: imgNectarBushWilted,
   dead_tree: imgDeadTree,
 
+  // Fishing System
+  lure_maker: imgWoodBase,
+
   // Ground Bases
   ground_tile: imgGroundTile,
   dirt_base: imgDirtBase,

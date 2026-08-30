@@ -45,7 +45,7 @@ export const EXPANSION_PARCELS: ExpansionParcel[] = [
   {
     id: 'exp_north_west_1',
     name: 'Colina Alta',
-    x: -5,
+    x: 14,
     y: 1,
     width: 6,
     height: 7,
@@ -58,7 +58,7 @@ export const EXPANSION_PARCELS: ExpansionParcel[] = [
   {
     id: 'exp_north_west_2',
     name: 'Vale dos Pinheiros',
-    x: -5,
+    x: 14,
     y: 8,
     width: 6,
     height: 6,

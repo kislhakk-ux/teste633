@@ -178,6 +178,14 @@ export function getInitialGameState(): GameState {
     soundEnabled: true,
     musicEnabled: false,
     graphicsStyle: '3d_rendered',
+    fishingBoat: {
+      status: 'broken',
+    },
+    deliveryBoat: {
+      status: 'away',
+      arrivesAt: Date.now() + 1000 * 60, // Arrives in 1 min the first time!
+      crates: [],
+    },
   };
 }
 
@@ -195,6 +203,20 @@ export function loadGameState(): GameState {
       // Ensure graphics style
       if (!parsed.graphicsStyle) {
         parsed.graphicsStyle = '3d_rendered';
+      }
+
+      // Ensure fishing boat exists
+      if (!parsed.fishingBoat) {
+        parsed.fishingBoat = { status: 'broken' };
+      }
+
+      // Ensure delivery boat exists
+      if (!parsed.deliveryBoat) {
+        parsed.deliveryBoat = {
+          status: 'away',
+          arrivesAt: Date.now() + 1000 * 30, // 30s to test
+          crates: [],
+        };
       }
 
       // Ensure entities have proper arrays

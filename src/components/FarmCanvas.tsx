@@ -59,8 +59,9 @@ import { IsoTruck } from './isometric/IsoTruck';
 import { IsoNpcVisitor } from './isometric/IsoNpcVisitor';
 import { IsoBeeTree } from './isometric/IsoBeeTree';
 import { IsoNectarBush } from './isometric/IsoNectarBush';
-import { IsoScenery } from './isometric/IsoScenery';
+import { IsoScenery, TreeOakCartoon, TreePineCartoon } from './isometric/IsoScenery';
 import { IsoLushGrass } from './isometric/IsoLushGrass';
+import { pseudoRandom, generateForestForParcel } from '../utils/forestGen';
 import { Iso3DSpriteBuilding } from './isometric/Iso3DSpriteBuilding';
 import { IsoDecoration } from './isometric/IsoDecoration';
 import { HD_BUILDING_SPRITES } from '../constants/buildingSprites';
@@ -120,7 +121,17 @@ interface FarmCanvasProps {
   // Expansion
   unlockedParcelIds?: string[];
   onOpenExpansionModal?: (parcelId: string) => void;
+
+  // Fishing System
+  fishingBoatStatus?: 'broken' | 'repairing' | 'repaired';
+  onFishingBoatClick?: () => void;
+
+  // Delivery Boat System
+  deliveryBoatStatus?: 'away' | 'docked';
+  onDeliveryBoatClick?: () => void;
 }
+
+
 
 export const FarmCanvas: React.FC<FarmCanvasProps> = ({
   entities,
@@ -161,10 +172,15 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
   onQuickPlantCrop,
   unlockedParcelIds = [],
   onOpenExpansionModal,
+  fishingBoatStatus,
+  onFishingBoatClick,
+  deliveryBoatStatus,
+  onDeliveryBoatClick,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState<number>(1);
+  const [zoom, setZoom] = useState<number>(1.5); // Initial zoom more focused
+  const [isInitialized, setIsInitialized] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [movingEntityId, setMovingEntityId] = useState<string | null>(null);
@@ -215,6 +231,21 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
   // Sync visual bee count based on current Stage * 5
   const beeTree = useMemo(() => entities.find((e) => e.type === 'bee_tree'), [entities]);
   const maxBees = beeTree?.beeTreeData?.beesCount || 0;
+
+  useEffect(() => {
+    if (!isInitialized && containerRef.current) {
+      const width = containerRef.current.clientWidth;
+      const height = containerRef.current.clientHeight;
+      // Center of the base farm (which is 13x13, so around x:6, y:6)
+      const centerTile = gridToIso(6, 6);
+      
+      setPan({
+        x: (width / 2) - (centerTile.x * 1.5),
+        y: (height / 2) - (centerTile.y * 1.5)
+      });
+      setIsInitialized(true);
+    }
+  }, [isInitialized]);
 
   useEffect(() => {
     if (maxBees <= 0) {
@@ -596,9 +627,23 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
     }
 
     if (isDragging && !isLongPressDragging) {
-      setPan({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y,
+      setPan((prev) => {
+        const nextX = e.clientX - dragStart.x;
+        const nextY = e.clientY - dragStart.y;
+        
+        // Clamp boundaries based on map size and current zoom
+        const paddingX = window.innerWidth / 2;
+        const paddingY = window.innerHeight / 2;
+        
+        const minX = -MAP_SIZE * 92 * zoom + paddingX;
+        const maxX = MAP_SIZE * 92 * zoom + paddingX;
+        const minY = -MAP_SIZE * 46 * zoom + paddingY;
+        const maxY = MAP_SIZE * 46 * zoom + paddingY;
+        
+        return {
+          x: Math.min(maxX, Math.max(minX, nextX)),
+          y: Math.min(maxY, Math.max(minY, nextY)),
+        };
       });
     }
   };
@@ -684,7 +729,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
     if (e.touches.length === 2 && touchStartDistRef.current !== null) {
       const dist = getTouchDistance(e.touches[0], e.touches[1]);
       const ratio = dist / touchStartDistRef.current;
-      const newZoom = Math.min(1.8, Math.max(0.6, touchStartZoomRef.current * ratio));
+      const newZoom = Math.min(2.5, Math.max(0.9, touchStartZoomRef.current * ratio));
       setZoom(newZoom);
       return;
     }
@@ -702,9 +747,23 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
     }
 
     if (isDragging && e.touches.length === 1 && !isLongPressDragging) {
-      setPan({
-        x: e.touches[0].clientX - dragStart.x,
-        y: e.touches[0].clientY - dragStart.y,
+      setPan((prev) => {
+        const nextX = e.touches[0].clientX - dragStart.x;
+        const nextY = e.touches[0].clientY - dragStart.y;
+        
+        // Clamp boundaries based on map size and current zoom
+        const paddingX = window.innerWidth / 2;
+        const paddingY = window.innerHeight / 2;
+        
+        const minX = -MAP_SIZE * 92 * zoom + paddingX;
+        const maxX = MAP_SIZE * 92 * zoom + paddingX;
+        const minY = -MAP_SIZE * 46 * zoom + paddingY;
+        const maxY = MAP_SIZE * 46 * zoom + paddingY;
+        
+        return {
+          x: Math.min(maxX, Math.max(minX, nextX)),
+          y: Math.min(maxY, Math.max(minY, nextY)),
+        };
       });
     }
 
@@ -744,7 +803,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
 
   // Zoom controls
   const handleZoom = (delta: number) => {
-    setZoom((prev) => Math.min(1.8, Math.max(0.6, prev + delta)));
+    setZoom((prev) => Math.min(2.5, Math.max(0.9, prev + delta)));
   };
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -799,6 +858,28 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       onSelectEntity(null);
     }
   };
+
+  const viewportBoundingBox = useMemo(() => {
+    if (!containerRef.current) return null;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    
+    // Convert screen corners to isometric grid space
+    // Account for zoom and pan
+    const pad = 8; // Render 8 extra tiles outside view to prevent pop-in
+    
+    const topLeft = screenToGrid(-pan.x / zoom, -pan.y / zoom);
+    const topRight = screenToGrid((w - pan.x) / zoom, -pan.y / zoom);
+    const bottomLeft = screenToGrid(-pan.x / zoom, (h - pan.y) / zoom);
+    const bottomRight = screenToGrid((w - pan.x) / zoom, (h - pan.y) / zoom);
+    
+    const minX = Math.floor(Math.min(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x)) - pad;
+    const maxX = Math.ceil(Math.max(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x)) + pad;
+    const minY = Math.floor(Math.min(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y)) - pad;
+    const maxY = Math.ceil(Math.max(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y)) + pad;
+    
+    return { minX, maxX, minY, maxY };
+  }, [pan, zoom]);
 
   const isDeliveringTruck = truckDeliveringUntil !== null && currentTime < truckDeliveringUntil;
 
@@ -892,6 +973,10 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             tileWidth={TILE_WIDTH}
             tileHeight={TILE_HEIGHT}
             gridToIso={gridToIso}
+            fishingBoatStatus={fishingBoatStatus}
+            onBoatClick={onFishingBoatClick}
+            deliveryBoatStatus={deliveryBoatStatus}
+            onDeliveryBoatClick={onDeliveryBoatClick}
           />
         </svg>
 
@@ -901,11 +986,23 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             const isUnlocked = unlockedParcelIds.includes(parcel.id);
             if (isUnlocked) return null;
 
+            // Viewport Culling Optimization for Expansion Parcels
+            if (
+              viewportBoundingBox &&
+              (parcel.x + parcel.width < viewportBoundingBox.minX ||
+               parcel.x > viewportBoundingBox.maxX ||
+               parcel.y + parcel.height < viewportBoundingBox.minY ||
+               parcel.y > viewportBoundingBox.maxY)
+            ) {
+              return null;
+            }
+
             const p1 = gridToIso(parcel.x, parcel.y); // Top
             const p2 = gridToIso(parcel.x + parcel.width, parcel.y); // Right
             const p3 = gridToIso(parcel.x + parcel.width, parcel.y + parcel.height); // Bottom
             const p4 = gridToIso(parcel.x, parcel.y + parcel.height); // Left
             const center = gridToIso(parcel.x + parcel.width / 2, parcel.y + parcel.height / 2);
+            const forestItems = generateForestForParcel(parcel);
 
             return (
               <g key={parcel.id} className="cursor-pointer pointer-events-auto group" onClick={() => onOpenExpansionModal?.(parcel.id)}>
@@ -919,15 +1016,44 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                   className="opacity-60 group-hover:opacity-100 transition-opacity"
                 />
                 
-                {/* Interactive Expansion Sign */}
-                <foreignObject x={center.x - 60} y={center.y - 60} width="120" height="120" className="pointer-events-none">
-                  <div className="w-full h-full flex flex-col items-center justify-center animate-bounce">
-                    <div className="bg-[#8D6E63] text-white font-black text-xs px-2 py-1 rounded shadow-lg border-2 border-[#4E342E] whitespace-nowrap group-hover:bg-[#5D4037] group-hover:scale-110 transition-transform">
-                      🔨 EXPANDIR
-                    </div>
-                    <div className="w-2 h-6 bg-[#4E342E] shadow-xl"></div>
-                  </div>
-                </foreignObject>
+                {/* Render the dense forest */}
+                {forestItems.map((item, idx) => {
+                  const p = gridToIso(item.x, item.y);
+                  const scale = 0.8 + pseudoRandom(item.x * 100) * 0.4;
+                  return (
+                    <g key={idx} className="opacity-90 transition-opacity">
+                      {item.type === 'oak' && <TreeOakCartoon x={p.x} y={p.y} scale={scale} />}
+                      {item.type === 'pine' && <TreePineCartoon x={p.x} y={p.y} scale={scale} />}
+                      {item.type === 'rock' && (
+                        <g transform={`translate(${p.x}, ${p.y}) scale(${scale})`}>
+                          <ellipse cx="0" cy="5" rx="12" ry="5" fill="rgba(0,0,0,0.3)" />
+                          <path d="M -8 5 Q 0 -5 10 5 L -8 5" fill="#757575" stroke="#424242" strokeWidth="1.5" />
+                        </g>
+                      )}
+                      {item.type === 'bush' && (
+                        <g transform={`translate(${p.x}, ${p.y}) scale(${scale})`}>
+                          <ellipse cx="0" cy="5" rx="8" ry="4" fill="rgba(0,0,0,0.3)" />
+                          <circle cx="0" cy="-5" r="8" fill="#558B2F" stroke="#33691E" strokeWidth="1" />
+                        </g>
+                      )}
+                    </g>
+                  );
+                })}
+                
+                {/* Small Interactive Expansion Sign at the center */}
+                <g transform={`translate(${center.x}, ${center.y})`} className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                  {/* Glowing halo */}
+                  <ellipse cx="0" cy="10" rx="30" ry="15" fill="rgba(255, 235, 59, 0.4)" className="animate-pulse" />
+                  
+                  {/* Sign board */}
+                  <g transform="translate(0, -20) scale(1.5)" className="animate-bounce">
+                    <rect x="-1" y="0" width="2" height="15" fill="#4E342E" />
+                    <polygon points="-15,0 15,0 15,-12 -15,-12" fill="#FFCC80" stroke="#E65100" strokeWidth="1" />
+                    <text x="0" y="-3" fontSize="6" fontWeight="bold" fill="#D84315" textAnchor="middle">
+                      EXPANDIR
+                    </text>
+                  </g>
+                </g>
               </g>
             );
           })}
@@ -936,6 +1062,17 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
         {/* Isometric Interactive Farm Grid (Seamless in normal mode, clean guides in move mode) */}
         {Array.from({ length: MAP_SIZE }).map((_, gy) =>
           Array.from({ length: MAP_SIZE }).map((_, gx) => {
+            // Viewport Culling Optimization
+            if (
+              viewportBoundingBox &&
+              (gx < viewportBoundingBox.minX ||
+               gx > viewportBoundingBox.maxX ||
+               gy < viewportBoundingBox.minY ||
+               gy > viewportBoundingBox.maxY)
+            ) {
+              return null;
+            }
+
             const { x: isoX, y: isoY } = gridToIso(gx, gy);
             const isHovered = hoveredTile?.x === gx && hoveredTile?.y === gy;
 
@@ -1297,6 +1434,18 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
 
         {/* Render Sorted Game Entities (Buildings, Plots, Animals, Decorations) */}
         {sortedEntities.map((entity) => {
+          // Viewport Culling Optimization for Entities
+          if (
+            viewportBoundingBox &&
+            (entity.x + entity.width < viewportBoundingBox.minX ||
+             entity.x > viewportBoundingBox.maxX ||
+             entity.y + entity.height < viewportBoundingBox.minY ||
+             entity.y > viewportBoundingBox.maxY) &&
+            !isMovingMode // don't cull while moving
+          ) {
+            return null;
+          }
+
           const isSelected = selectedEntity?.id === entity.id;
           const isMovingThis = movingEntityId === entity.id || draggingEntityId === entity.id;
           const isDraggingThis = draggingEntityId === entity.id;
@@ -2169,6 +2318,51 @@ function renderEntityVisual(ctx: VisualContext) {
               </svg>
             </div>
           )}
+        </div>
+      );
+    }
+
+    case 'obstacle': {
+      const type = entity.obstacleData?.type || 'pine';
+      let toolRequired = '🪓 Machado';
+      if (type === 'oak') toolRequired = '🪚 Serrote';
+      if (type === 'rock') toolRequired = '🧨 Dinamite';
+      if (type === 'bush') toolRequired = '🪓 Machado';
+
+      return (
+        <div className="relative flex flex-col items-center justify-center cursor-pointer">
+          {/* Tool label indicator above */}
+          {isSelected && (
+            <div className="absolute -top-7 z-30 bg-amber-950/95 text-yellow-300 text-[10px] font-black px-2.5 py-0.5 rounded-full border-2 border-amber-400 shadow-md whitespace-nowrap">
+              {toolRequired}
+            </div>
+          )}
+
+          {/* Random variation based on ID or coords */}
+          {(() => {
+            const scale = 0.8 + (Math.sin(entity.x * 100) * 0.4);
+            return (
+              <g className={`transition-transform duration-200 ${isSelected ? 'scale-110' : ''}`} style={{ transform: `scale(${scale})` }}>
+                {type === 'pine' && <TreePineCartoon x={0} y={0} scale={1} />}
+                {type === 'oak' && <TreeOakCartoon x={0} y={0} scale={1} />}
+                {type === 'rock' && (
+                  <svg width="60" height="40" viewBox="-30 -20 60 40" className="overflow-visible">
+                    <ellipse cx="0" cy="5" rx="12" ry="5" fill="rgba(0,0,0,0.3)" />
+                    <path d="M -15 5 Q 0 -15 15 5 L -15 5" fill="#757575" stroke="#424242" strokeWidth="2" />
+                    <path d="M -5 5 Q 5 -5 10 5" fill="#9E9E9E" stroke="#616161" strokeWidth="1" />
+                  </svg>
+                )}
+                {type === 'bush' && (
+                  <svg width="40" height="40" viewBox="-20 -20 40 40" className="overflow-visible">
+                    <ellipse cx="0" cy="5" rx="8" ry="4" fill="rgba(0,0,0,0.3)" />
+                    <circle cx="0" cy="-5" r="10" fill="#558B2F" stroke="#33691E" strokeWidth="1.5" />
+                    <circle cx="-3" cy="-8" r="3" fill="#689F38" />
+                    <circle cx="4" cy="-4" r="2" fill="#7CB342" />
+                  </svg>
+                )}
+              </g>
+            );
+          })()}
         </div>
       );
     }
