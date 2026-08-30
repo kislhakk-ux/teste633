@@ -12,6 +12,11 @@ interface TopBarProps {
   barnUsed: number;
   barnMax: number;
   farmName: string;
+  soundEnabled?: boolean;
+  musicEnabled?: boolean;
+  graphicsStyle?: string;
+  onlineCount?: number;
+  onOpenMultiplayer?: () => void;
   onOpenSilo: () => void;
   onOpenBarn: () => void;
   onOpenAchievements: () => void;

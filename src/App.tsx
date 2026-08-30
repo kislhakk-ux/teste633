@@ -180,6 +180,7 @@ export default function App() {
 
       // Registrar UID no state (fonte de verdade para o save)
       setCurrentUid(uid);
+      multiplayerClient.setFarmId(uid);
 
       // Salvar dados de sessão no localStorage (apenas perfil, não o progresso)
       localStorage.setItem('hayday_player_avatar', avatar);
@@ -277,6 +278,13 @@ export default function App() {
       gameState.roadsideBoxes
     );
 
+    // Initial fetch of Newspaper offers via REST API for immediate availability
+    multiplayerClient.fetchNewspaper().then((offers) => {
+      if (Array.isArray(offers) && offers.length > 0) {
+        setNewspaperOffers(offers);
+      }
+    });
+
     const unsubPresence = multiplayerClient.on('presence', (msg) => {
       setOnlineCount(msg.onlineCount);
       setOnlineFarms(msg.farms);
@@ -289,11 +297,13 @@ export default function App() {
     });
 
     const unsubOfferPublished = multiplayerClient.on('offer_published', (offer: MultiplayerOffer) => {
+      console.log('[App] Received new offer via WebSocket:', offer);
       setNewspaperOffers((prev) => [offer, ...prev.filter((o) => o.id !== offer.id)]);
       showToast(`📰 Novo anúncio no Jornal: ${offer.count}x ${ITEMS[offer.itemId]?.name || offer.itemId} por ${offer.sellerFarmName}!`);
     });
 
     const unsubOfferSold = multiplayerClient.on('offer_sold', (msg) => {
+      console.log('[App] Received offer_sold via WebSocket:', msg);
       setNewspaperOffers((prev) =>
         prev.map((o) =>
           o.id === msg.offerId
@@ -325,6 +335,15 @@ export default function App() {
       unsubItemSoldToYou();
     };
   }, [gameState.farmName, gameState.level, playerAvatar]);
+
+  // Refetch newspaper whenever Roadside Modal opens
+  useEffect(() => {
+    if (isRoadsideOpen) {
+      multiplayerClient.fetchNewspaper().then((offers) => {
+        setNewspaperOffers(offers);
+      });
+    }
+  }, [isRoadsideOpen]);
 
   // Main Simulation Game Loop (Every 1 second)
   useEffect(() => {
@@ -1153,6 +1172,12 @@ export default function App() {
     }));
 
     multiplayerClient.publishOffer(boxId, itemId, count, price, advertised);
+    setTimeout(() => {
+      multiplayerClient.fetchNewspaper().then((offers) => {
+        setNewspaperOffers(offers);
+      });
+    }, 200);
+
     showToast(
       `🏪 Item colocado à venda${advertised ? ' e anunciado no Jornal Multiplayer!' : '!'}`
     );
@@ -1937,7 +1962,7 @@ export default function App() {
           boxes={visitingFarm ? (visitingFarm.roadsideBoxes || []) : gameState.roadsideBoxes}
           inventory={gameState.inventory}
           coins={gameState.coins}
-          myFarmId={myFarmId}
+          myFarmId={currentUid || myFarmId}
           newspaperOffers={newspaperOffers}
           onClose={() => setIsRoadsideOpen(false)}
           onPutItemOnSale={handlePutItemOnSale}
@@ -1946,7 +1971,9 @@ export default function App() {
           onVisitFarm={handleVisitFarm}
           onOpenMultiplayerModal={() => setIsMultiplayerModalOpen(true)}
           onRefreshNewspaper={() => {
-            multiplayerClient.send({ type: 'heartbeat', farmId: myFarmId });
+            multiplayerClient.fetchNewspaper().then((offers) => {
+              setNewspaperOffers(offers);
+            });
           }}
         />
       )}

@@ -286,14 +286,15 @@ async function startServer() {
 
   // Publish a roadside box item to the newspaper
   app.post('/api/multiplayer/publish', (req, res) => {
-    const { farmId, boxId, itemId, count, price, advertised } = req.body;
+    const { offerId, farmId, boxId, itemId, count, price, advertised } = req.body;
     if (!farmId || !itemId || !count || !price) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
     const farm = farms.get(farmId);
+    const id = offerId || `offer_${farmId}_${boxId}_${Date.now()}`;
     const newOffer: MultiplayerOffer = {
-      id: `offer_${farmId}_${boxId}_${Date.now()}`,
+      id,
       sellerFarmId: farmId,
       sellerFarmName: farm?.farmName || 'Fazenda Vizinha',
       sellerAvatar: farm?.avatar || '👨‍🌾',
@@ -307,9 +308,9 @@ async function startServer() {
       createdAt: Date.now(),
     };
 
-    // Remove any previous offer for the same box
+    // Remove any previous offer for the same box or with same id
     globalOffers = globalOffers.filter(
-      (o) => !(o.sellerFarmId === farmId && o.boxId === boxId)
+      (o) => !(o.sellerFarmId === farmId && o.boxId === Number(boxId)) && o.id !== id
     );
 
     globalOffers.unshift(newOffer);
@@ -318,6 +319,8 @@ async function startServer() {
       type: 'offer_published',
       offer: newOffer,
     });
+
+    console.log(`[Server/Publish] Offer ${id} published by farm ${farmId} (${newOffer.sellerFarmName}): ${count}x ${itemId} for ${price} coins (advertised=${advertised})`);
 
     res.json({ success: true, offer: newOffer });
   });
@@ -524,13 +527,13 @@ async function startServer() {
           case 'publish_offer': {
             const offer: MultiplayerOffer = {
               ...msg.offer,
-              id: `offer_${msg.offer.sellerFarmId}_${msg.offer.boxId}_${Date.now()}`,
-              createdAt: Date.now(),
+              id: msg.offer.id || `offer_${msg.offer.sellerFarmId}_${msg.offer.boxId}_${Date.now()}`,
+              createdAt: msg.offer.createdAt || Date.now(),
               isSold: false,
             };
 
             globalOffers = globalOffers.filter(
-              (o) => !(o.sellerFarmId === offer.sellerFarmId && o.boxId === offer.boxId)
+              (o) => !(o.sellerFarmId === offer.sellerFarmId && o.boxId === offer.boxId) && o.id !== offer.id
             );
             globalOffers.unshift(offer);
 
@@ -538,6 +541,8 @@ async function startServer() {
               type: 'offer_published',
               offer,
             });
+
+            console.log(`[Server/WS-Publish] Offer ${offer.id} published by farm ${offer.sellerFarmId} (${offer.sellerFarmName}): ${offer.count}x ${offer.itemId} for ${offer.price} coins`);
             break;
           }
 
@@ -663,7 +668,7 @@ async function startServer() {
     });
   }
 
-  server.listen(PORT, '0.0.0.0', () => {
+  server.listen(Number(PORT), '0.0.0.0', () => {
     console.log(`🌾 Hay Day Farm Server running on port ${PORT} (0.0.0.0)`);
     console.log(`🌐 Ready for real-time multiplayer newspaper trading and cross-play!`);
   });

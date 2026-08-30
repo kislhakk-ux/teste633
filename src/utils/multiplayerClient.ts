@@ -37,6 +37,14 @@ class MultiplayerClient {
     return id;
   }
 
+  public setFarmId(id: string) {
+    if (id && id !== this.farmId) {
+      console.log(`[MultiplayerClient] Updating farmId from '${this.farmId}' to '${id}'`);
+      this.farmId = id;
+      localStorage.setItem('hayday_player_farm_id', id);
+    }
+  }
+
   public getFarmId(): string {
     return this.farmId;
   }
@@ -64,18 +72,48 @@ class MultiplayerClient {
     }
   }
 
-  private getApiUrl(endpoint: string): string {
+  public getApiUrl(endpoint: string): string {
     const isCapacitor = window.location.protocol.startsWith('capacitor') || 
                         (window.location.protocol.startsWith('http') && 
                          (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && 
                          !window.location.port);
 
     if (isCapacitor) {
-      const prodServer = process.env.PRODUCTION_SERVER_URL || 'teste633.onrender.com';
+      const prodServer = (process.env as any)?.PRODUCTION_SERVER_URL || 'teste633.onrender.com';
       const cleanProdServer = prodServer.replace(/^wss?:\/\//, '').replace(/\/ws$/, '').replace(/^https?:\/\//, '');
       return `https://${cleanProdServer}${endpoint}`;
     }
     return endpoint;
+  }
+
+  // Fetch all current Newspaper offers via REST for instant synchronization
+  public async fetchNewspaper(): Promise<MultiplayerOffer[]> {
+    const url = this.getApiUrl('/api/multiplayer/newspaper');
+    console.log(`[Multiplayer/Newspaper] Fetching offers for current farmId=${this.farmId} from URL=${url}`);
+    try {
+      const res = await fetch(url);
+      console.log(`[Multiplayer/Newspaper] Response HTTP status=${res.status}`);
+      if (!res.ok) {
+        console.warn(`[Multiplayer/Newspaper] Failed to fetch: HTTP ${res.status}`);
+        return this.currentOffers;
+      }
+      const data = await res.json();
+      const offers: MultiplayerOffer[] = Array.isArray(data.offers) ? data.offers : [];
+      this.currentOffers = offers;
+      if (data.farms) this.onlineFarms = data.farms;
+      if (data.onlineCount) this.onlineCount = data.onlineCount;
+      console.log(`[Multiplayer/Newspaper] Received ${offers.length} total offers (IDs: ${offers.map((o: any) => o.id).slice(0, 5).join(', ')}...)`);
+      this.emit('init', {
+        type: 'init',
+        onlineCount: this.onlineCount,
+        farms: this.onlineFarms,
+        offers: this.currentOffers,
+      });
+      return offers;
+    } catch (e: any) {
+      console.error('[Multiplayer/Newspaper] Error fetching offers:', e);
+      return this.currentOffers;
+    }
   }
 
   public connect(
@@ -248,8 +286,9 @@ class MultiplayerClient {
 
   // Publish offer to server
   public async publishOffer(boxId: number, itemId: ItemId, count: number, price: number, advertised: boolean = true) {
+    const offerId = `offer_${this.farmId}_${boxId}_${Date.now()}`;
     const offer: MultiplayerOffer = {
-      id: `offer_${this.farmId}_${boxId}_${Date.now()}`,
+      id: offerId,
       sellerFarmId: this.farmId,
       sellerFarmName: this.farmName,
       sellerAvatar: this.avatar,
@@ -263,6 +302,8 @@ class MultiplayerClient {
       createdAt: Date.now(),
     };
 
+    console.log(`[Multiplayer/Publish] Publishing offer ID=${offerId} for farmId=${this.farmId}, boxId=${boxId}, item=${itemId}, count=${count}, price=${price}, advertised=${advertised}`);
+
     // Send via WS
     this.send({
       type: 'publish_offer',
@@ -270,11 +311,13 @@ class MultiplayerClient {
     });
 
     // Also send via REST API for high reliability
+    const url = this.getApiUrl('/api/multiplayer/publish');
     try {
-      await fetch(this.getApiUrl('/api/multiplayer/publish'), {
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          offerId,
           farmId: this.farmId,
           boxId,
           itemId,
@@ -283,15 +326,18 @@ class MultiplayerClient {
           advertised,
         }),
       });
+      console.log(`[Multiplayer/Publish] REST publish response HTTP status=${res.status}`);
     } catch (e) {
-      console.warn('REST publish fallback failed:', e);
+      console.warn('[Multiplayer/Publish] REST publish fallback failed:', e);
     }
   }
 
   // Buy offer
   public async buyOffer(offerId: string): Promise<{ success: boolean; item?: any; error?: string }> {
+    const url = this.getApiUrl('/api/multiplayer/buy');
+    console.log(`[Multiplayer/Buy] Buying offer ID=${offerId} by buyerFarmId=${this.farmId} (${this.farmName}) at URL=${url}`);
     try {
-      const res = await fetch(this.getApiUrl('/api/multiplayer/buy'), {
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -301,11 +347,14 @@ class MultiplayerClient {
         }),
       });
 
+      console.log(`[Multiplayer/Buy] Response HTTP status=${res.status}`);
       const data = await res.json();
       if (!res.ok || !data.success) {
+        console.warn(`[Multiplayer/Buy] Purchase rejected:`, data.error);
         return { success: false, error: data.error || 'Erro ao comprar item' };
       }
 
+      console.log(`[Multiplayer/Buy] Purchase SUCCESS:`, data);
       return {
         success: true,
         item: {
@@ -316,6 +365,7 @@ class MultiplayerClient {
         },
       };
     } catch (e: any) {
+      console.error(`[Multiplayer/Buy] Network error:`, e);
       return { success: false, error: e.message || 'Erro de rede' };
     }
   }
