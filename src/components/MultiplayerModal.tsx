@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
 import { OnlineFarm } from '../types/multiplayer';
 import { sound } from '../utils/sound';
-import { googleSignIn } from '../utils/firebase';
+import { googleSignIn, googleSignOut } from '../utils/firebase';
 
 interface MultiplayerModalProps {
   isOpen: boolean;
@@ -41,7 +41,7 @@ export const MultiplayerModal: React.FC<MultiplayerModalProps> = ({
 
   // Google Login States
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => localStorage.getItem('hayday_google_logged_in') === 'true');
-  const [googleUser, setGoogleUser] = useState<{ name?: string; email?: string; imageUrl?: string } | null>(() => {
+  const [googleUser, setGoogleUser] = useState<{ uid?: string; name?: string; email?: string; imageUrl?: string } | null>(() => {
     const saved = localStorage.getItem('hayday_google_user_data');
     return saved ? JSON.parse(saved) : null;
   });
@@ -84,8 +84,7 @@ export const MultiplayerModal: React.FC<MultiplayerModalProps> = ({
   const handleGoogleSignOut = async () => {
     sound.playClick();
     try {
-      await auth.signOut();
-      await GoogleAuth.signOut();
+      await googleSignOut();
     } catch (e) {
       // ignore
     }

@@ -26,6 +26,7 @@ import {
   generateRandomOrder,
   generateRandomVisitor,
   getStorageUsage,
+  getInitialGameState,
 } from './utils/storage';
 import { sound } from './utils/sound';
 
@@ -47,13 +48,20 @@ import { MultiplayerModal } from './components/MultiplayerModal';
 import { multiplayerClient } from './utils/multiplayerClient';
 import { MultiplayerOffer, OnlineFarm } from './types/multiplayer';
 import { SettingsModal } from './components/SettingsModal';
-import { auth, googleSignIn, googleSignOut } from './utils/firebase';
+import { LoadingScreen } from './components/LoadingScreen';
+import { googleSignIn, googleSignOut, loadFarmFromFirestore, saveFarmToFirestore } from './utils/firebase';
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState>(() => {
     const state = loadGameState();
     return { ...state, graphicsStyle: '3d_rendered' };
   });
+  // UID do usuário autenticado (null = ninguém logado)
+  const [currentUid, setCurrentUid] = useState<string | null>(null);
+  // Mostra loading enquanto busca a fazenda no Firestore
+  const [isLoadingFarm, setIsLoadingFarm] = useState<boolean>(false);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
+  const [isFadingOutLoading, setIsFadingOutLoading] = useState<boolean>(false);
   const [selectedEntity, setSelectedEntity] = useState<FarmEntity | null>(null);
   const [activeBuildingModalEntity, setActiveBuildingModalEntity] = useState<FarmEntity | null>(null);
   const [isOrderBoardOpen, setIsOrderBoardOpen] = useState(false);
@@ -88,9 +96,11 @@ export default function App() {
     return localStorage.getItem('hayday_google_logged_in') !== 'true';
   });
 
-  // Google Login flow handler
+  // Google Login flow handler — carrega/cria fazenda no Firestore pelo UID
   const handleGoogleLogin = async () => {
     sound.playClick();
+    setLoadingError(null);
+    setIsFadingOutLoading(false);
     try {
       const firebaseUser = await googleSignIn();
 
@@ -98,40 +108,83 @@ export default function App() {
       const defaultName = firebaseUser.displayName || 'Fazendeiro do Google';
       const avatar = firebaseUser.photoURL || '👨‍🌾';
       const email = firebaseUser.email || '';
-      
-      // Prompt for farm name when logging in with Google
-      let farmName = window.prompt("Escolha um nome para a sua fazenda:", defaultName);
-      if (!farmName || farmName.trim() === '') {
-        farmName = defaultName;
+
+      // Mostrar loading enquanto busca no Firestore
+      setIsLoadingFarm(true);
+
+      // Timeout safety: se passar de 15s sem resposta do Firestore, tratar com erro amigável
+      const fetchWithTimeout = Promise.race([
+        loadFarmFromFirestore(uid),
+        new Promise<null>((_, reject) =>
+          setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+        ),
+      ]);
+
+      let farmState: GameState | null = null;
+      try {
+        farmState = await fetchWithTimeout;
+      } catch (loadErr: any) {
+        if (loadErr?.message === 'TIMEOUT') {
+          throw new Error('A conexão com a nuvem demorou muito. Verifique sua internet.');
+        }
+        console.warn('Firestore load fallback to local/init:', loadErr);
       }
 
-      setGameState((p) => ({ ...p, farmName: farmName }));
-      setPlayerAvatar(avatar);
+      if (farmState) {
+        // Fazenda existente — carrega dados do Firestore
+        setGameState({ ...farmState, graphicsStyle: '3d_rendered' });
+        setPlayerAvatar(avatar);
+      } else {
+        // Novo usuário — pede nome e cria fazenda nova
+        let farmName = window.prompt('Escolha um nome para a sua fazenda:', defaultName);
+        if (!farmName || farmName.trim() === '') {
+          farmName = defaultName;
+        }
+        const newState = { ...getInitialGameState(), farmName, graphicsStyle: '3d_rendered' as const };
+        setGameState(newState);
+        setPlayerAvatar(avatar);
+        // Persiste a fazenda nova no Firestore imediatamente
+        try {
+          await saveFarmToFirestore(uid, newState);
+        } catch (saveErr) {
+          console.warn('Initial save warning:', saveErr);
+        }
+      }
+
+      // Registrar UID no state (fonte de verdade para o save)
+      setCurrentUid(uid);
+
+      // Salvar dados de sessão no localStorage (apenas perfil, não o progresso)
       localStorage.setItem('hayday_player_avatar', avatar);
-      
       localStorage.setItem('hayday_google_logged_in', 'true');
-      const userData = {
-        uid,
-        name: farmName,
-        email,
-        imageUrl: avatar
-      };
+      const userData = { uid, name: farmState?.farmName ?? defaultName, email, imageUrl: avatar };
       localStorage.setItem('hayday_google_user_data', JSON.stringify(userData));
       setGoogleUser(userData);
-      
+
       multiplayerClient.connect(
-        farmName,
-        gameState.level,
+        farmState?.farmName ?? defaultName,
+        farmState?.level ?? 1,
         avatar,
-        gameState.entities,
-        gameState.roadsideBoxes
+        farmState?.entities ?? [],
+        farmState?.roadsideBoxes ?? []
       );
-      
-      setIsAuthRequired(false);
-      showToast(`🌾 Bem-vindo, ${farmName}!`);
+
+      // Transição suave (fade out da tela de loading)
+      setIsFadingOutLoading(true);
+      setTimeout(() => {
+        setIsLoadingFarm(false);
+        setIsFadingOutLoading(false);
+        setIsAuthRequired(false);
+        showToast(`🌾 Bem-vindo, ${farmState?.farmName ?? defaultName}!`);
+      }, 600);
     } catch (err: any) {
       console.error('Google Sign In Error:', err);
-      alert(`Erro no login com o Google: ${err.message || JSON.stringify(err)}`);
+      setIsLoadingFarm(true); // Manter tela com mensagem amigável e botões
+      setLoadingError(
+        err?.message && !err.message.includes('popup_closed') && !err.message.includes('cancelled')
+          ? 'Não conseguimos carregar sua fazenda. Verifique sua conexão e tente novamente.'
+          : 'Autenticação cancelada ou não concluída. Tente novamente.'
+      );
     }
   };
 
@@ -141,6 +194,7 @@ export default function App() {
     } catch (e) {
       // ignore
     }
+    setCurrentUid(null); // Garante que o save Firestore para imediatamente
     localStorage.removeItem('hayday_google_logged_in');
     localStorage.removeItem('hayday_google_user_data');
     setGoogleUser(null);
@@ -155,10 +209,20 @@ export default function App() {
     }, 2800);
   }, []);
 
-  // Save to LocalStorage whenever gameState changes
+  // Salva no localStorage imediatamente (cache local)
+  // e no Firestore com debounce de 3s (evitar writes excessivos)
   useEffect(() => {
     saveGameState(gameState);
-  }, [gameState]);
+
+    if (!currentUid) return;
+
+    const uid = currentUid;
+    const timer = setTimeout(() => {
+      saveFarmToFirestore(uid, gameState);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [gameState, currentUid]);
 
   // Sync sound settings with SoundManager
   useEffect(() => {
@@ -1352,19 +1416,20 @@ export default function App() {
   };
 
   const handleQuickPlantCrop = (plotId: string, cropId: string) => {
-    const currentQty = gameState.inventory[cropId] || 0;
+    const currentQty = gameState.inventory[cropId as ItemId] || 0;
     if (currentQty <= 0) return;
 
     setGameState((prev) => {
       const updatedEntities = prev.entities.map((ent) => {
         if (ent.id === plotId && ent.type === 'crop_plot') {
           const cropDef = CROPS[cropId as ItemId];
+          if (!cropDef) return ent;
           return {
             ...ent,
             cropData: {
               cropId: cropId as ItemId,
               plantedAt: Date.now(),
-              growDuration: cropDef.growTime,
+              growDuration: cropDef.growTimeSeconds, // ← fixed: was growTime
             },
           };
         }
@@ -1373,7 +1438,7 @@ export default function App() {
 
       const updatedInventory = {
         ...prev.inventory,
-        [cropId]: currentQty - 1,
+        [cropId]: Math.max(0, currentQty - 1),
       };
 
       return {
@@ -1384,6 +1449,75 @@ export default function App() {
     });
     sound.playPlant();
   };
+
+  /**
+   * Bulk-plant multiple plots in a single state update.
+   * Respects available seed quantity — never goes negative.
+   * Each entry: { plotId: string; cropId: ItemId }
+   */
+  const handleBulkPlantCrop = (entries: { plotId: string; cropId: ItemId }[]) => {
+    if (!entries.length) return;
+
+    // Count how many seeds of each type we need vs have
+    const needed: Record<string, number> = {};
+    entries.forEach(({ cropId }) => {
+      needed[cropId] = (needed[cropId] || 0) + 1;
+    });
+
+    // Cap per-crop at available qty
+    const available: Record<string, number> = {};
+    for (const cropId of Object.keys(needed)) {
+      available[cropId] = Math.min(
+        needed[cropId],
+        gameState.inventory[cropId as ItemId] || 0
+      );
+    }
+
+    // Build the plant set respecting caps (first-come-first-served)
+    const used: Record<string, number> = {};
+    const toPlant: { plotId: string; cropId: ItemId }[] = [];
+    for (const entry of entries) {
+      const cap = available[entry.cropId] || 0;
+      const soFar = used[entry.cropId] || 0;
+      if (soFar < cap) {
+        toPlant.push(entry);
+        used[entry.cropId] = soFar + 1;
+      }
+    }
+
+    if (!toPlant.length) return;
+
+    const now = Date.now();
+    setGameState((prev) => {
+      const plantIds = new Set(toPlant.map((e) => e.plotId));
+      const plotCrop: Record<string, ItemId> = {};
+      toPlant.forEach(({ plotId, cropId }) => { plotCrop[plotId] = cropId; });
+
+      const newInventory = { ...prev.inventory };
+      const newEntities = prev.entities.map((ent) => {
+        if (ent.type !== 'crop_plot' || !plantIds.has(ent.id)) return ent;
+        const cropId = plotCrop[ent.id];
+        const cropDef = CROPS[cropId];
+        if (!cropDef) return ent;
+        newInventory[cropId] = Math.max(0, (newInventory[cropId] || 0) - 1);
+        return {
+          ...ent,
+          cropData: {
+            cropId,
+            plantedAt: now,
+            growDuration: cropDef.growTimeSeconds,
+          },
+        };
+      });
+
+      return { ...prev, entities: newEntities, inventory: newInventory };
+    });
+
+    sound.playPlant();
+    const names = [...new Set(toPlant.map(({ cropId }) => CROPS[cropId]?.name || cropId))];
+    showToast(`🌱 ${toPlant.length} canteiro${toPlant.length > 1 ? 's' : ''} plantado${toPlant.length > 1 ? 's' : ''}! (${names.join(', ')})`);
+  };
+
 
   const handleBuyDecoration = (decType: DecorationType) => {
     const decDef = DECORATIONS[decType];
@@ -1437,6 +1571,23 @@ export default function App() {
 
     showToast(`🏆 Conquista resgatada! +${ach.rewardGems} 💎 +${ach.rewardCoins} 🪙`);
   };
+
+  // Loading screen animada enquanto Firestore carrega a fazenda
+  if (isLoadingFarm) {
+    return (
+      <LoadingScreen
+        statusText="Carregando sua fazenda..."
+        errorMessage={loadingError}
+        isFadingOut={isFadingOutLoading}
+        onRetry={() => handleGoogleLogin()}
+        onCancel={() => {
+          setIsLoadingFarm(false);
+          setLoadingError(null);
+          setIsFadingOutLoading(false);
+        }}
+      />
+    );
+  }
 
   if (isAuthRequired) {
     return (
