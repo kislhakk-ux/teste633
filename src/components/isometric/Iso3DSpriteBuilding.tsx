@@ -51,8 +51,8 @@ export const Iso3DSpriteBuilding: React.FC<Iso3DSpriteBuildingProps> = React.mem
       }
       className={`relative ${!widthPx ? widthClass : ''} ${!heightPx ? heightClass : ''} flex items-center justify-center select-none pointer-events-none transition-transform duration-150`}
     >
-      {/* 1. Authentic Dimetric 2:1 Isometric Foundation Curb */}
-      {baseType !== 'none' && (
+      {/* 1. Authentic Dimetric 2:1 Isometric Foundation Curb - DEACTIVATED FOR SEAMLESS GRASS INTEGRATION */}
+      {false && baseType !== 'none' && (
         <div className="absolute bottom-1 w-[90%] h-14 flex items-center justify-center pointer-events-auto cursor-pointer z-0">
           <svg
             viewBox="0 0 160 80"
