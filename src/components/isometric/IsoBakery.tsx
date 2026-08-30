@@ -47,9 +47,7 @@ export const IsoBakery: React.FC<{ isWorking?: boolean }> = ({ isWorking }) => {
         {/* Ambient Ground Shadow */}
         <ellipse cx="105" cy="158" rx="84" ry="28" fill="rgba(0,0,0,0.32)" />
 
-        {/* 1. Cobblestone Foundation Platform */}
-        <polygon points="105,150 44,120 44,134 105,164" fill="#8D6E63" stroke="#5D4037" strokeWidth="1.2" />
-        <polygon points="105,150 166,120 166,134 105,164" fill="#5D4037" stroke="#3E2723" strokeWidth="1.2" />
+        {/* 1. Cobblestone Foundation Platform - DEACTIVATED FOR SEAMLESS GRASS INTEGRATION */}
 
         {/* 2. Main Stone Oven Body */}
         <polygon points="105,74 44,104 44,128 105,156" fill="url(#hd-bakery-stone-l)" stroke="#8D6E63" strokeWidth="1.2" />

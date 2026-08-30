@@ -39,9 +39,7 @@ export const IsoBBQGrill: React.FC<{ isWorking?: boolean }> = ({ isWorking }) =>
         {/* Ambient Ground Shadow */}
         <ellipse cx="105" cy="158" rx="84" ry="28" fill="rgba(0,0,0,0.32)" />
 
-        {/* 1. Stone Foundation */}
-        <polygon points="105,150 42,120 42,132 105,164" fill="#616161" stroke="#37474F" strokeWidth="1.2" />
-        <polygon points="105,150 168,120 168,132 105,164" fill="#37474F" stroke="#212121" strokeWidth="1.2" />
+        {/* 1. Stone Foundation - DEACTIVATED FOR SEAMLESS GRASS INTEGRATION */}
 
         {/* 2. Red Brick Masonry Smoker Pit */}
         <polygon points="105,86 46,114 46,132 105,160" fill="url(#hd-bbq-brick-l)" stroke="#BF360C" strokeWidth="1.2" />

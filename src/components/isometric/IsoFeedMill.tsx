@@ -42,10 +42,7 @@ export const IsoFeedMill: React.FC<{ isWorking?: boolean }> = ({ isWorking }) =>
         {/* Ambient Ground Shadow */}
         <ellipse cx="90" cy="138" rx="66" ry="20" fill="rgba(0,0,0,0.3)" />
 
-        {/* 1. Wooden Plank Ground Platform */}
-        <polygon points="40,126 80,106 106,118 66,138" fill="#8D6E63" stroke="#4E342E" strokeWidth="1.2" />
-        <line x1="48" y1="129" x2="88" y2="109" stroke="#4E342E" strokeWidth="1.2" />
-        <line x1="56" y1="133" x2="96" y2="113" stroke="#4E342E" strokeWidth="1.2" />
+        {/* 1. Wooden Plank Ground Platform - DEACTIVATED FOR SEAMLESS GRASS INTEGRATION */}
 
         {/* 2. Bright Yellow Tubular A-Frame Stand Legs */}
         <line x1="72" y1="84" x2="58" y2="124" stroke="url(#hd-feed-yellow)" strokeWidth="4.5" strokeLinecap="round" />

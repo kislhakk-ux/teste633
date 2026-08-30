@@ -60,9 +60,7 @@ export const IsoDairy: React.FC<{ isWorking?: boolean }> = ({ isWorking }) => {
         {/* Ambient Ground Shadow */}
         <ellipse cx="105" cy="160" rx="86" ry="26" fill="rgba(0,0,0,0.32)" />
 
-        {/* 1. Brick / Stone Foundation Base */}
-        <polygon points="105,152 48,122 48,132 105,162" fill="#BCAAA4" stroke="#8D6E63" strokeWidth="1" />
-        <polygon points="105,152 166,120 166,130 105,162" fill="#A1887F" stroke="#6D4C41" strokeWidth="1" />
+        {/* 1. Brick / Stone Foundation Base - DEACTIVATED FOR SEAMLESS GRASS INTEGRATION */}
 
         {/* 2. Main White Stucco Walls */}
         <polygon points="105,82 48,112 48,126 105,154" fill="url(#hd-dairy-wall-l)" stroke="#CFD8DC" strokeWidth="1.2" />

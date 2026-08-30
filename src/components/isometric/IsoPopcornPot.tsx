@@ -35,9 +35,7 @@ export const IsoPopcornPot: React.FC<{ isWorking?: boolean }> = ({ isWorking }) 
         {/* Ambient Ground Shadow */}
         <ellipse cx="105" cy="158" rx="82" ry="26" fill="rgba(0,0,0,0.32)" />
 
-        {/* 1. Stone / Wooden Cart Base */}
-        <polygon points="105,150 46,120 46,132 105,162" fill="#8D6E63" stroke="#5D4037" strokeWidth="1.2" />
-        <polygon points="105,150 164,120 164,132 105,162" fill="#5D4037" stroke="#3E2723" strokeWidth="1.2" />
+        {/* 1. Stone / Wooden Cart Base - DEACTIVATED FOR SEAMLESS GRASS INTEGRATION */}
 
         {/* Big Golden Spoke Cart Wheels on Sides */}
         <g id="popcorn-cart-wheels">

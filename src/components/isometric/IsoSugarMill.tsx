@@ -52,9 +52,7 @@ export const IsoSugarMill: React.FC<{ isWorking?: boolean }> = ({ isWorking }) =
         {/* Ambient Ground Shadow */}
         <ellipse cx="105" cy="158" rx="84" ry="28" fill="rgba(0,0,0,0.32)" />
 
-        {/* 1. Heavy Timber Platform Base */}
-        <polygon points="105,150 42,120 42,132 105,164" fill="#5D4037" stroke="#3E2723" strokeWidth="1.2" />
-        <polygon points="105,150 168,120 168,132 105,164" fill="#3E2723" stroke="#1C0E07" strokeWidth="1.2" />
+        {/* 1. Heavy Timber Platform Base - DEACTIVATED FOR SEAMLESS GRASS INTEGRATION */}
 
         {/* 2. Open-Air Rustic Wooden Sugar Shed Structure */}
         <polygon points="105,80 46,108 46,128 105,154" fill="url(#hd-sugar-wood-l)" stroke="#4E342E" strokeWidth="1.2" />
