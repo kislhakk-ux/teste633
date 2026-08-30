@@ -10,7 +10,7 @@ export const IsoDecoration: React.FC<IsoDecorationProps> = ({ type, isSelected }
   switch (type) {
     case 'scarecrow':
       return (
-        <div className={`relative w-24 h-28 flex items-center justify-center filter drop-shadow-[0_8px_10px_rgba(0,0,0,0.32)] ${isSelected ? 'scale-105' : ''}`}>
+        <div className="relative w-24 h-28 flex items-center justify-center filter drop-shadow-[0_8px_10px_rgba(0,0,0,0.32)]">
           <svg viewBox="0 0 96 110" className="w-full h-full overflow-visible pointer-events-none select-none">
             <defs>
               <linearGradient id="scarecrow-shirt" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -111,7 +111,7 @@ export const IsoDecoration: React.FC<IsoDecorationProps> = ({ type, isSelected }
 
     case 'apple_tree':
       return (
-        <div className={`relative w-28 h-32 flex items-center justify-center filter drop-shadow-[0_10px_14px_rgba(0,0,0,0.36)] ${isSelected ? 'scale-105' : ''}`}>
+        <div className="relative w-28 h-32 flex items-center justify-center filter drop-shadow-[0_10px_14px_rgba(0,0,0,0.36)]">
           <svg viewBox="0 0 110 130" className="w-full h-full overflow-visible pointer-events-none select-none">
             <defs>
               <linearGradient id="tree-bark" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -174,7 +174,7 @@ export const IsoDecoration: React.FC<IsoDecorationProps> = ({ type, isSelected }
 
     case 'hay_bale':
       return (
-        <div className={`relative w-20 h-16 flex items-center justify-center filter drop-shadow-[0_6px_8px_rgba(0,0,0,0.3)] ${isSelected ? 'scale-105' : ''}`}>
+        <div className="relative w-20 h-16 flex items-center justify-center filter drop-shadow-[0_6px_8px_rgba(0,0,0,0.3)]">
           <svg viewBox="0 0 84 64" className="w-full h-full overflow-visible pointer-events-none select-none">
             <defs>
               <linearGradient id="bale-top" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -215,7 +215,7 @@ export const IsoDecoration: React.FC<IsoDecorationProps> = ({ type, isSelected }
     case 'flower_yellow': {
       const isYellow = type === 'flower_yellow';
       return (
-        <div className={`relative w-20 h-16 flex items-center justify-center filter drop-shadow-[0_6px_8px_rgba(0,0,0,0.28)] ${isSelected ? 'scale-105' : ''}`}>
+        <div className="relative w-20 h-16 flex items-center justify-center filter drop-shadow-[0_6px_8px_rgba(0,0,0,0.28)]">
           <svg viewBox="0 0 84 64" className="w-full h-full overflow-visible pointer-events-none select-none">
             {/* Wooden Border Planter Diamond on Ground */}
             <polygon points="42,22 68,35 42,48 16,35" fill="#5D4037" stroke="#3E2723" strokeWidth="1.2" />
@@ -249,7 +249,7 @@ export const IsoDecoration: React.FC<IsoDecorationProps> = ({ type, isSelected }
 
     case 'fence_wood':
       return (
-        <div className={`relative w-20 h-16 flex items-center justify-center filter drop-shadow-[0_6px_8px_rgba(0,0,0,0.3)] ${isSelected ? 'scale-105' : ''}`}>
+        <div className="relative w-20 h-16 flex items-center justify-center filter drop-shadow-[0_6px_8px_rgba(0,0,0,0.3)]">
           <svg viewBox="0 0 84 64" className="w-full h-full overflow-visible pointer-events-none select-none">
             {/* Wooden Fence Section aligned isometrically */}
             {/* Post 1 (Left-back) */}
@@ -266,7 +266,7 @@ export const IsoDecoration: React.FC<IsoDecorationProps> = ({ type, isSelected }
 
     case 'windmill':
       return (
-        <div className={`relative w-36 h-44 flex items-center justify-center filter drop-shadow-[0_12px_16px_rgba(0,0,0,0.35)] ${isSelected ? 'scale-105' : ''}`}>
+        <div className="relative w-36 h-44 flex items-center justify-center filter drop-shadow-[0_12px_16px_rgba(0,0,0,0.35)]">
           <svg viewBox="0 0 160 180" className="w-full h-full overflow-visible pointer-events-none select-none">
             {/* Stone Base Ring */}
             <ellipse cx="80" cy="144" rx="42" ry="21" fill="#78909C" stroke="#37474F" strokeWidth="1.5" />
@@ -301,7 +301,7 @@ export const IsoDecoration: React.FC<IsoDecorationProps> = ({ type, isSelected }
 
     case 'tractor':
       return (
-        <div className={`relative w-36 h-32 flex items-center justify-center filter drop-shadow-[0_10px_14px_rgba(0,0,0,0.36)] ${isSelected ? 'scale-105' : ''}`}>
+        <div className="relative w-36 h-32 flex items-center justify-center filter drop-shadow-[0_10px_14px_rgba(0,0,0,0.36)]">
           <svg viewBox="0 0 160 140" className="w-full h-full overflow-visible pointer-events-none select-none">
             {/* Vintage Red Farm Tractor */}
             {/* Big Rear Left Tire */}

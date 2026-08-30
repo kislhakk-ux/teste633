@@ -597,21 +597,21 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       return;
     }
 
-    const clickedEntity = entities.find(
+    // Only crop plots are selected from background tile clicks.
+    // Buildings/animals/decorations are clicked directly on their visible figures.
+    const clickedPlot = entities.find(
       (ent) =>
+        ent.type === 'crop_plot' &&
         gx >= ent.x &&
         gx < ent.x + ent.width &&
         gy >= ent.y &&
         gy < ent.y + ent.height
     );
 
-    if (clickedEntity) {
-      if (isMovingMode) {
-        setMovingEntityId(clickedEntity.id);
-      } else {
-        onSelectEntity(clickedEntity);
-      }
+    if (clickedPlot) {
+      onSelectEntity(clickedPlot);
     } else {
+      // Clicking on empty terrain clears selection
       onSelectEntity(null);
     }
   };
@@ -920,7 +920,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                 }}
                 className={`cursor-pointer group select-none transition-transform duration-150 relative ${
                   isMovingThis ? 'opacity-60 scale-105 animate-pulse' : ''
-                } ${isSelected ? 'scale-105' : 'hover:scale-[1.02]'}`}
+                }`}
               >
                 {/* 4 progressive loading bars while holding */}
                 {isHoldingThis && (
@@ -939,11 +939,6 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                     <div className={`w-2.5 h-6 rounded-md border-2 transition-colors duration-100 ${holdingProgress >= 75 ? 'bg-yellow-400 border-yellow-200 shadow-[0_0_8px_#FACC15]' : 'bg-amber-900 border-amber-950/50'}`}></div>
                     <div className={`w-2.5 h-6 rounded-md border-2 transition-colors duration-100 ${holdingProgress >= 100 ? 'bg-yellow-400 border-yellow-200 shadow-[0_0_8px_#FACC15]' : 'bg-amber-900 border-amber-950/50'}`}></div>
                   </div>
-                )}
-
-                {/* Selection Ring */}
-                {isSelected && (
-                  <div className="absolute inset-0 rounded-3xl border-3 border-amber-400 shadow-[0_0_15px_#F59E0B] pointer-events-none animate-pulse -m-2"></div>
                 )}
 
                 {/* Render Specific Entity Visuals */}

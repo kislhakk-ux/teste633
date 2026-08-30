@@ -49,11 +49,7 @@ export const Iso3DSpriteBuilding: React.FC<Iso3DSpriteBuildingProps> = ({
           ? { width: `${widthPx}px`, height: `${heightPx}px` }
           : undefined
       }
-      className={`relative ${!widthPx ? widthClass : ''} ${!heightPx ? heightClass : ''} flex items-center justify-center group select-none pointer-events-none transition-transform duration-200 ${
-        isSelected
-          ? 'scale-105 filter drop-shadow-[0_0_14px_rgba(255,215,0,0.95)]'
-          : 'hover:scale-102'
-      }`}
+      className={`relative ${!widthPx ? widthClass : ''} ${!heightPx ? heightClass : ''} flex items-center justify-center select-none pointer-events-none transition-transform duration-150`}
     >
       {/* 1. Authentic Dimetric 2:1 Isometric Foundation Curb */}
       {baseType !== 'none' && (
