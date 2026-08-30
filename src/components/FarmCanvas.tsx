@@ -227,9 +227,14 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
           progress: 0,
           targetBushId: null,
           harvestStart: 0,
+          idleStart: Date.now() - Math.random() * 12000, // Stagger initial flight starts
           angleOffset: Math.random() * Math.PI * 2,
           speed: 0.85 + Math.random() * 0.3,
           hasNectar: false,
+          archHeight: -25 - Math.random() * 35, // High vs low arches
+          wobbleAmp: 8 + Math.random() * 14,      // Wide vs narrow wobbles
+          wobbleFreq: 4 + Math.random() * 4,     // Fast vs slow cycles
+          wobblePhase: Math.random() * Math.PI * 2,
         });
       }
       return nextBees;
@@ -267,7 +272,8 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
               idleStart = Date.now();
             }
             const idleTime = Date.now() - idleStart;
-            if (idleTime >= 5000) { // 5 seconds rest time in tree
+            const customIdleDuration = 10000 + (Math.round(bee.id * 10000) % 6000); // 10s to 16s staggered wait
+            if (idleTime >= customIdleDuration) {
               if (projectedNectar < 100 && activeBushes.length > 0) {
                 const chosenBush = activeBushes[Math.floor(Math.random() * activeBushes.length)];
                 state = 'flying_to_bush';
@@ -278,7 +284,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
               }
             }
           } else if (state === 'flying_to_bush') {
-            progress += deltaSec * 0.16 * bee.speed; // moderate visible flight (~6s)
+            progress += deltaSec * 0.075 * bee.speed; // slower flight (~13s)
             if (progress >= 1) {
               progress = 1;
               state = 'harvesting';
@@ -286,7 +292,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             }
           } else if (state === 'harvesting') {
             const elapsed = Date.now() - harvestStart;
-            if (elapsed >= 5000) { // 5 seconds harvest time
+            if (elapsed >= 10000) { // 10 seconds harvest time
               const targetBush = entities.find((e) => e.id === targetBushId);
               if (targetBush && targetBush.nectarBushData && targetBush.nectarBushData.nectarLeft > 0) {
                 if (onHarvestNectarFromBush && targetBushId) {
@@ -310,7 +316,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
               }
             }
           } else if (state === 'flying_to_tree') {
-            progress += deltaSec * 0.16 * bee.speed; // moderate flight
+            progress += deltaSec * 0.075 * bee.speed; // slower flight (~13s)
             if (progress >= 1) {
               progress = 1;
               state = 'idle';
@@ -321,7 +327,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
               }
               hasNectar = false;
               targetBushId = null;
-              idleStart = Date.now(); // Start 5 seconds tree resting timer
+              idleStart = Date.now(); // Start tree resting timer
             }
           }
 
@@ -1018,8 +1024,9 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             const endX = bushCenter.x;
             const endY = bushCenter.y - 25;
 
+            const arch = bee.archHeight !== undefined ? bee.archHeight : -35;
             const baseLineX = startX + (endX - startX) * bee.progress;
-            const baseLineY = startY + (endY - startY) * bee.progress + Math.sin(bee.progress * Math.PI) * -35;
+            const baseLineY = startY + (endY - startY) * bee.progress + Math.sin(bee.progress * Math.PI) * arch;
 
             // Wobble perpendicular to path for organic flight feel
             const dx = endX - startX;
@@ -1028,11 +1035,15 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             const nx = -dy / dist;
             const ny = dx / dist;
 
-            const wobbleVal = Math.sin(bee.progress * Math.PI * 6) * 18;
+            const amp = bee.wobbleAmp !== undefined ? bee.wobbleAmp : 18;
+            const freq = bee.wobbleFreq !== undefined ? bee.wobbleFreq : 6;
+            const phase = bee.wobblePhase !== undefined ? bee.wobblePhase : 0;
+            const wobbleVal = Math.sin(bee.progress * Math.PI * freq + phase) * amp;
+
             bx = baseLineX + nx * wobbleVal;
             by = baseLineY + ny * wobbleVal + Math.sin(currentTime / 120) * 3.5;
             isFacingRight = endX > startX;
-            leanAngle = Math.cos(bee.progress * Math.PI * 6) * 16;
+            leanAngle = Math.cos(bee.progress * Math.PI * freq + phase) * (amp * 0.9);
           } else if (bee.state === 'harvesting' && bushCenter) {
             bx = bushCenter.x;
             by = bushCenter.y - 25;
@@ -1044,8 +1055,9 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             const endX = treeCenter.x;
             const endY = treeCenter.y - 45;
 
+            const arch = bee.archHeight !== undefined ? bee.archHeight : -35;
             const baseLineX = startX + (endX - startX) * bee.progress;
-            const baseLineY = startY + (endY - startY) * bee.progress + Math.sin(bee.progress * Math.PI) * -35;
+            const baseLineY = startY + (endY - startY) * bee.progress + Math.sin(bee.progress * Math.PI) * arch;
 
             const dx = endX - startX;
             const dy = endY - startY;
@@ -1053,11 +1065,15 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             const nx = -dy / dist;
             const ny = dx / dist;
 
-            const wobbleVal = Math.sin(bee.progress * Math.PI * 6) * 18;
+            const amp = bee.wobbleAmp !== undefined ? bee.wobbleAmp : 18;
+            const freq = bee.wobbleFreq !== undefined ? bee.wobbleFreq : 6;
+            const phase = bee.wobblePhase !== undefined ? bee.wobblePhase : 0;
+            const wobbleVal = Math.sin(bee.progress * Math.PI * freq + phase) * amp;
+
             bx = baseLineX + nx * wobbleVal;
             by = baseLineY + ny * wobbleVal + Math.sin(currentTime / 120) * 3.5;
             isFacingRight = endX > startX;
-            leanAngle = Math.cos(bee.progress * Math.PI * 6) * 16;
+            leanAngle = Math.cos(bee.progress * Math.PI * freq + phase) * (amp * 0.9);
           }
 
           return (
