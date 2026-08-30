@@ -281,6 +281,7 @@ export interface GameState {
   truckDeliveringUntil: number | null;
   roadsideBoxes: RoadsideBox[];
   activeVisitor: FarmVisitor | null;
+  nextVisitorAvailableAt?: number | null;
   lastLuckySpinDate: string | null;
   achievements: Achievement[];
   stats: GameStats;

@@ -434,11 +434,16 @@ export default function App() {
           return box;
         });
 
-        // 4. Spawn Farm Visitor periodically if none active
+        // 4. Spawn Farm Visitor every 45 minutes after completion
         let newVisitor = prev.activeVisitor;
-        if (!newVisitor && Math.random() < 0.03) {
-          updated = true;
-          newVisitor = generateRandomVisitor(prev.level, prev.inventory);
+        let newNextVisitorTime = prev.nextVisitorAvailableAt;
+        if (!newVisitor) {
+          const isTimeForVisitor = !newNextVisitorTime || now >= newNextVisitorTime;
+          if (isTimeForVisitor) {
+            updated = true;
+            newVisitor = generateRandomVisitor(prev.level, prev.inventory);
+            newNextVisitorTime = null;
+          }
         }
 
         // Check for XP Level Up
@@ -1319,8 +1324,10 @@ export default function App() {
     showToast('✅ Perfil da sua fazenda atualizado!');
   };
 
-  // 12. Farm Visitor Deal
+  // 12. Farm Visitor Deal (45 minutes cooldown after completion)
   const handleAcceptVisitorDeal = (visitor: FarmVisitor) => {
+    const nextSpawnTime = Date.now() + 45 * 60 * 1000; // 45 minutes
+
     setGameState((prev) => ({
       ...prev,
       coins: prev.coins + visitor.offeredCoins,
@@ -1332,6 +1339,7 @@ export default function App() {
         ),
       },
       activeVisitor: null,
+      nextVisitorAvailableAt: nextSpawnTime,
       stats: {
         ...prev.stats,
         totalCoinsEarned: prev.stats.totalCoinsEarned + visitor.offeredCoins,
@@ -1343,8 +1351,14 @@ export default function App() {
   };
 
   const handleRefuseVisitorDeal = () => {
-    setGameState((prev) => ({ ...prev, activeVisitor: null }));
+    const nextSpawnTime = Date.now() + 45 * 60 * 1000; // 45 minutes
+    setGameState((prev) => ({
+      ...prev,
+      activeVisitor: null,
+      nextVisitorAvailableAt: nextSpawnTime,
+    }));
     setIsVisitorModalOpen(false);
+    showToast('👋 Visitante foi embora. Próximo visitante em 45 minutos.');
   };
 
   // 13. Claim Wheel Reward
