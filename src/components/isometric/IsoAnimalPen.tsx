@@ -199,7 +199,7 @@ export const IsoAnimalPen: React.FC<IsoAnimalPenProps> = ({
               }}
               className="flex flex-col items-center cursor-pointer mt-6"
             >
-              {isReady ? (
+              {isReady && (
                 <button
                   className="bg-gradient-to-b from-green-400 to-green-600 hover:brightness-110 text-white text-[11px] font-black px-2.5 py-1 rounded-full shadow-[0_4px_10px_rgba(34,197,94,0.6)] border-2 border-white flex items-center gap-1 animate-bounce active:scale-95 transition-transform"
                   title="Coletar Produto!"
@@ -207,14 +207,6 @@ export const IsoAnimalPen: React.FC<IsoAnimalPenProps> = ({
                   <span>{ITEMS[penDef.produceId]?.icon}</span>
                   <span>Coletar!</span>
                 </button>
-              ) : isFed ? (
-                <div className="text-[9px] font-black text-amber-950 bg-white/95 px-2 py-0.5 rounded-full shadow border border-amber-300">
-                  ⏳ {Math.max(0, Math.ceil((penDef?.produceTimeSeconds || 30) - elapsed))}s
-                </div>
-              ) : (
-                <div className="text-[9px] font-black text-red-800 bg-red-100 px-2 py-0.5 rounded-full border border-red-300 shadow animate-pulse">
-                  🌾 Fome
-                </div>
               )}
             </div>
           );

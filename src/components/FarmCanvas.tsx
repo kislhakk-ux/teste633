@@ -796,9 +796,6 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                 }}
                 className="cursor-pointer group flex flex-col items-center select-none hover:scale-105 transition-transform"
               >
-                <div className="bg-white/95 px-2 py-0.5 rounded-full text-xs font-bold text-amber-900 border border-amber-400 shadow-md animate-bounce flex items-center gap-1 mb-1">
-                  💬 <span className="text-[11px]">{activeVisitor.name}</span>
-                </div>
                 <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-3xl shadow-lg border-2 border-amber-500 hover:scale-110 transition-transform">
                   {activeVisitor.avatar}
                 </div>
@@ -1332,16 +1329,36 @@ function renderEntityVisual(ctx: VisualContext) {
             </div>
           )}
 
-          {/* 3. Building Header Badge with Mastery Stars */}
-          <div className="absolute -top-3.5 z-10 bg-linear-to-r from-amber-950 via-amber-900 to-amber-950 text-amber-100 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-amber-400/70 shadow-md flex items-center gap-1.5 backdrop-blur-xs select-none">
-            <span>{bDef?.icon}</span>
-            <span>{bDef?.name}</span>
-            <span className="text-[9px] tracking-tighter" title={`Maestria: ${stars}/3 estrelas`}>
-              {stars >= 1 ? '⭐' : '☆'}
-              {stars >= 2 ? '⭐' : '☆'}
-              {stars >= 3 ? '⭐' : '☆'}
-            </span>
-          </div>
+          {/* 2. Floating 3D Golden Harvest Bubbles (Direct Tap-to-Collect when ready) */}
+          {hasCompleted && completedItems.length > 0 && (
+            <div className="absolute -top-11 z-30 flex items-center justify-center animate-bubble-float pointer-events-auto">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCollectBuilding(entity.id);
+                }}
+                className="group relative flex items-center justify-center cursor-pointer transition-transform duration-200 active:scale-90 hover:scale-110"
+                title="Toque para coletar produtos prontos!"
+              >
+                {/* Ambient Golden Glow */}
+                <div className="absolute inset-0 rounded-full bg-amber-400/50 blur-md animate-pulse pointer-events-none" />
+
+                {/* Bubble Shell */}
+                <div className="relative w-12 h-12 rounded-full bg-linear-to-b from-amber-200 via-amber-400 to-amber-600 border-2 border-yellow-100 shadow-xl flex items-center justify-center ring-2 ring-amber-500/50">
+                  <span className="text-2xl filter drop-shadow-md select-none transform transition-transform group-hover:scale-115">
+                    {ITEMS[completedItems[0]]?.icon || '📦'}
+                  </span>
+
+                  {/* Multiple Items Count Badge */}
+                  {completedItems.length > 1 && (
+                    <div className="absolute -top-1.5 -right-1.5 bg-emerald-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border border-white shadow-md">
+                      x{completedItems.length}
+                    </div>
+                  )}
+                </div>
+              </button>
+            </div>
+          )}
         </div>
       );
     }
@@ -1369,23 +1386,11 @@ function renderEntityVisual(ctx: VisualContext) {
           ) : (
             <IsoFarmhouse isSelected={isSelected} />
           )}
-
-          {/* Farmhouse Trophy Crest */}
-          <div className="absolute -top-4 z-20 bg-linear-to-r from-red-900 via-red-800 to-red-900 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full border border-amber-300 shadow-md flex items-center gap-1.5 select-none">
-            <span>🏆 Nv. {playerLevel || 1}</span>
-            <span className="text-amber-200 font-bold">• {farmName || 'Fazenda'}</span>
-          </div>
         </div>
       );
     }
 
     case 'silo': {
-      const used = siloUsed || 0;
-      const cap = siloCap || 50;
-      const pct = Math.round((used / cap) * 100);
-      const isCritical = pct >= 90;
-      const isWarning = pct >= 70;
-
       return (
         <div
           onClick={(e) => {
@@ -1408,46 +1413,11 @@ function renderEntityVisual(ctx: VisualContext) {
           ) : (
             <IsoSilo isSelected={isSelected} />
           )}
-
-          {/* Silo Title & Live Fill Gauge Badge */}
-          <div className="absolute -top-4 z-20 flex flex-col items-center gap-0.5">
-            <div
-              className={`px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-md border flex items-center gap-1.5 select-none ${
-                isCritical
-                  ? 'bg-red-950/90 text-red-200 border-red-400 animate-pulse'
-                  : isWarning
-                  ? 'bg-amber-950/90 text-amber-200 border-amber-400'
-                  : 'bg-emerald-950/90 text-emerald-200 border-emerald-400'
-              }`}
-            >
-              <span>🌾 Silo:</span>
-              <span className="font-extrabold">
-                {used}/{cap}
-              </span>
-              <span className="text-[9px] opacity-75">Nv.{siloLevel || 1}</span>
-            </div>
-
-            {/* In-world Mini Fill Bar */}
-            <div className="w-16 h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/20">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  isCritical ? 'bg-red-500' : isWarning ? 'bg-amber-400' : 'bg-emerald-400'
-                }`}
-                style={{ width: `${Math.min(100, pct)}%` }}
-              />
-            </div>
-          </div>
         </div>
       );
     }
 
     case 'barn': {
-      const used = barnUsed || 0;
-      const cap = barnCap || 50;
-      const pct = Math.round((used / cap) * 100);
-      const isCritical = pct >= 90;
-      const isWarning = pct >= 70;
-
       return (
         <div
           onClick={(e) => {
@@ -1470,35 +1440,6 @@ function renderEntityVisual(ctx: VisualContext) {
           ) : (
             <IsoBarn isSelected={isSelected} />
           )}
-
-          {/* Barn Title & Live Fill Gauge Badge */}
-          <div className="absolute -top-4 z-20 flex flex-col items-center gap-0.5">
-            <div
-              className={`px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-md border flex items-center gap-1.5 select-none ${
-                isCritical
-                  ? 'bg-red-950/90 text-red-200 border-red-400 animate-pulse'
-                  : isWarning
-                  ? 'bg-amber-950/90 text-amber-200 border-amber-400'
-                  : 'bg-emerald-950/90 text-emerald-200 border-emerald-400'
-              }`}
-            >
-              <span>🛖 Celeiro:</span>
-              <span className="font-extrabold">
-                {used}/{cap}
-              </span>
-              <span className="text-[9px] opacity-75">Nv.{barnLevel || 1}</span>
-            </div>
-
-            {/* In-world Mini Fill Bar */}
-            <div className="w-16 h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/20">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  isCritical ? 'bg-red-500' : isWarning ? 'bg-amber-400' : 'bg-emerald-400'
-                }`}
-                style={{ width: `${Math.min(100, pct)}%` }}
-              />
-            </div>
-          </div>
         </div>
       );
     }
@@ -1525,17 +1466,6 @@ function renderEntityVisual(ctx: VisualContext) {
             />
           ) : (
             <IsoOrderBoard />
-          )}
-
-          {/* Order Board Status Pill */}
-          {hasFulfillableOrders ? (
-            <div className="absolute -top-5 z-20 bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs px-2.5 py-0.5 rounded-full border-2 border-white shadow-xl flex items-center gap-1 animate-bounce select-none">
-              <span>📋 Pedido Pronto! ✨</span>
-            </div>
-          ) : (
-            <div className="absolute -top-3.5 z-10 bg-amber-950/90 text-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-500/70 shadow-md flex items-center gap-1 select-none">
-              <span>📋 {availableOrdersCount || 3} Pedidos</span>
-            </div>
           )}
         </div>
       );
@@ -1564,17 +1494,6 @@ function renderEntityVisual(ctx: VisualContext) {
           ) : (
             <IsoRoadsideShop isSelected={isSelected} />
           )}
-
-          {/* Roadside Shop Coins Notification */}
-          {hasRoadsideCoinsToCollect ? (
-            <div className="absolute -top-5 z-20 bg-yellow-400 hover:bg-yellow-300 text-yellow-950 font-black text-xs px-2.5 py-0.5 rounded-full border-2 border-white shadow-xl flex items-center gap-1 animate-bounce select-none">
-              <span>🪙 Pegar Moedas!</span>
-            </div>
-          ) : (
-            <div className="absolute -top-3.5 z-10 bg-amber-950/90 text-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-500/70 shadow-md select-none">
-              🏪 Banca Aberta
-            </div>
-          )}
         </div>
       );
     }
@@ -1601,17 +1520,6 @@ function renderEntityVisual(ctx: VisualContext) {
             />
           ) : (
             <IsoLuckyWheel isSelected={isSelected} />
-          )}
-
-          {/* Lucky Wheel Free Spin Notification */}
-          {canSpinWheel ? (
-            <div className="absolute -top-5 z-20 bg-linear-to-r from-purple-600 to-indigo-600 text-white font-black text-xs px-2.5 py-0.5 rounded-full border-2 border-white shadow-xl flex items-center gap-1 animate-bounce select-none">
-              <span>🎡 Giro Grátis!</span>
-            </div>
-          ) : (
-            <div className="absolute -top-3.5 z-10 bg-purple-950/90 text-purple-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-400/60 shadow-md select-none">
-              🎡 Roleta Diária
-            </div>
           )}
         </div>
       );
