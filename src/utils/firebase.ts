@@ -77,12 +77,19 @@ export const googleSignOut = async () => {
 
 /**
  * Loads the farm progress from Firestore for the given UID.
- * Returns null if no document exists (new user).
+ * Returns null if no document exists (new user) or on network timeout.
  */
 export const loadFarmFromFirestore = async (uid: string): Promise<GameState | null> => {
   try {
     const ref = doc(db, 'users', uid);
-    const snap = await getDoc(ref);
+
+    // 6-second timeout guard to prevent hanging indefinitely
+    const fetchPromise = getDoc(ref);
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Firestore fetch timeout')), 6000)
+    );
+
+    const snap = await Promise.race([fetchPromise, timeoutPromise]);
     if (!snap.exists()) {
       return null;
     }
@@ -148,7 +155,11 @@ export const loadFarmFromFirestore = async (uid: string): Promise<GameState | nu
 export const saveFarmToFirestore = async (uid: string, state: GameState): Promise<void> => {
   try {
     const ref = doc(db, 'users', uid);
-    await setDoc(ref, { ...state, savedAt: Date.now() }, { merge: true });
+    const savePromise = setDoc(ref, { ...state, savedAt: Date.now() }, { merge: true });
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Firestore save timeout')), 6000)
+    );
+    await Promise.race([savePromise, timeoutPromise]);
   } catch (e) {
     console.error('[Firestore] Error saving farm:', e);
   }

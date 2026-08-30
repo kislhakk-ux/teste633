@@ -134,6 +134,12 @@ export default function App() {
     }
   }, []);
 
+  const handlePlayOffline = () => {
+    setIsLoadingFarm(false);
+    setIsAuthRequired(false);
+    showToast('🌾 Bem-vindo à sua Fazenda!');
+  };
+
   // Google Login flow handler — carrega/cria fazenda no Firestore pelo UID
   const handleGoogleLogin = async () => {
     sound.playClick();
@@ -143,16 +149,11 @@ export default function App() {
     setIsLoadingFarm(true);
     setIsLoadingFadingOut(false);
 
-    // Timeout guard (20s) to prevent infinite waiting
-    const timeoutId = setTimeout(() => {
-      setLoadingError('O carregamento demorou mais que o esperado. Verifique sua conexão e tente novamente.');
-    }, 20000);
-
     try {
       const firebaseUser = await googleSignIn();
 
       const uid = firebaseUser.uid;
-      const defaultName = firebaseUser.displayName || 'Fazendeiro do Google';
+      const defaultName = firebaseUser.displayName || 'Fazendeiro';
       const avatar = firebaseUser.photoURL || '👨‍🌾';
       const email = firebaseUser.email || '';
 
@@ -160,7 +161,7 @@ export default function App() {
       setLoadingStatusText('Carregando sua fazenda...');
       setLoadingSubMessage('Buscando progresso no Firestore ☁️');
 
-      // Buscar fazenda no Firestore pelo UID
+      // Buscar fazenda no Firestore pelo UID (com timeout interno resiliente de 6s)
       let farmState = await loadFarmFromFirestore(uid);
 
       if (farmState) {
@@ -168,19 +169,14 @@ export default function App() {
         setGameState({ ...farmState, graphicsStyle: '3d_rendered' });
         setPlayerAvatar(avatar);
       } else {
-        // Novo usuário — pede nome e cria fazenda nova
-        let farmName = window.prompt('Escolha um nome para a sua fazenda:', defaultName);
-        if (!farmName || farmName.trim() === '') {
-          farmName = defaultName;
-        }
+        // Novo usuário — inicializa com nome da conta Google (sem prompt bloqueante)
+        const farmName = defaultName.includes(' ') ? `Fazenda de ${defaultName.split(' ')[0]}` : `Fazenda de ${defaultName}`;
         const newState = { ...getInitialGameState(), farmName, graphicsStyle: '3d_rendered' as const };
         setGameState(newState);
         setPlayerAvatar(avatar);
-        // Persiste a fazenda nova no Firestore imediatamente
-        await saveFarmToFirestore(uid, newState);
+        // Persiste a fazenda nova no Firestore em segundo plano
+        saveFarmToFirestore(uid, newState);
       }
-
-      clearTimeout(timeoutId);
 
       // Registrar UID no state (fonte de verdade para o save)
       setCurrentUid(uid);
@@ -209,12 +205,11 @@ export default function App() {
         setIsAuthRequired(false);
         setIsLoadingFadingOut(false);
         showToast(`🌾 Bem-vindo, ${farmState?.farmName ?? defaultName}!`);
-      }, 450);
+      }, 400);
     } catch (err: any) {
-      clearTimeout(timeoutId);
       console.error('Google Sign In Error:', err);
 
-      if (err?.code === 'auth/popup-closed-by-user') {
+      if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
         // Usuário apenas fechou o popup do Google
         setIsLoadingFarm(false);
         setLoadingError(null);
@@ -223,7 +218,7 @@ export default function App() {
 
       let friendlyMsg = 'Não conseguimos carregar sua fazenda. Verifique sua conexão e tente novamente.';
       if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('unauthorized-domain')) {
-        friendlyMsg = `Domínio não autorizado no Firebase (${window.location.hostname}). Adicione este domínio no Firebase Console > Authentication > Settings > Authorized domains.`;
+        friendlyMsg = `Domínio (${window.location.hostname}) não está nos domínios autorizados do Firebase Console. Adicione-o em Authentication > Settings > Authorized domains.`;
       }
 
       setLoadingError(friendlyMsg);
@@ -1627,6 +1622,7 @@ export default function App() {
           setIsLoadingFarm(false);
           setLoadingError(null);
         }}
+        onPlayOffline={handlePlayOffline}
       />
     );
   }
@@ -1680,7 +1676,12 @@ export default function App() {
               <span>Entrar com o Google</span>
             </button>
 
-            {/* O login real com o Google agora é obrigatório para acessar o jogo */}
+            <button
+              onClick={handlePlayOffline}
+              className="w-full bg-amber-200/60 hover:bg-amber-200 text-amber-900 font-bold text-xs py-2.5 px-4 rounded-xl border border-amber-400/80 transition-all active:scale-95 cursor-pointer"
+            >
+              🌾 Continuar como Convidado (Modo Local)
+            </button>
           </div>
 
           <span className="text-[10px] text-[#b45309] font-bold">
