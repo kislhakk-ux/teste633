@@ -53,10 +53,32 @@ import { BeeTreeModal } from './components/BeeTreeModal';
 import { LoadingScreen } from './components/LoadingScreen';
 import { googleSignIn, googleSignOut, loadFarmFromFirestore, saveFarmToFirestore } from './utils/firebase';
 
+function applyWongamerVip(state: GameState, email?: string): GameState {
+  const name = (state.farmName || '').toLowerCase();
+  const mail = (email || '').toLowerCase();
+  if (
+    name.includes('wongamer') ||
+    name.includes('kislhakk') ||
+    mail.includes('kislhakk') ||
+    mail.includes('wongamer')
+  ) {
+    return {
+      ...state,
+      level: 1000,
+      xp: Math.max(state.xp || 0, 999999),
+      coins: Math.max(state.coins || 0, 5000000),
+      gems: Math.max(state.gems || 0, 10000),
+      siloLevel: Math.max(state.siloLevel || 1, 100),
+      barnLevel: Math.max(state.barnLevel || 1, 100),
+    };
+  }
+  return state;
+}
+
 export default function App() {
   const [gameState, setGameState] = useState<GameState>(() => {
     const state = loadGameState();
-    return { ...state, graphicsStyle: '3d_rendered' };
+    return applyWongamerVip({ ...state, graphicsStyle: '3d_rendered' });
   });
   // UID do usuário autenticado (null = ninguém logado)
   const [currentUid, setCurrentUid] = useState<string | null>(null);
@@ -120,7 +142,11 @@ export default function App() {
           loadFarmFromFirestore(parsed.uid)
             .then((cloudFarm) => {
               if (cloudFarm) {
-                setGameState({ ...cloudFarm, graphicsStyle: '3d_rendered' });
+                const finalState = applyWongamerVip({ ...cloudFarm, graphicsStyle: '3d_rendered' }, parsed.email);
+                setGameState(finalState);
+                if (finalState.level === 1000 && cloudFarm.level !== 1000) {
+                  saveFarmToFirestore(parsed.uid, finalState);
+                }
               }
               setIsLoadingFadingOut(true);
               setTimeout(() => {
@@ -171,12 +197,16 @@ export default function App() {
 
       if (farmState) {
         // Fazenda existente — carrega dados do Firestore
-        setGameState({ ...farmState, graphicsStyle: '3d_rendered' });
+        const finalState = applyWongamerVip({ ...farmState, graphicsStyle: '3d_rendered' }, email);
+        setGameState(finalState);
         setPlayerAvatar(avatar);
+        if (finalState.level === 1000 && farmState.level !== 1000) {
+          saveFarmToFirestore(uid, finalState);
+        }
       } else {
         // Novo usuário — inicializa com nome da conta Google (sem prompt bloqueante)
         const farmName = defaultName.includes(' ') ? `Fazenda de ${defaultName.split(' ')[0]}` : `Fazenda de ${defaultName}`;
-        const newState = { ...getInitialGameState(), farmName, graphicsStyle: '3d_rendered' as const };
+        const newState = applyWongamerVip({ ...getInitialGameState(), farmName, graphicsStyle: '3d_rendered' as const }, email);
         setGameState(newState);
         setPlayerAvatar(avatar);
         // Persiste a fazenda nova no Firestore em segundo plano
@@ -2081,7 +2111,7 @@ export default function App() {
         onClose={() => setIsSettingsOpen(false)}
         farmName={gameState.farmName}
         onUpdateFarmName={(newName) => {
-          setGameState((prev) => ({ ...prev, farmName: newName }));
+          setGameState((prev) => applyWongamerVip({ ...prev, farmName: newName }));
         }}
         soundEnabled={gameState.soundEnabled}
         onToggleSound={() => setGameState((p) => ({ ...p, soundEnabled: !p.soundEnabled }))}
@@ -2245,7 +2275,7 @@ export default function App() {
           stats={gameState.stats}
           onClose={() => setIsAchievementsOpen(false)}
           onRenameFarm={(newName) =>
-            setGameState((p) => ({ ...p, farmName: newName }))
+            setGameState((p) => applyWongamerVip({ ...p, farmName: newName }))
           }
           onClaimAchievement={handleClaimAchievement}
         />

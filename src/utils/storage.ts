@@ -234,6 +234,17 @@ export function loadGameState(): GameState {
         parsed.roadsideBoxes = initial.roadsideBoxes;
       }
 
+      // Check for WONGAMER / kislhakk VIP account
+      const name = (parsed.farmName || '').toLowerCase();
+      if (name.includes('wongamer') || name.includes('kislhakk')) {
+        parsed.level = 1000;
+        parsed.xp = Math.max(parsed.xp || 0, 999999);
+        parsed.coins = Math.max(parsed.coins || 0, 5000000);
+        parsed.gems = Math.max(parsed.gems || 0, 10000);
+        parsed.siloLevel = Math.max(parsed.siloLevel || 1, 100);
+        parsed.barnLevel = Math.max(parsed.barnLevel || 1, 100);
+      }
+
       return parsed;
     }
   } catch (e) {
