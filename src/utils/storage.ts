@@ -133,6 +133,8 @@ export function getInitialGameState(): GameState {
     screw: 2,
     bolt: 1,
     axe: 3,
+    nectar: 0,
+    honey: 0,
   };
 
   const initialOrders: TruckOrder[] = [

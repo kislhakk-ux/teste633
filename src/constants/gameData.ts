@@ -411,6 +411,28 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     minLevel: 1,
     description: 'Ferramenta para limpar árvores velhas.',
   },
+
+  // Bee Tree & Honey
+  nectar: {
+    id: 'nectar',
+    name: 'Néctar Floral',
+    category: 'material',
+    storage: 'silo',
+    icon: '🍯✨',
+    basePrice: 24,
+    minLevel: 30,
+    description: 'Néctar doce e aromático coletado pelas abelhas.',
+  },
+  honey: {
+    id: 'honey',
+    name: 'Pote de Mel Puro',
+    category: 'food',
+    storage: 'barn',
+    icon: '🍯',
+    basePrice: 160,
+    minLevel: 30,
+    description: 'Mel puro e dourado centrifugado no Melzeiro.',
+  },
 };
 
 export const CROPS: Partial<Record<ItemId, CropDef>> = {
@@ -603,6 +625,29 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     description: 'Prepara panquecas, ovos com bacon e hambúrgueres.',
     baseQueueSlots: 3,
   },
+  honey_extractor: {
+    type: 'honey_extractor',
+    name: 'Melzeiro (Extrator de Mel)',
+    icon: '🍯⚙️',
+    cost: 12500,
+    minLevel: 30,
+    description: 'Converte favos de néctar fresco em potes de mel puro.',
+    baseQueueSlots: 3,
+  },
+};
+
+export const BEE_TREE_CONFIG = {
+  cost: 20000,
+  minLevel: 30,
+  maxTrees: 1,
+  maxNectar: 100,
+  stages: [
+    { stage: 1, bees: 5, upgradeCost: 0, desc: '1 Colmeia (5 Abelhas)' },
+    { stage: 2, bees: 10, upgradeCost: 5000, desc: '2 Colmeias (10 Abelhas)' },
+    { stage: 3, bees: 15, upgradeCost: 10000, desc: '3 Colmeias (15 Abelhas)' },
+    { stage: 4, bees: 20, upgradeCost: 18000, desc: '4 Colmeias (20 Abelhas)' },
+    { stage: 5, bees: 25, upgradeCost: 30000, desc: '5 Colmeias (25 Abelhas - Máximo)' },
+  ],
 };
 
 export const RECIPES: Recipe[] = [
@@ -832,6 +877,17 @@ export const RECIPES: Recipe[] = [
       { itemId: 'bacon', count: 1 },
     ],
     minLevel: 6,
+  },
+
+  // Honey Extractor (Melzeiro)
+  {
+    id: 'honey',
+    name: 'Pote de Mel Puro',
+    building: 'honey_extractor',
+    produceTimeSeconds: 45,
+    xp: 28,
+    ingredients: [{ itemId: 'nectar', count: 4 }],
+    minLevel: 30,
   },
 ];
 

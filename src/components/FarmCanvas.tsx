@@ -48,6 +48,7 @@ import { IsoDairy } from './isometric/IsoDairy';
 import { IsoSugarMill } from './isometric/IsoSugarMill';
 import { IsoPopcornPot } from './isometric/IsoPopcornPot';
 import { IsoBBQGrill } from './isometric/IsoBBQGrill';
+import { IsoHoneyExtractor } from './isometric/IsoHoneyExtractor';
 import { IsoCropPlot } from './isometric/IsoCropPlot';
 import { IsoAnimalPen } from './isometric/IsoAnimalPen';
 import { IsoOrderBoard } from './isometric/IsoOrderBoard';
@@ -55,6 +56,7 @@ import { IsoRoadsideShop } from './isometric/IsoRoadsideShop';
 import { IsoLuckyWheel } from './isometric/IsoLuckyWheel';
 import { IsoTruck } from './isometric/IsoTruck';
 import { IsoNpcVisitor } from './isometric/IsoNpcVisitor';
+import { IsoBeeTree } from './isometric/IsoBeeTree';
 import { IsoScenery } from './isometric/IsoScenery';
 import { IsoLushGrass } from './isometric/IsoLushGrass';
 import { Iso3DSpriteBuilding } from './isometric/Iso3DSpriteBuilding';
@@ -107,6 +109,7 @@ interface FarmCanvasProps {
   onOpenOrderBoard?: () => void;
   onOpenRoadsideShop?: () => void;
   onOpenLuckyWheel?: () => void;
+  onOpenBeeTree?: (entity: FarmEntity) => void;
 }
 
 const MAP_SIZE = 14;
@@ -142,6 +145,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
   onOpenOrderBoard,
   onOpenRoadsideShop,
   onOpenLuckyWheel,
+  onOpenBeeTree,
   inventory = {},
   onQuickPlantCrop,
 }) => {
@@ -909,6 +913,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                   onOpenOrderBoard,
                   onOpenRoadsideShop,
                   onOpenLuckyWheel,
+                  onOpenBeeTree,
                 })}
               </div>
             </React.Fragment>
@@ -1079,6 +1084,7 @@ interface VisualContext {
   onOpenOrderBoard?: () => void;
   onOpenRoadsideShop?: () => void;
   onOpenLuckyWheel?: () => void;
+  onOpenBeeTree?: (entity: FarmEntity) => void;
 }
 
 // Sub-renderer for rich realistic Hay Day isometric entity graphics
@@ -1109,6 +1115,7 @@ function renderEntityVisual(ctx: VisualContext) {
     onOpenOrderBoard,
     onOpenRoadsideShop,
     onOpenLuckyWheel,
+    onOpenBeeTree,
   } = ctx;
 
   const is3D = graphicsStyle === '3d_rendered';
@@ -1180,6 +1187,7 @@ function renderEntityVisual(ctx: VisualContext) {
               {bData.buildingType === 'sugar_mill' && <IsoSugarMill isWorking={isWorking} />}
               {bData.buildingType === 'popcorn_pot' && <IsoPopcornPot isWorking={isWorking} />}
               {bData.buildingType === 'bbq_grill' && <IsoBBQGrill isWorking={isWorking} />}
+              {bData.buildingType === 'honey_extractor' && <IsoHoneyExtractor isWorking={isWorking} />}
             </>
           )}
 
@@ -1469,6 +1477,20 @@ function renderEntityVisual(ctx: VisualContext) {
           <IsoDecoration
             type={entity.decorationType || 'scarecrow'}
             isSelected={isSelected}
+          />
+        </div>
+      );
+    }
+
+    case 'bee_tree': {
+      return (
+        <div className="relative flex flex-col items-center justify-center cursor-pointer">
+          <IsoBeeTree
+            entity={entity}
+            isSelected={isSelected}
+            onOpenModal={() => {
+              if (onOpenBeeTree) onOpenBeeTree(entity);
+            }}
           />
         </div>
       );

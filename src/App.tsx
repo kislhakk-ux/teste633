@@ -49,6 +49,7 @@ import { multiplayerClient } from './utils/multiplayerClient';
 import { MultiplayerOffer, OnlineFarm } from './types/multiplayer';
 import { SettingsModal } from './components/SettingsModal';
 import { FreeGemsModal } from './components/FreeGemsModal';
+import { BeeTreeModal } from './components/BeeTreeModal';
 import { LoadingScreen } from './components/LoadingScreen';
 import { googleSignIn, googleSignOut, loadFarmFromFirestore, saveFarmToFirestore } from './utils/firebase';
 
@@ -69,6 +70,8 @@ export default function App() {
 
   const [selectedEntity, setSelectedEntity] = useState<FarmEntity | null>(null);
   const [activeBuildingModalEntity, setActiveBuildingModalEntity] = useState<FarmEntity | null>(null);
+  const [selectedBeeTreeEntity, setSelectedBeeTreeEntity] = useState<FarmEntity | null>(null);
+  const [isBeeTreeModalOpen, setIsBeeTreeModalOpen] = useState(false);
   const [isOrderBoardOpen, setIsOrderBoardOpen] = useState(false);
   const [isRoadsideOpen, setIsRoadsideOpen] = useState(false);
   const [roadsideInitialTab, setRoadsideInitialTab] = useState<'stand' | 'newspaper'>('stand');
@@ -386,6 +389,29 @@ export default function App() {
               }
             }
           }
+
+          // 1.5 Process Bee Tree Nectar Production (each bee generates 1 nectar per cycle up to 100 capacity)
+          if (ent.type === 'bee_tree' && ent.beeTreeData) {
+            const tree = ent.beeTreeData;
+            if (tree.nectarCount < tree.maxNectar) {
+              const lastHarvest = tree.lastHarvestAt || now;
+              const elapsedSec = (now - lastHarvest) / 1000;
+              // Every 12 seconds, active bees deliver 1 nectar per bee to the tree (up to max 100)
+              if (elapsedSec >= 12) {
+                updated = true;
+                const nectarGained = Math.min(tree.maxNectar - tree.nectarCount, tree.beesCount);
+                return {
+                  ...ent,
+                  beeTreeData: {
+                    ...tree,
+                    nectarCount: Math.min(tree.maxNectar, tree.nectarCount + nectarGained),
+                    lastHarvestAt: now,
+                  },
+                };
+              }
+            }
+          }
+
           return ent;
         });
 
@@ -1497,6 +1523,151 @@ export default function App() {
     showToast(`🏭 Nova ${bDef.name} construída na fazenda!`);
   };
 
+  const handleBuyBeeTree = () => {
+    const alreadyHas = gameState.entities.some((e) => e.type === 'bee_tree');
+    if (alreadyHas) {
+      showToast('⚠️ Você já possui uma Árvore de Abelhas na fazenda (Máximo: 1)!');
+      return;
+    }
+    if (gameState.level < 30) {
+      showToast('🔒 A Árvore de Abelhas é desbloqueada no Nível 30!');
+      return;
+    }
+    if (gameState.coins < 20000) {
+      showToast('⚠️ Moedas insuficientes (Custo: 20.000 moedas)!');
+      return;
+    }
+
+    const pos = findNextAvailablePosition(2, 2);
+    const newTree: FarmEntity = {
+      id: 'bee_tree_' + Date.now(),
+      x: pos.x,
+      y: pos.y,
+      width: 2,
+      height: 2,
+      type: 'bee_tree',
+      beeTreeData: {
+        stage: 1,
+        beesCount: 5,
+        nectarCount: 0,
+        maxNectar: 100,
+        lastHarvestAt: Date.now(),
+      },
+    };
+
+    setGameState((prev) => ({
+      ...prev,
+      coins: prev.coins - 20000,
+      entities: [...prev.entities, newTree],
+    }));
+
+    setIsShopOpen(false);
+    sound.playCoin();
+    confetti({ particleCount: 70, spread: 70 });
+    showToast('🌳🐝 Árvore de Abelhas construída na fazenda!');
+  };
+
+  const handleOpenBeeTree = (entity: FarmEntity) => {
+    // Find latest entity state from gameState
+    const latest = gameState.entities.find((e) => e.id === entity.id) || entity;
+    setSelectedBeeTreeEntity(latest);
+    setIsBeeTreeModalOpen(true);
+  };
+
+  const handleHarvestNectar = (entityId: string) => {
+    const treeEntity = gameState.entities.find((e) => e.id === entityId);
+    if (!treeEntity || !treeEntity.beeTreeData || treeEntity.beeTreeData.nectarCount <= 0) return;
+
+    const count = treeEntity.beeTreeData.nectarCount;
+    const xpGained = count * 2;
+
+    setGameState((prev) => ({
+      ...prev,
+      xp: prev.xp + xpGained,
+      inventory: {
+        ...prev.inventory,
+        nectar: (prev.inventory.nectar || 0) + count,
+      },
+      entities: prev.entities.map((e) =>
+        e.id === entityId && e.beeTreeData
+          ? {
+              ...e,
+              beeTreeData: {
+                ...e.beeTreeData,
+                nectarCount: 0,
+                lastHarvestAt: Date.now(),
+              },
+            }
+          : e
+      ),
+    }));
+
+    setSelectedBeeTreeEntity((prev) =>
+      prev && prev.id === entityId && prev.beeTreeData
+        ? {
+            ...prev,
+            beeTreeData: {
+              ...prev.beeTreeData,
+              nectarCount: 0,
+              lastHarvestAt: Date.now(),
+            },
+          }
+        : prev
+    );
+
+    sound.playDing();
+    showToast(`🍯 Colheu ${count}x Néctar Floral! +${xpGained} XP`);
+  };
+
+  const handleUpgradeBeeTreeStage = (entityId: string, cost: number) => {
+    if (gameState.coins < cost) {
+      showToast('⚠️ Moedas insuficientes para evoluir a árvore!');
+      return;
+    }
+
+    setGameState((prev) => {
+      const updatedEntities = prev.entities.map((e) => {
+        if (e.id === entityId && e.beeTreeData && e.beeTreeData.stage < 5) {
+          const newStage = e.beeTreeData.stage + 1;
+          return {
+            ...e,
+            beeTreeData: {
+              ...e.beeTreeData,
+              stage: newStage,
+              beesCount: newStage * 5,
+            },
+          };
+        }
+        return e;
+      });
+
+      return {
+        ...prev,
+        coins: prev.coins - cost,
+        entities: updatedEntities,
+      };
+    });
+
+    setSelectedBeeTreeEntity((prev) => {
+      if (prev && prev.id === entityId && prev.beeTreeData && prev.beeTreeData.stage < 5) {
+        const newStage = prev.beeTreeData.stage + 1;
+        return {
+          ...prev,
+          beeTreeData: {
+            ...prev.beeTreeData,
+            stage: newStage,
+            beesCount: newStage * 5,
+          },
+        };
+      }
+      return prev;
+    });
+
+    sound.playDing();
+    confetti({ particleCount: 60, spread: 60 });
+    showToast('⭐ Árvore de Abelhas evoluída! +5 Abelhas ativas adicionadas!');
+  };
+
   const handleQuickPlantCrop = (plotId: string, cropId: string) => {
     const currentQty = gameState.inventory[cropId as ItemId] || 0;
     if (currentQty <= 0) return;
@@ -1841,6 +2012,7 @@ export default function App() {
         onOpenOrderBoard={() => setIsOrderBoardOpen(true)}
         onOpenRoadsideShop={() => setIsRoadsideOpen(true)}
         onOpenLuckyWheel={() => setIsLuckyWheelOpen(true)}
+        onOpenBeeTree={handleOpenBeeTree}
       />
 
       {/* Radial Tool Selector / Quick Plot Popups */}
@@ -2005,6 +2177,37 @@ export default function App() {
           onBuyAnimalPen={handleBuyAnimalPen}
           onBuyBuilding={handleBuyBuilding}
           onBuyDecoration={handleBuyDecoration}
+          onBuyBeeTree={handleBuyBeeTree}
+        />
+      )}
+
+      {isBeeTreeModalOpen && selectedBeeTreeEntity && (
+        <BeeTreeModal
+          entity={
+            gameState.entities.find((e) => e.id === selectedBeeTreeEntity.id) ||
+            selectedBeeTreeEntity
+          }
+          coins={gameState.coins}
+          level={gameState.level}
+          hasHoneyExtractor={gameState.entities.some(
+            (e) => e.type === 'building' && e.buildingData?.buildingType === 'honey_extractor'
+          )}
+          onClose={() => {
+            setIsBeeTreeModalOpen(false);
+            setSelectedBeeTreeEntity(null);
+          }}
+          onHarvestNectar={handleHarvestNectar}
+          onUpgradeStage={handleUpgradeBeeTreeStage}
+          onOpenHoneyExtractor={() => {
+            setIsBeeTreeModalOpen(false);
+            setSelectedBeeTreeEntity(null);
+            const extractor = gameState.entities.find(
+              (e) => e.type === 'building' && e.buildingData?.buildingType === 'honey_extractor'
+            );
+            if (extractor) {
+              setActiveBuildingModalEntity(extractor);
+            }
+          }}
         />
       )}
 

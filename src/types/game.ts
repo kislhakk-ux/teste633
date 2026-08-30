@@ -43,7 +43,10 @@ export type ItemId =
   | 'nail'
   | 'screw'
   | 'bolt'
-  | 'axe';
+  | 'axe'
+  // Bee Tree & Honey
+  | 'nectar'
+  | 'honey';
 
 export type StorageType = 'silo' | 'barn';
 
@@ -92,7 +95,8 @@ export type BuildingType =
   | 'dairy'
   | 'sugar_mill'
   | 'bbq_grill'
-  | 'popcorn_pot';
+  | 'popcorn_pot'
+  | 'honey_extractor';
 
 export interface Recipe {
   id: ItemId;
@@ -128,7 +132,8 @@ export type TileType =
   | 'order_board'
   | 'roadside_shop'
   | 'lucky_wheel'
-  | 'decoration';
+  | 'decoration'
+  | 'bee_tree';
 
 export interface GridPos {
   x: number;
@@ -169,6 +174,14 @@ export interface BuildingData {
   masteryLevel?: number;
 }
 
+export interface BeeTreeData {
+  stage: number; // 1 to 5
+  beesCount: number; // stage * 5 (5, 10, 15, 20, 25)
+  nectarCount: number; // 0 to 100
+  maxNectar: number; // 100
+  lastHarvestAt?: number;
+}
+
 export type DecorationType =
   | 'fence_wood'
   | 'flower_red'
@@ -200,6 +213,7 @@ export interface FarmEntity {
   animalData?: AnimalPenData;
   buildingData?: BuildingData;
   decorationType?: DecorationType;
+  beeTreeData?: BeeTreeData;
   appleTreeData?: {
     harvestsLeft: number;
     readyAt: number;

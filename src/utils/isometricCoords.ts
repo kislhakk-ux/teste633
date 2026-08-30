@@ -184,6 +184,21 @@ export const ISO_ANCHOR_REGISTRY: {
       anchorY: 0.765,
       shadow: { width: 168, height: 84, opacity: 0.48 },
     },
+    honey_extractor: {
+      widthPx: 176,
+      heightPx: 176,
+      anchorX: 0.5,
+      anchorY: 0.765,
+      shadow: { width: 168, height: 84, opacity: 0.48 },
+    },
+    // Bee Tree (2x2)
+    bee_tree: {
+      widthPx: 160,
+      heightPx: 180,
+      anchorX: 0.5,
+      anchorY: 0.82,
+      shadow: { width: 140, height: 70, opacity: 0.45 },
+    },
     // Crop Plot (1x1)
     crop_plot: {
       widthPx: 128,
