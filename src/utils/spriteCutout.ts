@@ -4,13 +4,18 @@
  */
 
 const spriteCache = new Map<string, string>();
+const inFlightCache = new Map<string, Promise<string>>();
 
 export function getCutoutSprite(src: string): Promise<string> {
   if (spriteCache.has(src)) {
     return Promise.resolve(spriteCache.get(src)!);
   }
 
-  return new Promise((resolve) => {
+  if (inFlightCache.has(src)) {
+    return inFlightCache.get(src)!;
+  }
+
+  const promise = new Promise<string>((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.referrerPolicy = 'no-referrer';
@@ -156,21 +161,27 @@ export function getCutoutSprite(src: string): Promise<string> {
         ctx.putImageData(imgData, 0, 0);
         const resultDataUrl = canvas.toDataURL('image/png');
         spriteCache.set(src, resultDataUrl);
+        inFlightCache.delete(src);
         resolve(resultDataUrl);
       } catch (err) {
         console.error('Error processing cutout sprite:', err);
         spriteCache.set(src, src);
+        inFlightCache.delete(src);
         resolve(src);
       }
     };
 
     img.onerror = () => {
       spriteCache.set(src, src);
+      inFlightCache.delete(src);
       resolve(src);
     };
 
     img.src = src;
   });
+
+  inFlightCache.set(src, promise);
+  return promise;
 }
 
 function getPixel(data: Uint8ClampedArray, x: number, y: number, width: number) {

@@ -16,7 +16,7 @@ interface Iso3DSpriteBuildingProps {
   baseType?: GroundBaseType;
 }
 
-export const Iso3DSpriteBuilding: React.FC<Iso3DSpriteBuildingProps> = ({
+export const Iso3DSpriteBuilding: React.FC<Iso3DSpriteBuildingProps> = React.memo(({
   src,
   alt,
   widthPx,
@@ -167,4 +167,4 @@ export const Iso3DSpriteBuilding: React.FC<Iso3DSpriteBuildingProps> = ({
       )}
     </div>
   );
-};
+});

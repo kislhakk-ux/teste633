@@ -6,7 +6,7 @@ interface IsoDecorationProps {
   isSelected?: boolean;
 }
 
-export const IsoDecoration: React.FC<IsoDecorationProps> = ({ type, isSelected }) => {
+export const IsoDecoration: React.FC<IsoDecorationProps> = React.memo(({ type, isSelected }) => {
   switch (type) {
     case 'scarecrow':
       return (
@@ -339,4 +339,4 @@ export const IsoDecoration: React.FC<IsoDecorationProps> = ({ type, isSelected }
         </div>
       );
   }
-};
+});

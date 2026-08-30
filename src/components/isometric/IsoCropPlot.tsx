@@ -9,10 +9,16 @@ interface IsoCropPlotProps {
   onHarvest?: () => void;
 }
 
-// Unique ID suffix per instance so SVG defs don't collide when many plots render
 let _plotIdCounter = 0;
 
-export const IsoCropPlot: React.FC<IsoCropPlotProps> = ({
+function getCropStage(plantedAt?: number, growDuration: number = 10, currentTime: number = Date.now()): number {
+  if (!plantedAt) return -1;
+  const elapsed = (currentTime - plantedAt) / 1000;
+  const progress = Math.min(1, elapsed / growDuration);
+  return progress >= 1 ? 2 : progress >= 0.4 ? 1 : 0;
+}
+
+const IsoCropPlotComponent: React.FC<IsoCropPlotProps> = ({
   cropId,
   plantedAt,
   growDuration = 10,
@@ -510,4 +516,21 @@ function render3DCropVegetation(
         </g>
       );
   }
-}
+};
+
+export const IsoCropPlot = React.memo(IsoCropPlotComponent, (prev, next) => {
+  // If base identity props changed, re-render
+  if (prev.cropId !== next.cropId || prev.plantedAt !== next.plantedAt || prev.growDuration !== next.growDuration) {
+    return false;
+  }
+  // If empty plot, no need to re-render on timer ticks
+  if (!prev.cropId) {
+    return true;
+  }
+  // Calculate growth stage for both timestamps
+  const prevStage = getCropStage(prev.plantedAt, prev.growDuration, prev.currentTime);
+  const nextStage = getCropStage(next.plantedAt, next.growDuration, next.currentTime);
+
+  // Re-render ONLY if growth stage visually changed (e.g. sprout -> growing -> ripe)
+  return prevStage === nextStage;
+});

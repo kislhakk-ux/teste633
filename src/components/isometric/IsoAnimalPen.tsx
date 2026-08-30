@@ -9,7 +9,7 @@ interface IsoAnimalPenProps {
   onCollectAnimal: (idx: number) => void;
 }
 
-export const IsoAnimalPen: React.FC<IsoAnimalPenProps> = ({
+const IsoAnimalPenComponent: React.FC<IsoAnimalPenProps> = ({
   animalType,
   animals,
   currentTime,
@@ -215,6 +215,24 @@ export const IsoAnimalPen: React.FC<IsoAnimalPenProps> = ({
     </div>
   );
 };
+
+export const IsoAnimalPen = React.memo(IsoAnimalPenComponent, (prev, next) => {
+  if (prev.animalType !== next.animalType || prev.animals.length !== next.animals.length) {
+    return false;
+  }
+  const produceTime = ANIMAL_PENS[prev.animalType]?.produceTimeSeconds || 30;
+  for (let i = 0; i < prev.animals.length; i++) {
+    const a1 = prev.animals[i];
+    const a2 = next.animals[i];
+    if (a1.fedAt !== a2.fedAt) return false;
+    if (a1.fedAt) {
+      const ready1 = (prev.currentTime - a1.fedAt) / 1000 >= produceTime;
+      const ready2 = (next.currentTime - a2.fedAt) / 1000 >= produceTime;
+      if (ready1 !== ready2) return false;
+    }
+  }
+  return true;
+});
 
 // 3D Cartoon Characters Rendering (Hay Day Stylized)
 function render3DCartoonAnimal(
