@@ -262,21 +262,9 @@ export const IsoCropPlot: React.FC<IsoCropPlotProps> = ({
         )}
       </svg>
 
-      {/* ── ACTION OVERLAY: harvest button / timer ── */}
-      {isReady ? (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onHarvest?.();
-          }}
-          className="absolute -top-4 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:brightness-110 text-amber-950 text-xs font-black px-3 py-1 rounded-full border-2 border-white shadow-[0_4px_12px_rgba(245,158,11,0.6)] flex items-center gap-1.5 animate-bounce z-20 active:scale-95 transition-transform"
-          title="Colher Agora!"
-        >
-          <span className="text-sm">✂️</span>
-          <span>Colher!</span>
-        </button>
-      ) : isPlanted ? (
-        <div className="absolute -bottom-1 bg-black/75 backdrop-blur-xs text-white text-[10px] font-black px-2 py-0.5 rounded-full border border-white/20 shadow-md z-10">
+      {/* ── ACTION OVERLAY: timer while growing ── */}
+      {isPlanted && !isReady ? (
+        <div className="absolute -bottom-1 bg-black/75 backdrop-blur-xs text-white text-[10px] font-black px-2 py-0.5 rounded-full border border-white/20 shadow-md z-10 pointer-events-none">
           ⏳ {Math.max(0, Math.ceil(growDuration - elapsed))}s
         </div>
       ) : null}

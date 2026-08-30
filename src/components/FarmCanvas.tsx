@@ -7,6 +7,38 @@ import {
   AnimalType,
 } from '../types/game';
 import { CROPS, BUILDINGS, ANIMAL_PENS, ITEMS, DECORATIONS, RECIPES } from '../constants/gameData';
+import { sound } from '../utils/sound';
+
+export const ScytheSvg: React.FC<{ size?: number; className?: string }> = ({ size = 36, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className}>
+    <defs>
+      <linearGradient id="scythe-metal" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#FFFFFF" />
+        <stop offset="40%" stopColor="#ECEFF1" />
+        <stop offset="80%" stopColor="#B0BEC5" />
+        <stop offset="100%" stopColor="#78909C" />
+      </linearGradient>
+      <linearGradient id="scythe-wood" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#D7CCC8" />
+        <stop offset="40%" stopColor="#8D6E63" />
+        <stop offset="100%" stopColor="#4E342E" />
+      </linearGradient>
+    </defs>
+    {/* Wooden Staff/Handle */}
+    <path d="M10 42 L28 16" stroke="url(#scythe-wood)" strokeWidth="4.5" strokeLinecap="round" />
+    {/* Metallic Connector Ring */}
+    <ellipse cx="28" cy="16" rx="3.5" ry="2.5" fill="#CFD8DC" stroke="#455A64" strokeWidth="0.8" />
+    {/* Curved Razor Blade */}
+    <path
+      d="M28 16 C30 6, 44 6, 44 20 C42 24, 34 22, 28 16 Z"
+      fill="url(#scythe-metal)"
+      stroke="#37474F"
+      strokeWidth="1.2"
+    />
+    {/* Blade Highlight */}
+    <path d="M30 14 C36 9, 42 12, 42 19" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+  </svg>
+);
 import { IsoFarmhouse } from './isometric/IsoFarmhouse';
 import { IsoBarn } from './isometric/IsoBarn';
 import { IsoSilo } from './isometric/IsoSilo';
@@ -250,10 +282,67 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
     touchStartPosRef.current = null;
   };
 
+  // Centralized Drag Action processor for Scythe and Seeds across all plots
+  const processDragAction = useCallback(
+    (clientX: number, clientY: number, overrideTool?: string) => {
+      const tool = overrideTool || activeDragTool;
+      if (!tool) return;
+
+      setDragCursorPos({ x: clientX, y: clientY });
+
+      // Robust Proximity & Isometric check across all crop plots
+      const hoveredPlot = entities.find((ent) => {
+        if (ent.type !== 'crop_plot') return false;
+        const center = gridToScreen(ent.x + 0.5, ent.y + 0.5);
+        const screenX = pan.x + center.x * zoom;
+        const screenY = pan.y + center.y * zoom;
+        const dx = clientX - screenX;
+        const dy = clientY - screenY;
+        const normX = dx / (46 * zoom);
+        const normY = dy / (25 * zoom);
+        return normX * normX + normY * normY <= 1.35;
+      });
+
+      if (hoveredPlot) {
+        if (tool === 'scythe') {
+          if (isCropPlotReady(hoveredPlot) && onQuickHarvestCrop) {
+            onQuickHarvestCrop(hoveredPlot.id);
+          }
+        } else if (tool.startsWith('plant_')) {
+          const seedId = tool.replace('plant_', '');
+          const isEmpty = !hoveredPlot.cropData || !hoveredPlot.cropData.cropId;
+          const qty = inventory[seedId] || 0;
+          if (isEmpty && qty > 0 && onQuickPlantCrop) {
+            onQuickPlantCrop(hoveredPlot.id, seedId);
+          }
+        }
+      }
+    },
+    [activeDragTool, entities, pan, zoom, inventory, onQuickHarvestCrop, onQuickPlantCrop, isCropPlotReady]
+  );
+
+  // Global window pointer listener for continuous drag over entire screen
+  useEffect(() => {
+    if (!activeDragTool) return;
+    const onWinPointerMove = (e: PointerEvent) => {
+      processDragAction(e.clientX, e.clientY);
+    };
+    const onWinPointerUp = () => {
+      setActiveDragTool(null);
+      onSelectEntity(null);
+    };
+    window.addEventListener('pointermove', onWinPointerMove, { passive: true });
+    window.addEventListener('pointerup', onWinPointerUp, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', onWinPointerMove);
+      window.removeEventListener('pointerup', onWinPointerUp);
+    };
+  }, [activeDragTool, processDragAction, onSelectEntity]);
+
   // Handle Drag / Pan
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return; // Only left click
-    if (isLongPressDragging) return;
+    if (isLongPressDragging || activeDragTool) return;
     
     pointerDownTimeRef.current = Date.now();
     wasMapDraggedRef.current = false;
@@ -264,6 +353,11 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    if (activeDragTool) {
+      processDragAction(e.clientX, e.clientY);
+      return;
+    }
+
     const tile = isoToGrid(e.clientX, e.clientY);
     if (tile.x >= 0 && tile.x < MAP_SIZE && tile.y >= 0 && tile.y < MAP_SIZE) {
       setHoveredTile((prev) => {
@@ -272,37 +366,6 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       });
     } else {
       setHoveredTile((prev) => (prev === null ? null : null));
-    }
-
-    if (activeDragTool) {
-      setDragCursorPos({ x: e.clientX, y: e.clientY });
-      
-      const currentTile = tile;
-      if (currentTile.x >= 0 && currentTile.x < MAP_SIZE && currentTile.y >= 0 && currentTile.y < MAP_SIZE) {
-        const hoveredPlot = entities.find(
-          (ent) =>
-            ent.type === 'crop_plot' &&
-            currentTile.x >= ent.x &&
-            currentTile.x < ent.x + ent.width &&
-            currentTile.y >= ent.y &&
-            currentTile.y < ent.y + ent.height
-        );
-        
-        if (hoveredPlot) {
-          if (activeDragTool === 'scythe') {
-            if (isCropPlotReady(hoveredPlot) && onQuickHarvestCrop) {
-              onQuickHarvestCrop(hoveredPlot.id);
-            }
-          } else if (activeDragTool.startsWith('plant_')) {
-            const seedId = activeDragTool.replace('plant_', '');
-            const isEmpty = !hoveredPlot.cropData || !hoveredPlot.cropData.cropId;
-            if (isEmpty && onQuickPlantCrop) {
-              onQuickPlantCrop(hoveredPlot.id, seedId);
-            }
-          }
-        }
-      }
-      return;
     }
 
     // If hold gesture is active, check if user moves too far
@@ -934,27 +997,30 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
               className="absolute z-[20000] flex items-center justify-center select-none"
             >
               {isReady ? (
-                /* Scythe Bubble */
+                /* Scythe Bubble (Foice de Colheita Hay Day) */
                 <div
                   onPointerDown={(e) => {
                     e.stopPropagation();
+                    e.preventDefault();
                     sound.playClick();
                     setActiveDragTool('scythe');
+                    processDragAction(e.clientX, e.clientY, 'scythe');
                   }}
-                  className="w-14 h-14 bg-gradient-to-tr from-amber-600 to-yellow-400 hover:scale-110 active:scale-95 text-white border-4 border-amber-950 rounded-full shadow-2xl flex items-center justify-center text-3xl cursor-grab active:cursor-grabbing transition-transform animate-in zoom-in duration-150"
-                  title="Arraste para colher!"
+                  className="w-16 h-16 bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-300 hover:scale-110 active:scale-95 text-white border-4 border-amber-950 rounded-full shadow-[0_8px_20px_rgba(0,0,0,0.5)] flex items-center justify-center cursor-grab active:cursor-grabbing transition-transform animate-in zoom-in duration-150"
+                  title="Arraste a Foice sobre as plantações para colher!"
                 >
-                  🪓
+                  <ScytheSvg size={38} className="drop-shadow" />
                 </div>
               ) : !isPlanted ? (
                 /* Seed Bags Row */
-                <div className="bg-gradient-to-r from-amber-900/95 to-amber-950/95 border-4 border-amber-400 p-2 rounded-3xl shadow-2xl flex items-center gap-2.5 animate-in zoom-in duration-150">
+                <div className="bg-gradient-to-r from-amber-900/95 to-amber-950/95 border-4 border-amber-400 p-2.5 rounded-3xl shadow-2xl flex items-center gap-2.5 animate-in zoom-in duration-150">
                   {[
                     { id: 'wheat', name: 'Trigo', icon: '🌾', level: 1 },
                     { id: 'corn', name: 'Milho', icon: '🌽', level: 2 },
-                    { id: 'cane', name: 'Cana', icon: '🎋', level: 3 },
-                    { id: 'carrot', name: 'Cenoura', icon: '🥕', level: 4 },
-                    { id: 'soy', name: 'Soja', icon: '🌱', level: 5 },
+                    { id: 'carrot', name: 'Cenoura', icon: '🥕', level: 3 },
+                    { id: 'sugarcane', name: 'Cana', icon: '🎋', level: 3 },
+                    { id: 'soybean', name: 'Soja', icon: '🌱', level: 4 },
+                    { id: 'pumpkin', name: 'Abóbora', icon: '🎃', level: 6 },
                   ].map((seed) => {
                     const isUnlocked = playerLevel >= seed.level;
                     if (!isUnlocked) return null;
@@ -966,18 +1032,20 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                         key={seed.id}
                         onPointerDown={(e) => {
                           e.stopPropagation();
+                          e.preventDefault();
                           if (seedQty <= 0) {
                             sound.playClick();
                             alert(`Você não tem sementes de ${seed.name} suficientes no Silo!`);
                             return;
                           }
-                          sound.playClick();
+                          sound.playPlant();
                           setActiveDragTool(`plant_${seed.id}`);
+                          processDragAction(e.clientX, e.clientY, `plant_${seed.id}`);
                         }}
                         className={`relative flex flex-col items-center justify-center w-12 h-12 bg-amber-100 hover:scale-110 active:scale-95 rounded-2xl border-2 border-amber-800 shadow cursor-grab active:cursor-grabbing transition-all ${
                           seedQty <= 0 ? 'opacity-50 grayscale' : ''
                         }`}
-                        title={`Arraste para plantar! (${seedQty})`}
+                        title={`Arraste sobre os canteiros para plantar! (${seedQty})`}
                       >
                         <span className="text-2xl">{seed.icon}</span>
                         <span className="absolute -bottom-1.5 -right-1 bg-amber-950 text-yellow-100 font-extrabold text-[8px] px-1 rounded-full border border-amber-400">
@@ -1017,15 +1085,31 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             pointerEvents: 'none',
             zIndex: 99999,
           }}
-          className="text-4xl filter drop-shadow-2xl select-none"
+          className="filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.45)] select-none pointer-events-none"
         >
-          {activeDragTool === 'scythe' ? '🪓' : (() => {
+          {activeDragTool === 'scythe' ? (
+            <div className="w-16 h-16 bg-gradient-to-tr from-amber-500 to-yellow-300 rounded-full border-3 border-amber-950 shadow-2xl flex items-center justify-center rotate-[-15deg] animate-bounce">
+              <ScytheSvg size={42} />
+            </div>
+          ) : (() => {
             const seed = activeDragTool.replace('plant_', '');
-            if (seed === 'wheat') return '🌾';
-            if (seed === 'corn') return '🌽';
-            if (seed === 'cane') return '🎋';
-            if (seed === 'carrot') return '🥕';
-            return '🌱';
+            const icon =
+              seed === 'wheat'
+                ? '🌾'
+                : seed === 'corn'
+                ? '🌽'
+                : seed === 'sugarcane'
+                ? '🎋'
+                : seed === 'carrot'
+                ? '🥕'
+                : seed === 'pumpkin'
+                ? '🎃'
+                : '🌱';
+            return (
+              <div className="w-14 h-14 bg-amber-950/95 text-3xl rounded-full border-2 border-yellow-300 shadow-2xl flex items-center justify-center animate-pulse">
+                {icon}
+              </div>
+            );
           })()}
         </div>
       )}
