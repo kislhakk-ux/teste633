@@ -157,6 +157,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
   const [draggingEntityId, setDraggingEntityId] = useState<string | null>(null);
   const [isLongPressDragging, setIsLongPressDragging] = useState(false);
   const longPressTimerRef = useRef<any>(null);
+  const longPressTriggeredRef = useRef<boolean>(false);
   const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
   const pressedEntityRef = useRef<any>(null);
   const pointerDownTimeRef = useRef<number>(0);
@@ -231,6 +232,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
     
     pointerDownTimeRef.current = Date.now();
     wasMapDraggedRef.current = false;
+    longPressTriggeredRef.current = false;
     touchStartPosRef.current = { x: e.clientX, y: e.clientY };
     pressedEntityRef.current = entity;
 
@@ -249,10 +251,10 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       if (elapsed >= 2000) {
         clearInterval(longPressTimerRef.current);
         longPressTimerRef.current = null;
+        longPressTriggeredRef.current = true;
         sound.playDing();
         setDraggingEntityId(entity.id);
         setIsLongPressDragging(true);
-        onSelectEntity(entity);
         setHoldingEntityId(null);
         setHoldingProgress(0);
       }
@@ -263,24 +265,29 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
     cancelHoldGesture();
 
     const clickDuration = Date.now() - pointerDownTimeRef.current;
+    const wasLongPress = longPressTriggeredRef.current || isLongPressDragging || draggingEntityId === entity.id;
 
-    if (isLongPressDragging && draggingEntityId === entity.id) {
+    if (wasLongPress) {
       e.stopPropagation();
-      if (hoveredTile && onMoveEntityPosition) {
+      if (hoveredTile && onMoveEntityPosition && draggingEntityId === entity.id) {
         onMoveEntityPosition(entity.id, hoveredTile.x, hoveredTile.y);
       }
       setDraggingEntityId(null);
       setIsLongPressDragging(false);
-    } else {
-      // Normal short tap (must be rapid and not dragged)
-      if (clickDuration < 350 && !wasMapDraggedRef.current) {
-        e.stopPropagation();
-        if (isMovingMode) {
-          setMovingEntityId(entity.id);
-        } else {
-          sound.playClick();
-          onSelectEntity(entity);
-        }
+      longPressTriggeredRef.current = false;
+      pressedEntityRef.current = null;
+      touchStartPosRef.current = null;
+      return; // Do NOT trigger normal click / open building modal
+    }
+
+    // Normal short tap (rapid < 350ms and not dragged)
+    if (clickDuration < 350 && !wasMapDraggedRef.current) {
+      e.stopPropagation();
+      if (isMovingMode) {
+        setMovingEntityId(entity.id);
+      } else {
+        sound.playClick();
+        onSelectEntity(entity);
       }
     }
 
@@ -402,12 +409,13 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       setActiveDragTool(null);
       onSelectEntity(null);
     }
-    if (isLongPressDragging) {
+    if (isLongPressDragging || longPressTriggeredRef.current) {
       if (pressedEntityRef.current && hoveredTile && onMoveEntityPosition) {
         onMoveEntityPosition(pressedEntityRef.current.id, hoveredTile.x, hoveredTile.y);
       }
       setDraggingEntityId(null);
       setIsLongPressDragging(false);
+      longPressTriggeredRef.current = false;
       pressedEntityRef.current = null;
     }
   };
@@ -436,38 +444,6 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
         x: touch.clientX - pan.x,
         y: touch.clientY - pan.y,
       });
-      
-      // Mimic pointer down for touch
-      const clickedEntity = entities.find(
-        (ent) => {
-          const tile = isoToGrid(touch.clientX, touch.clientY);
-          return tile.x >= ent.x && tile.x < ent.x + ent.width && tile.y >= ent.y && tile.y < ent.y + ent.height;
-        }
-      );
-      if (clickedEntity) {
-        cancelHoldGesture();
-        pressedEntityRef.current = clickedEntity;
-        
-        setHoldingEntityId(clickedEntity.id);
-        setHoldingProgress(0);
-        const startTime = Date.now();
-        longPressTimerRef.current = setInterval(() => {
-          const elapsed = Date.now() - startTime;
-          const progress = Math.min(100, (elapsed / 2000) * 100);
-          setHoldingProgress(progress);
-          
-          if (elapsed >= 2000) {
-            clearInterval(longPressTimerRef.current);
-            longPressTimerRef.current = null;
-            sound.playDing();
-            setDraggingEntityId(clickedEntity.id);
-            setIsLongPressDragging(true);
-            onSelectEntity(clickedEntity);
-            setHoldingEntityId(null);
-            setHoldingProgress(0);
-          }
-        }, 50);
-      }
     }
   };
 
@@ -554,12 +530,13 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
     if (e.touches.length < 2) {
       touchStartDistRef.current = null;
     }
-    if (isLongPressDragging) {
+    if (isLongPressDragging || longPressTriggeredRef.current) {
       if (pressedEntityRef.current && hoveredTile && onMoveEntityPosition) {
         onMoveEntityPosition(pressedEntityRef.current.id, hoveredTile.x, hoveredTile.y);
       }
       setDraggingEntityId(null);
       setIsLongPressDragging(false);
+      longPressTriggeredRef.current = false;
       pressedEntityRef.current = null;
     }
   };
@@ -592,7 +569,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
     e.stopPropagation();
 
     const clickDuration = Date.now() - pointerDownTimeRef.current;
-    if (wasMapDraggedRef.current || clickDuration > 300) {
+    if (wasMapDraggedRef.current || clickDuration > 300 || isLongPressDragging || longPressTriggeredRef.current) {
       return; // Ignore drag panning or long click wait gestures!
     }
 
