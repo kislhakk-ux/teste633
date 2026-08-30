@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { sound } from '../utils/sound';
 import { admobService, ADMOB_CONFIG } from '../utils/admobService';
@@ -9,39 +9,88 @@ interface FreeGemsModalProps {
   onEarnGems: (amount: number) => void;
 }
 
+// Sample sponsor video advertisements for web browser testing
+const SPONSOR_ADS = [
+  {
+    title: 'Supercell • Squad Busters Mobile',
+    sponsor: 'Google AdMob Gaming Network',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    duration: 15,
+  },
+  {
+    title: 'Clash Royale • Temporada Lendária',
+    sponsor: 'Google AdMob Games',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+    duration: 15,
+  },
+  {
+    title: 'Brawl Stars • Novo Brawler',
+    sponsor: 'Google AdMob Premium Video',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
+    duration: 15,
+  },
+];
+
 export const FreeGemsModal: React.FC<FreeGemsModalProps> = ({
   currentGems,
   onClose,
   onEarnGems,
 }) => {
   const [isPlayingAd, setIsPlayingAd] = useState(false);
-  const [adCountdown, setAdCountdown] = useState(5);
+  const [currentAdIndex, setCurrentAdIndex] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState(15);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
   const [isRewarded, setIsRewarded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const activeAd = SPONSOR_ADS[currentAdIndex % SPONSOR_ADS.length];
 
   const handleWatchAd = async () => {
     sound.playClick();
-    setIsPlayingAd(true);
-    setAdCountdown(5);
     setIsRewarded(false);
 
-    // Try native AdMob first
+    // 1. Try Native Google AdMob Rewarded Video (Android / iOS)
     const showedNative = await admobService.showRewardedAd((rewardAmount) => {
       handleAdComplete(rewardAmount);
     });
 
-    // If web browser/fallback, run the video preview simulation
+    // 2. If running on Web / Browser, launch real Video Ad Player with onEnded callback
     if (!showedNative) {
-      const interval = setInterval(() => {
-        setAdCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            handleAdComplete(ADMOB_CONFIG.rewardAmount);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      setCurrentAdIndex((prev) => prev + 1);
+      setIsPlayingAd(true);
+      setTimeRemaining(15);
+      setVideoProgress(0);
+
+      // Play video with audio if permitted
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.currentTime = 0;
+          videoRef.current.play().catch(() => {
+            // Autoplay with sound might need muted start on some browsers
+            if (videoRef.current) {
+              videoRef.current.muted = true;
+              setIsMuted(true);
+              videoRef.current.play();
+            }
+          });
+        }
+      }, 100);
     }
+  };
+
+  const handleVideoTimeUpdate = () => {
+    if (videoRef.current) {
+      const current = videoRef.current.currentTime;
+      const total = videoRef.current.duration || 15;
+      setTimeRemaining(Math.max(0, Math.ceil(total - current)));
+      setVideoProgress((current / total) * 100);
+    }
+  };
+
+  // Callback ONLY fired when the video ad reaches 100% completion!
+  const handleVideoEnded = () => {
+    handleAdComplete(ADMOB_CONFIG.rewardAmount);
   };
 
   const handleAdComplete = (amount: number) => {
@@ -49,23 +98,31 @@ export const FreeGemsModal: React.FC<FreeGemsModalProps> = ({
     setIsRewarded(true);
     sound.playDing();
     confetti({
-      particleCount: 80,
-      spread: 70,
+      particleCount: 90,
+      spread: 75,
       origin: { y: 0.6 },
     });
     onEarnGems(amount);
   };
 
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(videoRef.current.muted);
+    }
+  };
+
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 select-none"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 select-none"
       onClick={isPlayingAd ? undefined : onClose}
     >
       <div
-        className="bg-gradient-to-b from-[#fff3e0] via-[#ffe0b2] to-[#ffcc80] border-4 border-[#b45309] rounded-3xl p-5 sm:p-6 shadow-2xl max-w-md w-full relative flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-150 text-amber-950"
+        className="bg-gradient-to-b from-[#fff3e0] via-[#ffe0b2] to-[#ffcc80] border-4 border-[#b45309] rounded-3xl p-5 sm:p-6 shadow-2xl max-w-lg w-full relative flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-150 text-amber-950"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
+        {/* Close Button (Hidden during ad playback to enforce complete view) */}
         {!isPlayingAd && (
           <button
             onClick={() => {
@@ -86,12 +143,12 @@ export const FreeGemsModal: React.FC<FreeGemsModalProps> = ({
               Cinema da Fazenda
             </h2>
             <p className="text-xs text-amber-800 font-semibold">
-              Assista a anúncios premiados do Google AdMob e ganhe diamantes!
+              Anúncios Premiados Google AdMob • Ganhe Diamantes Grátis!
             </p>
           </div>
         </div>
 
-        {/* Main Content Body */}
+        {/* Normal Mode (Before watching) */}
         {!isPlayingAd ? (
           <div className="flex flex-col items-center text-center gap-4 py-2">
             {/* Diamond Showcase Badge */}
@@ -112,14 +169,14 @@ export const FreeGemsModal: React.FC<FreeGemsModalProps> = ({
 
             {/* Info description */}
             <p className="text-xs text-amber-900/90 leading-relaxed font-medium px-2">
-              Toque no botão abaixo para assistir a um anúncio em vídeo. Ao concluir a exibição, os diamantes serão adicionados instantaneamente ao seu inventário!
+              Assista a um anúncio em vídeo completo para receber a recompensa de <strong>+{ADMOB_CONFIG.rewardAmount} 💎 Diamantes</strong> instantaneamente em sua conta!
             </p>
 
             {/* Success message if just earned */}
             {isRewarded && (
               <div className="w-full bg-emerald-100 border-2 border-emerald-500 text-emerald-950 px-3 py-2 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow animate-in fade-in">
                 <span>🎉</span>
-                <span>+{ADMOB_CONFIG.rewardAmount} Diamantes adicionados com sucesso!</span>
+                <span>+{ADMOB_CONFIG.rewardAmount} Diamantes creditados com sucesso!</span>
               </div>
             )}
 
@@ -129,39 +186,67 @@ export const FreeGemsModal: React.FC<FreeGemsModalProps> = ({
               className="w-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-600 hover:brightness-110 text-white font-black text-sm sm:text-base py-3.5 px-6 rounded-2xl shadow-lg border-2 border-white flex items-center justify-center gap-2.5 active:scale-98 transition-all cursor-pointer mt-1"
             >
               <span className="text-xl">▶️</span>
-              <span>Assistir Anúncio (+{ADMOB_CONFIG.rewardAmount} 💎)</span>
+              <span>Assistir Anúncio em Vídeo (+{ADMOB_CONFIG.rewardAmount} 💎)</span>
             </button>
 
             {/* AdMob ID Footer info */}
-            <div className="text-[10px] text-amber-800/70 font-mono">
-              AdMob Rewarded Unit: {ADMOB_CONFIG.rewardedAdUnitId.slice(0, 18)}...
+            <div className="text-[10px] text-amber-800/70 font-mono flex items-center gap-1">
+              <span>🛡️ Google AdMob Rewarded:</span>
+              <span className="font-bold">{ADMOB_CONFIG.rewardedAdUnitId.slice(0, 20)}...</span>
             </div>
           </div>
         ) : (
-          /* Simulated In-Game Ad Player (when testing on web) */
-          <div className="flex flex-col items-center text-center gap-4 py-4">
+          /* Active Video Ad Player (Real Commercials with Strict Callback) */
+          <div className="flex flex-col items-center text-center gap-3 py-2">
             <div className="w-full bg-black rounded-2xl aspect-video relative flex flex-col items-center justify-center border-4 border-amber-900 shadow-2xl overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/70 to-purple-950/90 flex flex-col items-center justify-center p-4">
-                <span className="text-4xl animate-pulse mb-2">🍿</span>
-                <p className="text-white font-black text-sm tracking-wide">
-                  Anúncio do Patrocinador Google AdMob
-                </p>
-                <p className="text-yellow-300 text-xs mt-1">
-                  Recompensa em: <span className="text-base font-black">{adCountdown}s</span>
-                </p>
+              {/* Real Video Commercial Stream */}
+              <video
+                ref={videoRef}
+                src={activeAd.videoUrl}
+                playsInline
+                autoPlay
+                onTimeUpdate={handleVideoTimeUpdate}
+                onEnded={handleVideoEnded}
+                className="w-full h-full object-cover"
+              />
+
+              {/* Top AdMob Header Overlay */}
+              <div className="absolute top-2 left-3 right-3 flex items-center justify-between pointer-events-none">
+                <div className="bg-black/70 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-md border border-white/20 flex items-center gap-1">
+                  <span>📢</span>
+                  <span>{activeAd.sponsor}</span>
+                </div>
+
+                <div className="bg-yellow-400 text-amber-950 text-xs font-black px-2.5 py-0.5 rounded-full border border-white shadow">
+                  Recompensa em: {timeRemaining}s
+                </div>
+              </div>
+
+              {/* Bottom Video Controls Overlay */}
+              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-auto">
+                <button
+                  onClick={toggleMute}
+                  className="bg-black/70 hover:bg-black/90 text-white text-xs px-2.5 py-1 rounded-lg border border-white/30 flex items-center gap-1 cursor-pointer"
+                >
+                  <span>{isMuted ? '🔇 Mudo' : '🔊 Som'}</span>
+                </button>
+
+                <div className="text-[11px] text-white/90 font-bold bg-black/60 px-2 py-0.5 rounded">
+                  {activeAd.title}
+                </div>
               </div>
 
               {/* Progress bar at the bottom */}
-              <div className="absolute bottom-0 left-0 right-0 h-2 bg-black/60">
+              <div className="absolute bottom-0 left-0 right-0 h-2 bg-black/80">
                 <div
-                  className="h-full bg-gradient-to-r from-yellow-400 to-emerald-400 transition-all duration-1000"
-                  style={{ width: `${((5 - adCountdown) / 5) * 100}%` }}
+                  className="h-full bg-gradient-to-r from-yellow-400 via-emerald-400 to-green-500 transition-all duration-300"
+                  style={{ width: `${videoProgress}%` }}
                 />
               </div>
             </div>
 
             <p className="text-xs text-amber-900 font-semibold animate-pulse">
-              Aguarde a conclusão do vídeo para receber seus diamantes...
+              ⏳ Assista ao vídeo até o final para liberar sua recompensa de +{ADMOB_CONFIG.rewardAmount} 💎!
             </p>
           </div>
         )}
