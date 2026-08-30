@@ -6,3 +6,9 @@ coverage/
 *.log
 .env*
 !.env.example
+*.apk
+local.properties
+android/local.properties
+android/.gradle
+android/build/
+android/app/build/

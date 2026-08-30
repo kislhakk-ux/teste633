@@ -54,6 +54,7 @@ import { IsoOrderBoard } from './isometric/IsoOrderBoard';
 import { IsoRoadsideShop } from './isometric/IsoRoadsideShop';
 import { IsoLuckyWheel } from './isometric/IsoLuckyWheel';
 import { IsoTruck } from './isometric/IsoTruck';
+import { IsoNpcVisitor } from './isometric/IsoNpcVisitor';
 import { IsoScenery } from './isometric/IsoScenery';
 import { IsoLushGrass } from './isometric/IsoLushGrass';
 import { Iso3DSpriteBuilding } from './isometric/Iso3DSpriteBuilding';
@@ -726,60 +727,14 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
           })
         )}
 
-        {/* Roadside Mailbox / Visitor Character */}
-        {activeVisitor && (() => {
-          const vPlacement = calculateIsoPlacement(
-            1, 6, 1, 1,
-            ISO_DECORATION_ANCHORS.visitor
-          );
-          return (
-            <React.Fragment>
-              {/* Visitor Ground Shadow */}
-              <div
-                id="visitor-shadow"
-                className="absolute pointer-events-none select-none"
-                style={{
-                  left: vPlacement.shadow.left,
-                  top: vPlacement.shadow.top,
-                  width: `${vPlacement.shadow.width}px`,
-                  height: `${vPlacement.shadow.height}px`,
-                  transform: vPlacement.shadow.transform,
-                  zIndex: vPlacement.shadow.zIndex,
-                  opacity: vPlacement.shadow.opacity,
-                }}
-              >
-                <div
-                  className="w-full h-full rounded-[50%] blur-[2px]"
-                  style={{
-                    background:
-                      'radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.2) 60%, transparent 90%)',
-                  }}
-                />
-              </div>
-
-              {/* Visitor Character */}
-              <div
-                id="visitor-character"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenVisitor();
-                }}
-                style={{
-                  left: vPlacement.left,
-                  top: vPlacement.top,
-                  position: 'absolute',
-                  zIndex: vPlacement.zIndex,
-                  transform: vPlacement.transform,
-                }}
-                className="cursor-pointer group flex flex-col items-center select-none hover:scale-105 transition-transform"
-              >
-                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-3xl shadow-lg border-2 border-amber-500 hover:scale-110 transition-transform">
-                  {activeVisitor.avatar}
-                </div>
-              </div>
-            </React.Fragment>
-          );
-        })()}
+        {/* Dynamic Animated Farm NPC Visitor Character */}
+        {activeVisitor && (
+          <IsoNpcVisitor
+            visitor={activeVisitor}
+            gridToIso={gridToIso}
+            onOpenVisitor={onOpenVisitor}
+          />
+        )}
 
         {/* Delivery Truck on Road */}
         {(() => {
