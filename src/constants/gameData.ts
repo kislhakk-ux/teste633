@@ -650,6 +650,14 @@ export const BEE_TREE_CONFIG = {
   ],
 };
 
+export const NECTAR_BUSH_CONFIG = {
+  cost: 1200,
+  minLevel: 30,
+  maxNectar: 200,
+  width: 1,
+  height: 1,
+};
+
 export const RECIPES: Recipe[] = [
   // Feed Mill
   {

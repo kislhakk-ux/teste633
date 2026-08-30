@@ -133,7 +133,8 @@ export type TileType =
   | 'roadside_shop'
   | 'lucky_wheel'
   | 'decoration'
-  | 'bee_tree';
+  | 'bee_tree'
+  | 'nectar_bush';
 
 export interface GridPos {
   x: number;
@@ -182,6 +183,12 @@ export interface BeeTreeData {
   lastHarvestAt?: number;
 }
 
+export interface NectarBushData {
+  nectarLeft: number; // 0 to 200
+  maxNectar: number;  // 200
+  isWilted: boolean;  // true when nectarLeft === 0
+}
+
 export type DecorationType =
   | 'fence_wood'
   | 'flower_red'
@@ -214,6 +221,7 @@ export interface FarmEntity {
   buildingData?: BuildingData;
   decorationType?: DecorationType;
   beeTreeData?: BeeTreeData;
+  nectarBushData?: NectarBushData;
   appleTreeData?: {
     harvestsLeft: number;
     readyAt: number;

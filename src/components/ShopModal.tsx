@@ -22,6 +22,7 @@ interface ShopModalProps {
   onBuyBuilding: (buildingType: BuildingType) => void;
   onBuyDecoration: (decType: DecorationType) => void;
   onBuyBeeTree?: () => void;
+  onBuyNectarBush?: () => void;
 }
 
 type ShopCategory = 'crops' | 'animals' | 'buildings' | 'decorations';
@@ -36,6 +37,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
   onBuyBuilding,
   onBuyDecoration,
   onBuyBeeTree,
+  onBuyNectarBush,
 }) => {
   const [category, setCategory] = useState<ShopCategory>('crops');
 
@@ -44,10 +46,13 @@ export const ShopModal: React.FC<ShopModalProps> = ({
   const maxAllowedPlots = Math.min(24, 6 + level * 2);
   const plotCost = 20 + currentPlots * 10;
 
-  // Bee Tree state
+  // Bee Tree & Bush state
   const hasBeeTree = entities.some((e) => e.type === 'bee_tree');
   const isBeeTreeUnlocked = level >= 30;
   const canAffordBeeTree = coins >= 20000;
+  const isBushUnlocked = level >= 30;
+  const canAffordBush = coins >= 1200;
+  const countBushes = entities.filter((e) => e.type === 'nectar_bush').length;
 
   return (
     <div
@@ -277,6 +282,59 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                   >
                     <span>🪙</span>
                     <span>20.000</span>
+                  </button>
+                ) : (
+                  <span className="text-[11px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-lg border border-red-200 shrink-0">
+                    Nível 30
+                  </span>
+                )}
+              </div>
+
+              {/* Special Structure: Arbusto de Néctar (Nectar Bush) */}
+              <div
+                className={`p-3.5 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl border-2 shadow-sm flex items-center justify-between gap-3 ${
+                  !isBushUnlocked ? 'opacity-60 border-gray-300' : 'border-emerald-400'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 bg-gradient-to-tr from-emerald-200 to-teal-300 rounded-2xl border-2 border-emerald-500 flex items-center justify-center text-3xl shadow-inner">
+                    🌺🌿
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="font-black text-sm text-emerald-950">
+                        Arbusto de Néctar
+                      </h4>
+                      <span className="bg-emerald-800 text-yellow-300 text-[9px] font-black px-1.5 py-0.5 rounded-md shadow-xs">
+                        200 NÉCTAR
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-800 line-clamp-1">
+                      Flores aromáticas para as abelhas coletarem 200 de néctar.
+                    </p>
+                    <span className="text-[10px] text-emerald-900 font-bold">
+                      Possui: {countBushes}
+                    </span>
+                  </div>
+                </div>
+
+                {isBushUnlocked ? (
+                  <button
+                    disabled={!canAffordBush || !onBuyNectarBush}
+                    onClick={() => {
+                      if (onBuyNectarBush) {
+                        sound.playCoin();
+                        onBuyNectarBush();
+                      }
+                    }}
+                    className={`px-3 py-2 rounded-xl font-black text-xs shadow border transition-all flex items-center gap-1 shrink-0 ${
+                      canAffordBush
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white border-white active:scale-95'
+                        : 'bg-gray-300 text-gray-500 border-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <span>🪙</span>
+                    <span>1.200</span>
                   </button>
                 ) : (
                   <span className="text-[11px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-lg border border-red-200 shrink-0">

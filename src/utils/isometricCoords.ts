@@ -199,6 +199,14 @@ export const ISO_ANCHOR_REGISTRY: {
       anchorY: 0.82,
       shadow: { width: 140, height: 70, opacity: 0.45 },
     },
+    // Nectar Bush (1x1)
+    nectar_bush: {
+      widthPx: 96,
+      heightPx: 96,
+      anchorX: 0.5,
+      anchorY: 0.72,
+      shadow: { width: 70, height: 35, opacity: 0.35 },
+    },
     // Crop Plot (1x1)
     crop_plot: {
       widthPx: 128,

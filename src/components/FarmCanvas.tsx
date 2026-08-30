@@ -57,6 +57,7 @@ import { IsoLuckyWheel } from './isometric/IsoLuckyWheel';
 import { IsoTruck } from './isometric/IsoTruck';
 import { IsoNpcVisitor } from './isometric/IsoNpcVisitor';
 import { IsoBeeTree } from './isometric/IsoBeeTree';
+import { IsoNectarBush } from './isometric/IsoNectarBush';
 import { IsoScenery } from './isometric/IsoScenery';
 import { IsoLushGrass } from './isometric/IsoLushGrass';
 import { Iso3DSpriteBuilding } from './isometric/Iso3DSpriteBuilding';
@@ -1491,6 +1492,17 @@ function renderEntityVisual(ctx: VisualContext) {
             onOpenModal={() => {
               if (onOpenBeeTree) onOpenBeeTree(entity);
             }}
+          />
+        </div>
+      );
+    }
+
+    case 'nectar_bush': {
+      return (
+        <div className="relative flex flex-col items-center justify-center cursor-pointer">
+          <IsoNectarBush
+            entity={entity}
+            isSelected={isSelected}
           />
         </div>
       );

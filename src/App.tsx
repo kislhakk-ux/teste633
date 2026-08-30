@@ -420,30 +420,68 @@ export default function App() {
             }
           }
 
-          // 1.5 Process Bee Tree Nectar Production (each bee generates 1 nectar per cycle up to 100 capacity)
-          if (ent.type === 'bee_tree' && ent.beeTreeData) {
-            const tree = ent.beeTreeData;
-            if (tree.nectarCount < tree.maxNectar) {
-              const lastHarvest = tree.lastHarvestAt || now;
-              const elapsedSec = (now - lastHarvest) / 1000;
-              // Every 12 seconds, active bees deliver 1 nectar per bee to the tree (up to max 100)
-              if (elapsedSec >= 12) {
-                updated = true;
-                const nectarGained = Math.min(tree.maxNectar - tree.nectarCount, tree.beesCount);
-                return {
-                  ...ent,
+          return ent;
+        });
+
+        // 1.5 Process Bee Tree & Nectar Bush Gathering
+        // Active bees forage from available bushes (reducing bush by 1 each) and bring 1 nectar to the tree
+        const treeIdx = newEntities.findIndex((e) => e.type === 'bee_tree' && e.beeTreeData);
+        if (treeIdx !== -1) {
+          const treeEnt = newEntities[treeIdx];
+          const treeData = treeEnt.beeTreeData!;
+
+          if (treeData.nectarCount < treeData.maxNectar) {
+            const lastHarvest = treeData.lastHarvestAt || now;
+            const elapsedSec = (now - lastHarvest) / 1000;
+
+            // Every 4 seconds, each active bee completes a gathering trip
+            if (elapsedSec >= 4) {
+              let availableCapacity = treeData.maxNectar - treeData.nectarCount;
+              let beesReady = treeData.beesCount;
+              let totalGained = 0;
+
+              // Drain nectar 1-by-1 from available blooming bushes
+              for (let i = 0; i < newEntities.length; i++) {
+                const ent = newEntities[i];
+                if (
+                  ent.type === 'nectar_bush' &&
+                  ent.nectarBushData &&
+                  ent.nectarBushData.nectarLeft > 0
+                ) {
+                  const take = Math.min(ent.nectarBushData.nectarLeft, beesReady, availableCapacity);
+                  if (take > 0) {
+                    updated = true;
+                    const newLeft = ent.nectarBushData.nectarLeft - take;
+                    newEntities[i] = {
+                      ...ent,
+                      nectarBushData: {
+                        ...ent.nectarBushData,
+                        nectarLeft: newLeft,
+                        isWilted: newLeft <= 0,
+                      },
+                    };
+                    totalGained += take;
+                    beesReady -= take;
+                    availableCapacity -= take;
+                  }
+                }
+                if (beesReady <= 0 || availableCapacity <= 0) break;
+              }
+
+              // Update the Bee Tree with gathered nectar
+              if (totalGained > 0) {
+                newEntities[treeIdx] = {
+                  ...treeEnt,
                   beeTreeData: {
-                    ...tree,
-                    nectarCount: Math.min(tree.maxNectar, tree.nectarCount + nectarGained),
+                    ...treeData,
+                    nectarCount: Math.min(treeData.maxNectar, treeData.nectarCount + totalGained),
                     lastHarvestAt: now,
                   },
                 };
               }
             }
           }
-
-          return ent;
-        });
+        }
 
         // 2. Process Truck Delivery Completion
         let newTruckDeliveringUntil = prev.truckDeliveringUntil;
@@ -1604,6 +1642,43 @@ export default function App() {
     showToast('🌳🐝 Árvore de Abelhas construída na fazenda!');
   };
 
+  const handleBuyNectarBush = () => {
+    if (gameState.level < 30) {
+      showToast('🔒 O Arbusto de Néctar é desbloqueado no Nível 30!');
+      return;
+    }
+    if (gameState.coins < 1200) {
+      showToast('⚠️ Moedas insuficientes (Custo: 1.200 moedas)!');
+      return;
+    }
+
+    const pos = findNextAvailablePosition(1, 1);
+    const newBush: FarmEntity = {
+      id: 'nectar_bush_' + Date.now(),
+      x: pos.x,
+      y: pos.y,
+      width: 1,
+      height: 1,
+      type: 'nectar_bush',
+      nectarBushData: {
+        nectarLeft: 200,
+        maxNectar: 200,
+        isWilted: false,
+      },
+    };
+
+    setGameState((prev) => ({
+      ...prev,
+      coins: prev.coins - 1200,
+      entities: [...prev.entities, newBush],
+    }));
+
+    setIsShopOpen(false);
+    sound.playCoin();
+    confetti({ particleCount: 50, spread: 50 });
+    showToast('🌺 Arbusto de Néctar plantado na fazenda! (200 Néctar)');
+  };
+
   const handleOpenBeeTree = (entity: FarmEntity) => {
     // Find latest entity state from gameState
     const latest = gameState.entities.find((e) => e.id === entity.id) || entity;
@@ -2215,6 +2290,7 @@ export default function App() {
           onBuyBuilding={handleBuyBuilding}
           onBuyDecoration={handleBuyDecoration}
           onBuyBeeTree={handleBuyBeeTree}
+          onBuyNectarBush={handleBuyNectarBush}
         />
       )}
 
