@@ -1755,6 +1755,18 @@ export default function App() {
           setSelectedEntity(ent);
           if (ent?.type === 'building') {
             setActiveBuildingModalEntity(ent);
+          } else if (ent?.type === 'order_board') {
+            setIsOrderBoardOpen(true);
+          } else if (ent?.type === 'roadside_shop') {
+            setIsRoadsideOpen(true);
+          } else if (ent?.type === 'lucky_wheel') {
+            setIsLuckyWheelOpen(true);
+          } else if (ent?.type === 'silo') {
+            setStorageModalType('silo');
+          } else if (ent?.type === 'barn') {
+            setStorageModalType('barn');
+          } else if (ent?.type === 'farmhouse') {
+            setIsAchievementsOpen(true);
           }
         }}
         onQuickHarvestCrop={handleHarvestCrop}

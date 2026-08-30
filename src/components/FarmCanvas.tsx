@@ -273,8 +273,14 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       setIsLongPressDragging(false);
     } else {
       // Normal short tap (must be rapid and not dragged)
-      if (clickDuration < 300 && !wasMapDraggedRef.current) {
-        handleTileClick(entity.x, entity.y, e as any);
+      if (clickDuration < 350 && !wasMapDraggedRef.current) {
+        e.stopPropagation();
+        if (isMovingMode) {
+          setMovingEntityId(entity.id);
+        } else {
+          sound.playClick();
+          onSelectEntity(entity);
+        }
       }
     }
 
