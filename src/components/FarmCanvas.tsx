@@ -814,13 +814,13 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
 
   // Sorted entities by render depth (isometric sorting: South-most front edge)
   const sortedEntities = useMemo(() => {
-    return [...entities].sort((a, b) => {
-      const depthA = a.x + a.y + a.width + a.height;
-      const depthB = b.x + b.y + b.width + b.height;
+    return [...entities].filter(Boolean).sort((a, b) => {
+      const depthA = (a.x || 0) + (a.y || 0) + (a.width || 1) + (a.height || 1);
+      const depthB = (b.x || 0) + (b.y || 0) + (b.width || 1) + (b.height || 1);
       if (Math.abs(depthA - depthB) > 0.001) {
         return depthA - depthB;
       }
-      return (a.x - a.y) - (b.x - b.y);
+      return ((a.x || 0) - (a.y || 0)) - ((b.x || 0) - (b.y || 0));
     });
   }, [entities]);
 

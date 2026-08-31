@@ -219,19 +219,20 @@ export function loadGameState(): GameState {
         };
       }
 
-      // Ensure entities have proper arrays
+      // Ensure entities have proper arrays and filter out nulls
       if (Array.isArray(parsed.entities) && parsed.entities.length > 0) {
-        parsed.entities = parsed.entities.map((e: any) => {
-          if (!e) return e;
-          if (e.type === 'building' && e.buildingData) {
-            e.buildingData.queue = Array.isArray(e.buildingData.queue) ? e.buildingData.queue : [];
-            e.buildingData.completedItems = Array.isArray(e.buildingData.completedItems)
-              ? e.buildingData.completedItems
-              : [];
-            e.buildingData.totalCrafted = e.buildingData.totalCrafted || 0;
-          }
-          return e;
-        });
+        parsed.entities = parsed.entities
+          .filter((e: any) => e !== null && e !== undefined)
+          .map((e: any) => {
+            if (e.type === 'building' && e.buildingData) {
+              e.buildingData.queue = Array.isArray(e.buildingData.queue) ? e.buildingData.queue : [];
+              e.buildingData.completedItems = Array.isArray(e.buildingData.completedItems)
+                ? e.buildingData.completedItems
+                : [];
+              e.buildingData.totalCrafted = e.buildingData.totalCrafted || 0;
+            }
+            return e;
+          });
       } else {
         parsed.entities = initial.entities;
       }
