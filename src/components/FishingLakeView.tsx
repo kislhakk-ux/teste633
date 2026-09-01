@@ -130,17 +130,9 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
       </div>
 
       {/* Lake Environment */}
-      <div className="relative flex-1 w-full h-full">
-        {/* Environment Background */}
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-        <div className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-[#2E7D32] to-transparent opacity-80"></div>
-        
-        {/* Decorative elements */}
-        <div className="absolute top-10 left-10 text-7xl drop-shadow-lg">🌲</div>
-        <div className="absolute top-16 right-20 text-6xl drop-shadow-lg">🌲</div>
-        <div className="absolute bottom-40 left-8 text-5xl drop-shadow-lg">🦆</div>
-        <div className="absolute top-1/2 right-10 text-6xl drop-shadow-lg">🪨</div>
-        <div className="absolute top-2/3 left-1/4 text-6xl drop-shadow-lg">🌿</div>
+      <div className="relative flex-1 w-full h-full bg-[url('/fishing_lake_bg.jpg')] bg-cover bg-center">
+        {/* Environment Background Overlay (optional for readability) */}
+        <div className="absolute inset-0 bg-blue-900/10 pointer-events-none"></div>
 
         {/* Fishing Spots */}
         {spots.map((spot) => {

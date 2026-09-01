@@ -181,9 +181,9 @@ export function getInitialGameState(): GameState {
     fishingBoat: {
       status: 'broken',
       spots: [
-        { id: 'spot_1', x: 20, y: 50, status: 'ready' },
-        { id: 'spot_2', x: 50, y: 70, status: 'ready' },
-        { id: 'spot_3', x: 80, y: 40, status: 'ready' },
+        { id: 'spot_1', x: 25, y: 45, status: 'ready' },
+        { id: 'spot_2', x: 40, y: 75, status: 'ready' },
+        { id: 'spot_3', x: 70, y: 75, status: 'ready' },
       ],
     },
     deliveryBoat: {
