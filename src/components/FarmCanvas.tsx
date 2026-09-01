@@ -868,10 +868,10 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
     // Account for zoom and pan
     const pad = 8; // Render 8 extra tiles outside view to prevent pop-in
     
-    const topLeft = screenToGrid(-pan.x / zoom, -pan.y / zoom);
-    const topRight = screenToGrid((w - pan.x) / zoom, -pan.y / zoom);
-    const bottomLeft = screenToGrid(-pan.x / zoom, (h - pan.y) / zoom);
-    const bottomRight = screenToGrid((w - pan.x) / zoom, (h - pan.y) / zoom);
+    const topLeft = screenToGrid(0, 0, pan, zoom);
+    const topRight = screenToGrid(w, 0, pan, zoom);
+    const bottomLeft = screenToGrid(0, h, pan, zoom);
+    const bottomRight = screenToGrid(w, h, pan, zoom);
     
     const minX = Math.floor(Math.min(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x)) - pad;
     const maxX = Math.ceil(Math.max(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x)) + pad;
