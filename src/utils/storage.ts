@@ -73,7 +73,7 @@ export function generateRandomOrder(level: number): TruckOrder {
   };
 }
 
-export function generateRandomVisitor(level: number, inventory: Record<ItemId, number>): FarmVisitor {
+export function generateRandomVisitor(level: number, inventory: Partial<Record<ItemId, number>>): FarmVisitor {
   const char = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
   const candidateItems: ItemId[] = ['wheat', 'corn'];
   if (level >= 2) candidateItems.push('egg');
@@ -96,7 +96,7 @@ export function generateRandomVisitor(level: number, inventory: Record<ItemId, n
 }
 
 export function getInitialGameState(): GameState {
-  const initialInventory: Record<ItemId, number> = {
+  const initialInventory: Partial<Record<ItemId, number>> = {
     wheat: 8,
     corn: 4,
     carrot: 0,
@@ -292,7 +292,7 @@ export function saveGameState(state: GameState) {
   }
 }
 
-export function getStorageUsage(inventory: Record<ItemId, number>, storageType: 'silo' | 'barn'): { used: number; max: number } {
+export function getStorageUsage(inventory: Partial<Record<ItemId, number>>, storageType: 'silo' | 'barn'): { used: number; max: number } {
   let used = 0;
   for (const [id, count] of Object.entries(inventory)) {
     const itemDef = ITEMS[id as ItemId];

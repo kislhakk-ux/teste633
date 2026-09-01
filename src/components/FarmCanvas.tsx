@@ -90,7 +90,7 @@ interface FarmCanvasProps {
   truckDeliveringUntil: number | null;
   activeVisitor: any;
   onOpenVisitor: () => void;
-  graphicsStyle?: '3d_rendered' | 'vector';
+  graphicsStyle?: '3d_rendered' | '2d_flat';
 
   // Live Structure HUD & Storage Gauges
   siloUsed?: number;
@@ -145,7 +145,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
   truckDeliveringUntil,
   activeVisitor,
   onOpenVisitor,
-  graphicsStyle = 'vector',
+  graphicsStyle = '2d_flat',
   siloUsed = 0,
   siloCap = 50,
   siloLevel = 1,

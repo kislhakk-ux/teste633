@@ -6,7 +6,7 @@ import { sound } from '../utils/sound';
 interface BuildingModalProps {
   entity: FarmEntity | null;
   level: number;
-  inventory: Record<ItemId, number>;
+  inventory: Partial<Record<ItemId, number>>;
   gems: number;
   onClose: () => void;
   onQueueRecipe: (entityId: string, recipe: Recipe) => void;

@@ -57,6 +57,7 @@ export type ItemId =
   | 'green_lure'
   | 'fish_fillet'
   | 'salmon'
+  | 'lobster_tail'
   | 'fishing_net'
   | 'shrimp_trap'
   | 'sushi'
@@ -112,7 +113,8 @@ export type BuildingType =
   | 'sugar_mill'
   | 'bbq_grill'
   | 'popcorn_pot'
-  | 'honey_extractor';
+  | 'honey_extractor'
+  | 'lure_maker';
 
 export interface Recipe {
   id: ItemId;
@@ -310,6 +312,20 @@ export interface GameStats {
   wheelSpins: number;
 }
 
+export interface FishingSpot {
+  id: string;
+  x: number;
+  y: number;
+  status: 'ready' | 'cooldown';
+  availableAt?: number;
+}
+
+export interface FishingBoat {
+  status: 'broken' | 'repairing' | 'repaired';
+  repairStartedAt?: number;
+  spots: FishingSpot[];
+}
+
 export interface GameState {
   farmName: string;
   level: number;
@@ -332,17 +348,7 @@ export interface GameState {
   musicEnabled: boolean;
   graphicsStyle?: '2d_flat' | '3d_rendered';
   unlockedParcelIds?: string[]; // IDs of unlocked expansion parcels
-  fishingBoat?: {
-    status: 'broken' | 'repairing' | 'repaired';
-    repairStartedAt?: number;
-    spots?: {
-      id: string;
-      x: number; // percentage width
-      y: number; // percentage height
-      status: 'ready' | 'cooldown';
-      availableAt?: number;
-    }[];
-  };
+  fishingBoat?: FishingBoat;
   deliveryBoat?: {
     status: 'away' | 'docked';
     arrivesAt?: number; // Time it will arrive (if away)

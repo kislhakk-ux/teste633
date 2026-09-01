@@ -5,7 +5,7 @@ import { sound } from '../utils/sound';
 
 interface StorageModalProps {
   type: StorageType;
-  inventory: Record<ItemId, number>;
+  inventory: Partial<Record<ItemId, number>>;
   siloLevel: number;
   barnLevel: number;
   gems: number;

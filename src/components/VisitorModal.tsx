@@ -5,7 +5,7 @@ import { sound } from '../utils/sound';
 
 interface VisitorModalProps {
   visitor: FarmVisitor | null;
-  inventory: Record<ItemId, number>;
+  inventory: Partial<Record<ItemId, number>>;
   onClose: () => void;
   onAcceptDeal: (visitor: FarmVisitor) => void;
   onRefuseDeal: () => void;

@@ -5,7 +5,7 @@ import { sound } from '../utils/sound';
 
 interface OrderBoardModalProps {
   orders: TruckOrder[];
-  inventory: Record<ItemId, number>;
+  inventory: Partial<Record<ItemId, number>>;
   truckDeliveringUntil: number | null;
   gems: number;
   onClose: () => void;

@@ -76,7 +76,7 @@ function applyWongamerVip(state: GameState, email?: string): GameState {
       gems: Math.max(state.gems || 0, 10000),
       siloLevel: Math.max(state.siloLevel || 1, 100),
       barnLevel: Math.max(state.barnLevel || 1, 100),
-      fishingBoat: { status: 'repaired' },
+      fishingBoat: { ...(state.fishingBoat || { spots: [] }), status: 'repaired' },
       inventory: {
         ...state.inventory,
         land_map: Math.max(state.inventory?.land_map || 0, 50),
@@ -1600,6 +1600,7 @@ export default function App() {
       const next = { ...prev };
       next.coins -= costCoins;
       next.fishingBoat = {
+        ...(prev.fishingBoat || { spots: [] }),
         status: 'repairing',
         repairStartedAt: Date.now(),
       };
@@ -1614,6 +1615,7 @@ export default function App() {
       const next = { ...prev };
       next.gems -= costGems;
       next.fishingBoat = {
+        ...(prev.fishingBoat || { spots: [] }),
         status: 'repaired',
       };
       setIsFishingBoatModalOpen(false);
@@ -2332,7 +2334,7 @@ export default function App() {
     setGameState((prev) => ({
       ...prev,
       coins: prev.coins - costCoins,
-      fishingBoat: { status: 'repairing', repairStartedAt: Date.now() },
+      fishingBoat: { ...(prev.fishingBoat || { spots: [] }), status: 'repairing', repairStartedAt: Date.now() },
     }));
   };
 
@@ -2340,7 +2342,7 @@ export default function App() {
     setGameState((prev) => ({
       ...prev,
       gems: prev.gems - costGems,
-      fishingBoat: { status: 'repaired' },
+      fishingBoat: { ...(prev.fishingBoat || { spots: [] }), status: 'repaired' },
     }));
   };
 
@@ -2468,6 +2470,11 @@ export default function App() {
         onHarvestNectarFromBush={handleHarvestNectarFromBush}
         onAddNectarToTree={handleAddNectarToTree}
         onRemoveDeadEntity={handleRemoveDeadEntity}
+        unlockedParcelIds={gameState.unlockedParcelIds}
+        onOpenExpansionModal={(parcelId) => {
+          sound.playClick();
+          setUnlockModalParcelId(parcelId);
+        }}
       />
 
       {/* Radial Tool Selector / Quick Plot Popups */}
@@ -2515,28 +2522,6 @@ export default function App() {
           onRemoveDeadEntity={(entityId) => {
             handleRemoveDeadEntity(entityId);
             setSelectedEntity(null);
-          }}
-          unlockedParcelIds={gameState.unlockedParcelIds}
-          onOpenExpansionModal={(parcelId) => {
-            sound.playClick();
-            setUnlockModalParcelId(parcelId);
-            setSelectedEntity(null);
-          }}
-          fishingBoatStatus={gameState.fishingBoat?.status}
-          onFishingBoatClick={() => {
-            sound.playClick();
-            if (gameState.fishingBoat?.status === 'broken' || gameState.fishingBoat?.status === 'repairing') {
-              setIsFishingBoatModalOpen(true);
-            } else if (gameState.fishingBoat?.status === 'repaired') {
-              setIsFishingLakeMode(true);
-            }
-          }}
-          deliveryBoatStatus={gameState.deliveryBoat?.status}
-          onDeliveryBoatClick={() => {
-            if (gameState.deliveryBoat?.status === 'docked') {
-              sound.playClick();
-              setIsDeliveryBoatModalOpen(true);
-            }
           }}
         />
       )}
@@ -2600,8 +2585,8 @@ export default function App() {
         graphicsStyle={gameState.graphicsStyle || '3d_rendered'}
         onToggleGraphicsStyle={() => {
           setGameState((p) => {
-            const nextStyle = p.graphicsStyle === 'vector' ? '3d_rendered' : 'vector';
-            showToast(nextStyle === '3d_rendered' ? '✨ Gráficos 3D Ativados!' : '📐 Gráficos Vetoriais Ativados!');
+            const nextStyle = p.graphicsStyle === '2d_flat' ? '3d_rendered' : '2d_flat';
+            showToast(nextStyle === '3d_rendered' ? '⭐ Gráficos 3D Ativados!' : '🎨 Gráficos Vetoriais Ativados!');
             return { ...p, graphicsStyle: nextStyle };
           });
         }}

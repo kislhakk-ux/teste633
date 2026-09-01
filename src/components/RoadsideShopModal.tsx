@@ -7,7 +7,7 @@ import { sound } from '../utils/sound';
 interface RoadsideShopModalProps {
   initialTab?: 'stand' | 'newspaper';
   boxes: RoadsideBox[];
-  inventory: Record<ItemId, number>;
+  inventory: Partial<Record<ItemId, number>>;
   coins: number;
   myFarmId: string;
   newspaperOffers: MultiplayerOffer[];

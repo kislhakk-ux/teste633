@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GameState, ItemId } from '../types/game';
 import { sound } from '../utils/sound';
+import { FishingCanvas } from './FishingCanvas';
 
 interface FishingLakeViewProps {
   gameState: GameState;
@@ -130,50 +131,15 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
       </div>
 
       {/* Lake Environment */}
-      <div className="relative flex-1 w-full h-full bg-[url('/fishing_lake_bg.jpg')] bg-cover bg-center">
-        {/* Environment Background Overlay (optional for readability) */}
-        <div className="absolute inset-0 bg-blue-900/10 pointer-events-none"></div>
-
-        {/* Fishing Spots */}
-        {spots.map((spot) => {
-          const isCooldown = spot.status === 'cooldown';
-          let timeLeft = 0;
-          if (isCooldown && spot.availableAt) {
-            timeLeft = Math.max(0, spot.availableAt - Date.now());
-          }
-
-          return (
-            <div
-              key={spot.id}
-              className={`absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center transition-all ${!isCooldown && selectedLure ? 'cursor-pointer hover:scale-110' : ''}`}
-              style={{ left: `${spot.x}%`, top: `${spot.y}%` }}
-              onClick={() => handleSpotClick(spot)}
-            >
-              {isCooldown ? (
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-blue-900/40 rounded-full border-4 border-blue-800/50 flex items-center justify-center shadow-inner">
-                    <span className="text-xl opacity-50">💧</span>
-                  </div>
-                  <div className="mt-2 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded-md whitespace-nowrap">
-                    {formatTime(timeLeft)}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center">
-                  <div className="w-20 h-20 border-4 border-cyan-300 rounded-full animate-ping absolute opacity-50"></div>
-                  <div className="w-16 h-16 bg-cyan-400/30 rounded-full border-2 border-cyan-200 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.5)] z-10 relative">
-                    <span className="text-2xl animate-bounce">🐟</span>
-                  </div>
-                  {selectedLure && (
-                    <div className="mt-2 bg-green-500 text-white text-xs font-black px-2 py-1 rounded-full whitespace-nowrap drop-shadow-md animate-pulse">
-                      JOGAR ISCA
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+      <div className="relative flex-1 w-full h-full bg-blue-900/50">
+         <FishingCanvas 
+            spots={spots}
+            activeSpot={activeSpot}
+            selectedLure={selectedLure}
+            onSpotClick={handleSpotClick}
+            onReturnToFarm={onReturnToFarm}
+         />
+      </div>
 
         {/* Minigame Overlay */}
         {activeSpot && (
@@ -213,7 +179,6 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
             )}
           </div>
         )}
-      </div>
 
       {/* Lure Selection Dock */}
       <div className="absolute bottom-0 w-full bg-gradient-to-t from-[#3E2723] to-[#5D4037] border-t-8 border-[#4E342E] p-4 flex flex-col items-center z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
