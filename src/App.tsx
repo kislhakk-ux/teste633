@@ -71,7 +71,7 @@ function applyWongamerVip(state: GameState, email?: string): GameState {
   ) {
     return {
       ...state,
-      level: Math.max(state.level || 1, 100),
+      level: state.level === 1000 ? 100 : Math.max(state.level || 1, 100),
       coins: Math.max(state.coins || 0, 5000000),
       gems: Math.max(state.gems || 0, 10000),
       siloLevel: Math.max(state.siloLevel || 1, 100),
@@ -94,7 +94,12 @@ function applyWongamerVip(state: GameState, email?: string): GameState {
 export default function App() {
   const [gameState, setGameState] = useState<GameState>(() => {
     const state = loadGameState();
-    return applyWongamerVip({ ...state, graphicsStyle: '3d_rendered' });
+    let initialEmail = undefined;
+    try {
+      const saved = localStorage.getItem('hayday_google_user_data');
+      if (saved) initialEmail = JSON.parse(saved).email;
+    } catch (e) {}
+    return applyWongamerVip({ ...state, graphicsStyle: '3d_rendered' }, initialEmail);
   });
   // UID do usuário autenticado (null = ninguém logado)
   const [currentUid, setCurrentUid] = useState<string | null>(null);
@@ -2555,7 +2560,7 @@ export default function App() {
         onClose={() => setIsSettingsOpen(false)}
         farmName={gameState.farmName}
         onUpdateFarmName={(newName) => {
-          setGameState((prev) => applyWongamerVip({ ...prev, farmName: newName }));
+          setGameState((prev) => applyWongamerVip({ ...prev, farmName: newName }, googleUser?.email));
         }}
         soundEnabled={gameState.soundEnabled}
         onToggleSound={() => setGameState((p) => ({ ...p, soundEnabled: !p.soundEnabled }))}
@@ -2720,7 +2725,7 @@ export default function App() {
           stats={gameState.stats}
           onClose={() => setIsAchievementsOpen(false)}
           onRenameFarm={(newName) =>
-            setGameState((p) => applyWongamerVip({ ...p, farmName: newName }))
+            setGameState((p) => applyWongamerVip({ ...p, farmName: newName }, googleUser?.email))
           }
           onClaimAchievement={handleClaimAchievement}
         />
