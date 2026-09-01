@@ -71,12 +71,12 @@ function applyWongamerVip(state: GameState, email?: string): GameState {
   ) {
     return {
       ...state,
-      level: 1000,
-      xp: 0,
+      level: Math.max(state.level || 1, 100),
       coins: Math.max(state.coins || 0, 5000000),
       gems: Math.max(state.gems || 0, 10000),
       siloLevel: Math.max(state.siloLevel || 1, 100),
       barnLevel: Math.max(state.barnLevel || 1, 100),
+      fishingBoat: { status: 'repaired' },
       inventory: {
         ...state.inventory,
         land_map: Math.max(state.inventory?.land_map || 0, 50),
@@ -164,7 +164,7 @@ export default function App() {
               if (cloudFarm) {
                 const finalState = applyWongamerVip({ ...cloudFarm, graphicsStyle: '3d_rendered' }, parsed.email);
                 setGameState(finalState);
-                if (finalState.level === 1000 && cloudFarm.level !== 1000) {
+                if (finalState.level === 100 && cloudFarm.level < 100) {
                   saveFarmToFirestore(parsed.uid, finalState);
                 }
               }
@@ -2295,6 +2295,30 @@ export default function App() {
     );
   }
 
+  const handleStartFishingBoatRepair = (costCoins: number) => {
+    setGameState((prev) => ({
+      ...prev,
+      coins: prev.coins - costCoins,
+      fishingBoat: { status: 'repairing', repairStartedAt: Date.now() },
+    }));
+  };
+
+  const handleSpeedUpFishingBoatRepair = (costGems: number) => {
+    setGameState((prev) => ({
+      ...prev,
+      gems: prev.gems - costGems,
+      fishingBoat: { status: 'repaired' },
+    }));
+  };
+
+  const handleFishingBoatClick = () => {
+    if (gameState.fishingBoat?.status === 'repaired') {
+      setIsFishingLakeMode(true);
+    } else {
+      setIsFishingBoatModalOpen(true);
+    }
+  };
+
   if (isFishingLakeMode) {
     return (
       <FishingLakeView
@@ -2349,6 +2373,8 @@ export default function App() {
         selectedEntity={selectedEntity}
         graphicsStyle={gameState.graphicsStyle || '3d_rendered'}
         inventory={gameState.inventory}
+        fishingBoatStatus={gameState.fishingBoat?.status || 'broken'}
+        onFishingBoatClick={handleFishingBoatClick}
         onQuickPlantCrop={handleQuickPlantCrop}
         onSelectEntity={(ent) => {
           if (visitingFarm) {
@@ -2732,6 +2758,16 @@ export default function App() {
             }));
             showToast(`💎 +${amount} Diamantes adicionados!`);
           }}
+        />
+      )}
+
+      {/* Fishing Boat Modal */}
+      {isFishingBoatModalOpen && (
+        <FishingBoatModal
+          gameState={gameState}
+          onClose={() => setIsFishingBoatModalOpen(false)}
+          onStartRepair={handleStartFishingBoatRepair}
+          onSpeedUpRepair={handleSpeedUpFishingBoatRepair}
         />
       )}
     </div>
