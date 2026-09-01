@@ -180,6 +180,11 @@ export function getInitialGameState(): GameState {
     graphicsStyle: '3d_rendered',
     fishingBoat: {
       status: 'broken',
+      spots: [
+        { id: 'spot_1', x: 20, y: 50, status: 'ready' },
+        { id: 'spot_2', x: 50, y: 70, status: 'ready' },
+        { id: 'spot_3', x: 80, y: 40, status: 'ready' },
+      ],
     },
     deliveryBoat: {
       status: 'away',
@@ -207,7 +212,9 @@ export function loadGameState(): GameState {
 
       // Ensure fishing boat exists
       if (!parsed.fishingBoat) {
-        parsed.fishingBoat = { status: 'broken' };
+        parsed.fishingBoat = initial.fishingBoat;
+      } else if (!parsed.fishingBoat.spots) {
+        parsed.fishingBoat.spots = initial.fishingBoat.spots;
       }
 
       // Ensure delivery boat exists

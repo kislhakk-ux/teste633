@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameState, ItemId } from '../types/game';
 import { sound } from '../utils/sound';
 
 interface FishingLakeViewProps {
   gameState: GameState;
   onReturnToFarm: () => void;
-  onCatchFish: (lureId: ItemId, fishId: ItemId) => void;
+  onCatchFish: (lureId: ItemId, fishId: ItemId, spotId: string) => void;
 }
 
 export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
@@ -14,7 +14,10 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
   onCatchFish,
 }) => {
   const [selectedLure, setSelectedLure] = useState<ItemId | null>(null);
-  const [isFishing, setIsFishing] = useState(false);
+  const [activeSpot, setActiveSpot] = useState<string | null>(null);
+  
+  const [minigameClicks, setMinigameClicks] = useState(0);
+  const [fishPos, setFishPos] = useState({ x: 50, y: 50 });
   const [fishCaught, setFishCaught] = useState<{ id: ItemId; name: string } | null>(null);
 
   const availableLures = [
@@ -22,35 +25,93 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
     { id: 'green_lure' as ItemId, name: 'Isca Verde', icon: '🐛' },
   ].filter((lure) => (gameState.inventory[lure.id] || 0) > 0);
 
-  const handleCastLure = () => {
-    if (!selectedLure || isFishing) return;
+  // Auto-deselect if lure runs out
+  useEffect(() => {
+    if (selectedLure && (gameState.inventory[selectedLure] || 0) <= 0) {
+      setSelectedLure(null);
+    }
+  }, [gameState.inventory, selectedLure]);
+
+  // Minigame Fish Movement
+  useEffect(() => {
+    if (!activeSpot || fishCaught) return;
+    
+    const moveInterval = setInterval(() => {
+      setFishPos({
+        x: 20 + Math.random() * 60,
+        y: 20 + Math.random() * 60,
+      });
+    }, 800);
+
+    return () => clearInterval(moveInterval);
+  }, [activeSpot, fishCaught]);
+
+  const formatTime = (ms: number) => {
+    if (ms <= 0) return '0s';
+    const totalSeconds = Math.floor(ms / 1000);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  };
+
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleSpotClick = (spot: { id: string, status: string }) => {
+    if (spot.status === 'cooldown') {
+      sound.playError();
+      return;
+    }
+    if (!selectedLure) {
+      sound.playError();
+      alert("Selecione uma isca na caixa de pesca primeiro!");
+      return;
+    }
     
     sound.playClick();
-    setIsFishing(true);
+    setActiveSpot(spot.id);
+    setMinigameClicks(0);
     setFishCaught(null);
+  };
 
-    // Simulate fishing time (3 seconds)
-    setTimeout(() => {
+  const handleFishClick = () => {
+    sound.playWoodHit(); // sound effect for tension
+    const newClicks = minigameClicks + 1;
+    setMinigameClicks(newClicks);
+
+    if (newClicks >= 3) {
+      // Caught!
       sound.playSuccess();
       
-      // Determine what was caught based on lure
       let caughtId: ItemId = 'fish_fillet';
       let caughtName = 'Filé de Peixe';
 
-      if (selectedLure === 'green_lure' && Math.random() > 0.5) {
+      if (selectedLure === 'green_lure' && Math.random() > 0.4) {
         caughtId = 'salmon';
         caughtName = 'Salmão';
       }
 
       setFishCaught({ id: caughtId, name: caughtName });
-      setIsFishing(false);
-      onCatchFish(selectedLure, caughtId);
-      setSelectedLure(null);
-    }, 3000);
+      
+      setTimeout(() => {
+        onCatchFish(selectedLure!, caughtId, activeSpot!);
+        setActiveSpot(null);
+        setFishCaught(null);
+        setSelectedLure(null);
+      }, 3000);
+    }
   };
 
+  const spots = gameState.fishingBoat?.spots || [];
+
   return (
-    <div className="absolute inset-0 bg-[#0288D1] overflow-hidden select-none flex flex-col">
+    <div className="absolute inset-0 bg-[#0288D1] overflow-hidden select-none flex flex-col font-sans">
       {/* Top Header */}
       <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-20 bg-gradient-to-b from-black/50 to-transparent">
         <button
@@ -60,62 +121,116 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
           }}
           className="bg-amber-700 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-xl shadow-lg border-2 border-amber-900 active:scale-95 transition-transform flex items-center gap-2"
         >
-          <span>⬅️</span> Voltar à Fazenda
+          <span>⬅️</span> Voltar
         </button>
 
         <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/30 text-white font-black drop-shadow-md">
-          Lago de Pesca Silencioso
+          Lago de Pesca
         </div>
       </div>
 
       {/* Lake Environment */}
-      <div className="relative flex-1 w-full h-full cursor-pointer flex items-center justify-center overflow-hidden" onClick={handleCastLure}>
-        {/* Ripples */}
-        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-400 via-[#0288D1] to-[#01579B]"></div>
-        
-        {isFishing ? (
-          <div className="z-10 flex flex-col items-center animate-bounce">
-            <div className="text-6xl drop-shadow-lg">🎣</div>
-            <div className="mt-4 bg-black/40 text-white px-4 py-2 rounded-full font-bold animate-pulse">
-              Pescando...
-            </div>
-            
-            {/* Water splash effect */}
-            <div className="absolute top-16 w-16 h-4 bg-white/40 rounded-[100%] animate-ping"></div>
-          </div>
-        ) : fishCaught ? (
-          <div className="z-10 flex flex-col items-center animate-in zoom-in-50 duration-500">
-            <div className="text-8xl drop-shadow-2xl mb-4 animate-bounce">
-              {fishCaught.id === 'salmon' ? '🍣' : '🐟'}
-            </div>
-            <div className="bg-green-500 text-white px-6 py-3 rounded-full font-black text-2xl border-4 border-white shadow-[0_0_20px_rgba(34,197,94,0.8)]">
-              Você pescou: {fishCaught.name}!
-            </div>
-            <p className="mt-4 text-white/80 font-bold bg-black/30 px-3 py-1 rounded-full">Toque na água para pescar novamente</p>
-          </div>
-        ) : (
-          <div className="z-10 text-center opacity-80 hover:opacity-100 transition-opacity">
-            <div className="text-8xl drop-shadow-lg opacity-40 mb-4 animate-pulse">🐟</div>
-            <h2 className="text-white text-3xl font-black drop-shadow-md">
-              {selectedLure ? 'Toque na água para arremessar!' : 'Selecione uma isca abaixo'}
-            </h2>
-          </div>
-        )}
+      <div className="relative flex-1 w-full h-full">
+        {/* Environment Background */}
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+        <div className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-[#2E7D32] to-transparent opacity-80"></div>
         
         {/* Decorative elements */}
-        <div className="absolute bottom-10 left-10 text-6xl drop-shadow-lg">🌿</div>
-        <div className="absolute top-20 right-20 text-5xl drop-shadow-lg">🦆</div>
-        <div className="absolute bottom-32 right-12 text-6xl drop-shadow-lg transform scale-x-[-1]">🌿</div>
+        <div className="absolute top-10 left-10 text-7xl drop-shadow-lg">🌲</div>
+        <div className="absolute top-16 right-20 text-6xl drop-shadow-lg">🌲</div>
+        <div className="absolute bottom-40 left-8 text-5xl drop-shadow-lg">🦆</div>
+        <div className="absolute top-1/2 right-10 text-6xl drop-shadow-lg">🪨</div>
+        <div className="absolute top-2/3 left-1/4 text-6xl drop-shadow-lg">🌿</div>
+
+        {/* Fishing Spots */}
+        {spots.map((spot) => {
+          const isCooldown = spot.status === 'cooldown';
+          let timeLeft = 0;
+          if (isCooldown && spot.availableAt) {
+            timeLeft = Math.max(0, spot.availableAt - Date.now());
+          }
+
+          return (
+            <div
+              key={spot.id}
+              className={`absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center transition-all ${!isCooldown && selectedLure ? 'cursor-pointer hover:scale-110' : ''}`}
+              style={{ left: `${spot.x}%`, top: `${spot.y}%` }}
+              onClick={() => handleSpotClick(spot)}
+            >
+              {isCooldown ? (
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 bg-blue-900/40 rounded-full border-4 border-blue-800/50 flex items-center justify-center shadow-inner">
+                    <span className="text-xl opacity-50">💧</span>
+                  </div>
+                  <div className="mt-2 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded-md whitespace-nowrap">
+                    {formatTime(timeLeft)}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <div className="w-20 h-20 border-4 border-cyan-300 rounded-full animate-ping absolute opacity-50"></div>
+                  <div className="w-16 h-16 bg-cyan-400/30 rounded-full border-2 border-cyan-200 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.5)] z-10 relative">
+                    <span className="text-2xl animate-bounce">🐟</span>
+                  </div>
+                  {selectedLure && (
+                    <div className="mt-2 bg-green-500 text-white text-xs font-black px-2 py-1 rounded-full whitespace-nowrap drop-shadow-md animate-pulse">
+                      JOGAR ISCA
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Minigame Overlay */}
+        {activeSpot && (
+          <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+            {fishCaught ? (
+              <div className="flex flex-col items-center animate-in zoom-in-50 duration-500">
+                <div className="text-9xl drop-shadow-2xl mb-4 animate-bounce">
+                  {fishCaught.id === 'salmon' ? '🍣' : '🐟'}
+                </div>
+                <div className="bg-green-500 text-white px-8 py-4 rounded-full font-black text-3xl border-4 border-white shadow-[0_0_30px_rgba(34,197,94,0.8)] text-center">
+                  Você pescou:<br/>{fishCaught.name}!
+                </div>
+              </div>
+            ) : (
+              <div className="relative w-80 h-80 bg-blue-500/30 rounded-full border-8 border-white/40 shadow-2xl overflow-hidden flex items-center justify-center backdrop-blur-md">
+                
+                <div className="absolute top-4 text-white font-black text-lg drop-shadow-md bg-black/30 px-4 py-1 rounded-full">
+                  Toque no peixe para puxar!
+                </div>
+
+                <div 
+                  className="absolute text-5xl transition-all duration-300 ease-out cursor-pointer hover:scale-110 active:scale-95 drop-shadow-lg"
+                  style={{ left: `${fishPos.x}%`, top: `${fishPos.y}%`, transform: 'translate(-50%, -50%)' }}
+                  onClick={handleFishClick}
+                >
+                  {selectedLure === 'green_lure' ? '🐠' : '🐟'}
+                </div>
+
+                {/* Progress Bar */}
+                <div className="absolute bottom-8 w-3/4 h-4 bg-black/50 rounded-full border-2 border-white/50 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-yellow-400 to-green-500 transition-all duration-200"
+                    style={{ width: `${(minigameClicks / 3) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Lure Selection Dock */}
       <div className="absolute bottom-0 w-full bg-gradient-to-t from-[#3E2723] to-[#5D4037] border-t-8 border-[#4E342E] p-4 flex flex-col items-center z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
-        <h3 className="text-amber-200 font-bold mb-2 uppercase tracking-wider text-sm drop-shadow">Caixa de Pesca</h3>
+        <h3 className="text-amber-200 font-bold mb-2 uppercase tracking-wider text-sm drop-shadow">Caixa de Iscas</h3>
         
         <div className="flex gap-4">
           {availableLures.length === 0 ? (
-            <div className="bg-black/20 text-amber-100/50 italic px-6 py-4 rounded-xl border border-black/30">
-              Você não tem iscas! Produza na Fábrica de Iscas.
+            <div className="bg-black/20 text-amber-100/50 italic px-6 py-4 rounded-xl border-black/30 text-sm">
+              Sua caixa está vazia. Produza iscas na sua fazenda!
             </div>
           ) : (
             availableLures.map((lure) => {
@@ -125,7 +240,6 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
               return (
                 <button
                   key={lure.id}
-                  disabled={isFishing}
                   onClick={() => {
                     sound.playClick();
                     setSelectedLure(lure.id);

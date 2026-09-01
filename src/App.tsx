@@ -533,6 +533,19 @@ export default function App() {
           }
         }
 
+        // 6. Process Fishing Boat Spots Cooldown
+        let newFishingBoat = prev.fishingBoat ? { ...prev.fishingBoat } : undefined;
+        if (newFishingBoat && newFishingBoat.spots) {
+          const newSpots = newFishingBoat.spots.map(spot => {
+            if (spot.status === 'cooldown' && spot.availableAt && now >= spot.availableAt) {
+              updated = true;
+              return { ...spot, status: 'ready' as const, availableAt: undefined };
+            }
+            return spot;
+          });
+          newFishingBoat.spots = newSpots;
+        }
+
         // Check for XP Level Up
         const getXpRequirement = (lvl: number) => {
           if (LEVEL_XP_REQUIREMENTS[lvl]) return LEVEL_XP_REQUIREMENTS[lvl];
@@ -569,6 +582,7 @@ export default function App() {
           truckDeliveringUntil: newTruckDeliveringUntil,
           roadsideBoxes: newBoxes,
           activeVisitor: newVisitor,
+          fishingBoat: newFishingBoat,
           deliveryBoat: newDeliveryBoat,
           stats: newStats,
         };
@@ -1572,12 +1586,12 @@ export default function App() {
 
       // Add a small XP reward for expanding
       const xpReward = 50 * parcel.requiredLevel;
+      next.xp += xpReward;
       
-      sound.playLevelUp(); // Special sound effect
-      
+      sound.playLevelUp();
       setUnlockModalParcelId(null);
       
-      return checkLevelUp({ ...next, xp: next.xp + xpReward });
+      return next;
     });
   };
 
@@ -1680,7 +1694,7 @@ export default function App() {
     });
   };
 
-  const handleCatchFish = (lureId: ItemId, fishId: ItemId) => {
+  const handleCatchFish = (lureId: ItemId, fishId: ItemId, spotId: string) => {
     setGameState((prev) => {
       const next = { ...prev };
       // Remove 1 lure
@@ -1691,10 +1705,24 @@ export default function App() {
       // Add 1 fish
       next.inventory[fishId] = (next.inventory[fishId] || 0) + 1;
       
+      // Update spot cooldown
+      if (next.fishingBoat && next.fishingBoat.spots) {
+        next.fishingBoat.spots = next.fishingBoat.spots.map(spot => {
+          if (spot.id === spotId) {
+            return {
+              ...spot,
+              status: 'cooldown',
+              availableAt: Date.now() + 1000 * 60 * 60 * 2 // 2 hours
+            };
+          }
+          return spot;
+        });
+      }
+
       // Some XP for catching fish
       const xpReward = fishId === 'salmon' ? 25 : 15;
-      
-      return checkLevelUp({ ...next, xp: next.xp + xpReward });
+      next.xp += xpReward;
+      return next;
     });
   };
 
@@ -2137,10 +2165,10 @@ export default function App() {
 
   const handleUpdateRoadsideBoxPrice = (boxId: number, newPrice: number) => {
     setGameState((prev) => {
-      const updatedRoadsideBox = prev.roadsideBox.map((box) => 
+      const updatedRoadsideBoxes = prev.roadsideBoxes.map((box) => 
         box.id === boxId ? { ...box, price: newPrice } : box
       );
-      return { ...prev, roadsideBox: updatedRoadsideBox };
+      return { ...prev, roadsideBoxes: updatedRoadsideBoxes };
     });
   };
 

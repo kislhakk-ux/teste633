@@ -51,7 +51,18 @@ export type ItemId =
   | 'brick'
   // Bee Tree & Honey
   | 'nectar'
-  | 'honey';
+  | 'honey'
+  // Fishing
+  | 'red_lure'
+  | 'green_lure'
+  | 'fish_fillet'
+  | 'salmon'
+  | 'fishing_net'
+  | 'shrimp_trap'
+  | 'sushi'
+  | 'fish_pie'
+  | 'shrimp_skewer'
+  | 'shrimp';
 
 export type StorageType = 'silo' | 'barn';
 
@@ -307,7 +318,7 @@ export interface GameState {
   gems: number;
   siloLevel: number; // each level adds +25 capacity
   barnLevel: number; // each level adds +25 capacity
-  inventory: Record<ItemId, number>;
+  inventory: Partial<Record<ItemId, number>>;
   entities: FarmEntity[];
   orders: TruckOrder[];
   truckDeliveringUntil: number | null;
@@ -324,6 +335,13 @@ export interface GameState {
   fishingBoat?: {
     status: 'broken' | 'repairing' | 'repaired';
     repairStartedAt?: number;
+    spots?: {
+      id: string;
+      x: number; // percentage width
+      y: number; // percentage height
+      status: 'ready' | 'cooldown';
+      availableAt?: number;
+    }[];
   };
   deliveryBoat?: {
     status: 'away' | 'docked';

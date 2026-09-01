@@ -10,7 +10,7 @@ interface SettingsModalProps {
   onToggleSound: () => void;
   musicEnabled: boolean;
   onToggleMusic: () => void;
-  graphicsStyle: '3d_rendered' | 'vector';
+  graphicsStyle: '3d_rendered' | '2d_flat';
   onToggleGraphicsStyle: () => void;
   googleUser: { name?: string; email?: string; imageUrl?: string } | null;
   onLogout: () => void;
@@ -123,7 +123,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 }}
                 className="px-3 py-1.5 rounded-xl font-extrabold text-xs border-2 shadow active:scale-95 transition-all cursor-pointer bg-amber-600 hover:bg-amber-500 text-white border-amber-700"
               >
-                {graphicsStyle === '3d_rendered' ? '✨ 3D REALISTA' : '📐 2D VETORIAL'}
+                {graphicsStyle === '3d_rendered' ? '✨ 3D REALISTA' : '📐 2D PLANO'}
               </button>
             </div>
           </div>

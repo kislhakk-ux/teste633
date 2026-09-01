@@ -6,7 +6,7 @@ import { sound } from '../utils/sound';
 interface ActionRadialProps {
   selectedEntity: FarmEntity | null;
   level: number;
-  inventory: Record<ItemId, number>;
+  inventory: Partial<Record<ItemId, number>>;
   gems: number;
   onClose: () => void;
   onPlantCrop: (entityId: string, cropId: ItemId) => void;
@@ -23,6 +23,8 @@ interface ActionRadialProps {
   onOpenBarn: () => void;
   onOpenFarmhouse: () => void;
   onRemoveDeadEntity?: (entityId: string) => void;
+  unlockedParcelIds?: string[];
+  onDeliveryBoatClick?: () => void;
 }
 
 export const ActionRadial: React.FC<ActionRadialProps> = ({
@@ -299,18 +301,14 @@ export const ActionRadial: React.FC<ActionRadialProps> = ({
 
   // Handle Obstacles and Dead Trees
   if (
-    selectedEntity.type === 'obstacle' ||
-    selectedEntity.type === 'dead_tree' ||
-    selectedEntity.type === 'dead_bush'
+    selectedEntity.type === 'obstacle'
   ) {
     let toolRequired: ItemId = 'axe';
     let toolName = 'Machado';
     let icon = '🪓';
     let actionName = 'Cortar';
 
-    if (selectedEntity.type === 'dead_tree') {
-      toolRequired = 'saw'; toolName = 'Serrote'; icon = '🪚'; actionName = 'Serrar';
-    } else if (selectedEntity.type === 'obstacle') {
+    if (selectedEntity.type === 'obstacle') {
       const oType = selectedEntity.obstacleData?.type;
       if (oType === 'pine' || oType === 'bush') { toolRequired = 'axe'; toolName = 'Machado'; icon = '🪓'; }
       if (oType === 'oak') { toolRequired = 'saw'; toolName = 'Serrote'; icon = '🪚'; actionName = 'Serrar'; }
