@@ -16,6 +16,7 @@ import {
   IsoShrimpTrap 
 } from './isometric/IsoFishingEntities';
 import { IsoScenery } from './isometric/IsoScenery';
+import { IsoFishingScenery } from './isometric/IsoFishingScenery';
 
 export const FISHING_MAP_SIZE = 16;
 
@@ -141,36 +142,6 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
     }
   };
 
-  const mapTiles = [];
-  for (let y = 0; y < FISHING_MAP_SIZE; y++) {
-    for (let x = 0; x < FISHING_MAP_SIZE; x++) {
-      const isLand = (x + y) < 10 || x < 2 || y < 2; 
-      const pos = gridToScreen(x, y);
-      
-      let tileColor = isLand ? '#8BC34A' : '#0288D1';
-      if (isLand && ((x + y) === 9 || x === 2 || y === 2)) tileColor = '#7CB342'; 
-      
-      mapTiles.push(
-        <div
-          key={`tile_${x}_${y}`}
-          className="absolute origin-top-left"
-          style={{
-            left: pos.x,
-            top: pos.y,
-            width: TILE_WIDTH,
-            height: TILE_HEIGHT,
-            backgroundColor: tileColor,
-            border: '1px solid rgba(255,255,255,0.05)',
-            transform: `rotateX(60deg) rotateZ(45deg)`,
-            boxSizing: 'border-box'
-          }}
-        >
-          {!isLand && <div className="absolute inset-0 bg-white/10 animate-pulse" style={{ animationDelay: `${(x+y)*100}ms` }} />}
-        </div>
-      );
-    }
-  }
-
   const spotPositions = [
     { gridX: 6, gridY: 10 },
     { gridX: 10, gridY: 6 },
@@ -198,9 +169,7 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
           transition: isDragging ? 'none' : 'transform 0.1s ease-out'
         }}
       >
-        <div className="absolute top-0 left-0">
-          {mapTiles}
-        </div>
+        <IsoFishingScenery />
 
         <IsoFishingHut 
           x={3} 

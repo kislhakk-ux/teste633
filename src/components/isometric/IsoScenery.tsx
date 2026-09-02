@@ -674,7 +674,7 @@ const ButterflyCartoon: React.FC<{ x: number; y: number; wingColor: string }> = 
 // --- NEW HAY DAY FLORA & ENVIRONMENTAL DETAILS ---
 
 // 3D Water Lily (Vitória-Régia)
-const WaterLily: React.FC<{ x: number; y: number; scale?: number }> = ({ x, y, scale = 1 }) => {
+export const WaterLily: React.FC<{ x: number; y: number; scale?: number }> = ({ x, y, scale = 1 }) => {
   return (
     <g transform={`translate(${x}, ${y}) scale(${scale})`}>
       {/* Lily Pad Leaf */}
@@ -690,7 +690,7 @@ const WaterLily: React.FC<{ x: number; y: number; scale?: number }> = ({ x, y, s
 };
 
 // 3D Cattails (Taboas)
-const Cattails: React.FC<{ x: number; y: number; scale?: number }> = ({ x, y, scale = 1 }) => {
+export const Cattails: React.FC<{ x: number; y: number; scale?: number }> = ({ x, y, scale = 1 }) => {
   return (
     <g transform={`translate(${x}, ${y}) scale(${scale})`}>
       {/* Green Stalks */}
@@ -709,7 +709,7 @@ const Cattails: React.FC<{ x: number; y: number; scale?: number }> = ({ x, y, sc
 };
 
 // Smooth River Stone
-const RiverStone: React.FC<{ x: number; y: number; scale?: number }> = ({ x, y, scale = 1 }) => {
+export const RiverStone: React.FC<{ x: number; y: number; scale?: number }> = ({ x, y, scale = 1 }) => {
   return (
     <g transform={`translate(${x}, ${y}) scale(${scale})`}>
       <ellipse cx="0" cy="4" rx="12" ry="5" fill="rgba(0,0,0,0.3)" />
@@ -723,7 +723,7 @@ const RiverStone: React.FC<{ x: number; y: number; scale?: number }> = ({ x, y, 
 // --- ANIMATED JUMPING FISH (Hay Day Style) ---
 // This uses a keyframe animation in CSS that we inject dynamically or rely on Tailwind.
 // Since we can't easily add arbitrary @keyframes, we'll use SVG <animateMotion> or <animateTransform>
-const AnimatedJumpingFish: React.FC<{ x: number; y: number; delay?: string }> = ({ x, y, delay = "0s" }) => {
+export const AnimatedJumpingFish: React.FC<{ x: number; y: number; delay?: string }> = ({ x, y, delay = "0s" }) => {
   return (
     <g transform={`translate(${x}, ${y})`}>
       {/* Splash Ring (Expands when fish lands/jumps) */}
