@@ -25,6 +25,7 @@ interface FishingCanvasProps {
   onSpotClick: (spot: FishingSpot) => void;
   selectedLure: string | null;
   onReturnToFarm: () => void;
+  onHutClick: () => void;
 }
 
 export const FishingCanvas: React.FC<FishingCanvasProps> = ({
@@ -33,6 +34,7 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
   onSpotClick,
   selectedLure,
   onReturnToFarm,
+  onHutClick,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -200,7 +202,15 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
           {mapTiles}
         </div>
 
-        <IsoFishingHut x={3} y={3} />
+        <IsoFishingHut 
+          x={3} 
+          y={3} 
+          onClick={() => {
+            if (!wasMapDraggedRef.current) {
+              onHutClick();
+            }
+          }}
+        />
         <IsoLureMaker x={5} y={1} />
         <IsoNetMaker x={1} y={5} />
         <IsoDuckTrap x={8} y={3} />

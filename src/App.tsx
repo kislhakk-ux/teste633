@@ -1721,8 +1721,21 @@ export default function App() {
         });
       }
 
+      // Update fish collection
+      const collection = { ...(next.fishCollection || {}) };
+      const currentStats = collection[fishId] || { caught: 0 };
+      
+      // Random weight between 0.5 and 15 kg (just for fun in the collection book)
+      const weight = (Math.random() * 14.5) + 0.5;
+      
+      collection[fishId] = {
+        caught: currentStats.caught + 1,
+        largestWeight: Math.max(currentStats.largestWeight || 0, weight)
+      };
+      next.fishCollection = collection;
+
       // Some XP for catching fish
-      const xpReward = fishId === 'salmon' ? 25 : 15;
+      const xpReward = fishId === 'salmon' ? 25 : fishId === 'trout' ? 20 : fishId === 'bass' ? 22 : fishId === 'catfish' ? 18 : 15;
       next.xp += xpReward;
       return next;
     });

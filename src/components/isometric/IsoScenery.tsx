@@ -242,12 +242,18 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
         );
       })()}
 
-      {/* 4. RIVER (Along the South-West Edge: pLeft to pBottom) */}
+      {/* 4. 3D RIVER (Along the South-West Edge: pLeft to pBottom) */}
       <defs>
         <linearGradient id="river-water-3d" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#29B6F6" />
-          <stop offset="50%" stopColor="#039BE5" />
-          <stop offset="100%" stopColor="#0277BD" />
+          <stop offset="40%" stopColor="#039BE5" />
+          <stop offset="80%" stopColor="#0288D1" />
+          <stop offset="100%" stopColor="#01579B" />
+        </linearGradient>
+        <linearGradient id="river-bank-3d" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#8D6E63" />
+          <stop offset="50%" stopColor="#6D4C41" />
+          <stop offset="100%" stopColor="#4E342E" />
         </linearGradient>
       </defs>
       {(() => {
@@ -263,22 +269,52 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
 
         return (
           <g id="river-system">
+            {/* 3D River Bank (Cliff dropping into water) */}
             <polygon 
-              points={`${rxTop},${ryTop} ${rxBottom},${ryBottom} ${rOuterBottom.x},${rOuterBottom.y} ${rOuterTop.x},${rOuterTop.y}`} 
+              points={`${rxTop},${ryTop} ${rxBottom},${ryBottom} ${rxBottom},${ryBottom + 20} ${rxTop},${ryTop + 20}`} 
+              fill="url(#river-bank-3d)" 
+              stroke="#3E2723" 
+              strokeWidth="1.5"
+            />
+            {/* Deep Water Surface */}
+            <polygon 
+              points={`${rxTop},${ryTop + 18} ${rxBottom},${ryBottom + 18} ${rOuterBottom.x},${rOuterBottom.y + 18} ${rOuterTop.x},${rOuterTop.y + 18}`} 
               fill="url(#river-water-3d)" 
             />
-            {/* Water Ripples */}
-            <path d={`M ${rxTop - 60} ${ryTop + 40} Q ${rxTop - 40} ${ryTop + 45} ${rxTop - 20} ${ryTop + 40}`} stroke="#81D4FA" strokeWidth="2" fill="none" opacity="0.6" />
-            <path d={`M ${rxBottom - 120} ${ryBottom + 20} Q ${rxBottom - 100} ${ryBottom + 25} ${rxBottom - 80} ${ryBottom + 20}`} stroke="#81D4FA" strokeWidth="2" fill="none" opacity="0.6" />
+            {/* Water Ripples & Flow */}
+            <path d={`M ${rxTop - 60} ${ryTop + 45} Q ${rxTop - 40} ${ryTop + 50} ${rxTop - 20} ${ryTop + 45}`} stroke="#81D4FA" strokeWidth="2" fill="none" opacity="0.8" className="animate-pulse" />
+            <path d={`M ${rxBottom - 120} ${ryBottom + 35} Q ${rxBottom - 100} ${ryBottom + 40} ${rxBottom - 80} ${ryBottom + 35}`} stroke="#81D4FA" strokeWidth="2" fill="none" opacity="0.8" className="animate-pulse" />
             
+            {/* Rich Flora & Details (Hay Day style) */}
+            <WaterLily x={rxTop - 20} y={ryTop + 40} scale={0.8} />
+            <WaterLily x={rxBottom - 160} y={ryBottom + 60} scale={1.1} />
+            <Cattails x={rxTop} y={ryTop + 15} />
+            <Cattails x={rxBottom - 60} y={ryBottom + 12} />
+            <RiverStone x={rxTop + 30} y={ryTop + 5} scale={1} />
+            
+            {/* Animated Jumping Fish! */}
+            <AnimatedJumpingFish x={rxTop - 100} y={ryTop + 80} delay="0s" />
+
             {/* Fishing Pier */}
             <g id="fishing-pier" transform={`translate(${rxTop + 140}, ${ryTop + 70})`} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); onBoatClick?.(); }} style={{ pointerEvents: 'auto' }}>
+              {/* 3D Pier Deck */}
               <polygon points="0,0 60,30 20,50 -40,20" fill="#8D6E63" stroke="#4E342E" strokeWidth="2" />
-              {/* Pier Posts */}
-              <circle cx="0" cy="0" r="4" fill="#5D4037" />
-              <circle cx="60" cy="30" r="4" fill="#5D4037" />
-              <circle cx="20" cy="50" r="4" fill="#5D4037" />
-              <circle cx="-40" cy="20" r="4" fill="#5D4037" />
+              <polygon points="-40,20 20,50 20,56 -40,26" fill="#5D4037" />
+              <polygon points="20,50 60,30 60,36 20,56" fill="#4E342E" />
+              
+              {/* Wood plank gaps */}
+              <line x1="-15" y1="12" x2="35" y2="37" stroke="#5D4037" strokeWidth="1" />
+              <line x1="5" y1="2" x2="45" y2="22" stroke="#5D4037" strokeWidth="1" />
+              
+              {/* Thick Pier Posts into water */}
+              <rect x="-3" y="0" width="6" height="25" fill="#3E2723" />
+              <rect x="57" y="30" width="6" height="25" fill="#3E2723" />
+              <rect x="17" y="50" width="6" height="25" fill="#3E2723" />
+              <rect x="-43" y="20" width="6" height="25" fill="#3E2723" />
+              
+              {/* Rope Details */}
+              <ellipse cx="-40" cy="20" rx="5" ry="2" fill="none" stroke="#D7CCC8" strokeWidth="1.5" />
+              <ellipse cx="20" cy="50" rx="5" ry="2" fill="none" stroke="#D7CCC8" strokeWidth="1.5" />
 
               {/* FISHING BOAT */}
               <g transform="translate(40, 50)">
@@ -306,18 +342,23 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
             {/* Delivery Boat Pier */}
             <g id="delivery-pier" transform={`translate(${rxTop + 340}, ${ryTop + 170})`} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); onDeliveryBoatClick?.(); }} style={{ pointerEvents: 'auto' }}>
               <polygon points="0,0 80,40 30,65 -50,25" fill="#795548" stroke="#3E2723" strokeWidth="2" />
+              <polygon points="-50,25 30,65 30,73 -50,33" fill="#5D4037" />
+              <polygon points="30,65 80,40 80,48 30,73" fill="#4E342E" />
               <rect x="10" y="5" width="20" height="20" fill="#8D6E63" stroke="#4E342E" transform="skewX(-30)" />
               {/* Pier Posts */}
-              <circle cx="0" cy="0" r="5" fill="#4E342E" />
-              <circle cx="80" cy="40" r="5" fill="#4E342E" />
-              <circle cx="30" cy="65" r="5" fill="#4E342E" />
-              <circle cx="-50" cy="25" r="5" fill="#4E342E" />
+              <rect x="-4" y="0" width="8" height="30" fill="#4E342E" />
+              <rect x="76" y="40" width="8" height="30" fill="#4E342E" />
+              <rect x="26" y="65" width="8" height="30" fill="#4E342E" />
+              <rect x="-54" y="25" width="8" height="30" fill="#4E342E" />
+              <ellipse cx="30" cy="65" rx="6" ry="3" fill="none" stroke="#D7CCC8" strokeWidth="2" />
 
               {/* DELIVERY BOAT */}
               {deliveryBoatStatus === 'docked' && (
                 <g transform="translate(60, 60)">
                   {/* Big Boat Hull */}
                   <path d="M -60,-30 L 20,10 L 0,30 L -80,-10 Z" fill="#F44336" stroke="#B71C1C" strokeWidth="2" />
+                  <path d="M 0,30 L -80,-10 L -80,-5 L 0,35 Z" fill="#B71C1C" />
+                  <path d="M 20,10 L 0,30 L 0,35 L 20,15 Z" fill="#D32F2F" />
                   {/* Boat Cabin */}
                   <path d="M -40,-20 L 0,0 L -10,15 L -50,-5 Z" fill="#FFFFFF" stroke="#B0BEC5" strokeWidth="2" />
                   <rect x="-30" y="-10" width="10" height="15" fill="#4FC3F7" transform="skewY(26)" />
@@ -402,20 +443,47 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
       <TreeOakCartoon x={pTop.x + 95} y={pTop.y - 30} scale={1.3} hasApples={true} />
       <TreePineCartoon x={pTop.x + 155} y={pTop.y - 15} scale={1.05} />
 
-      {/* 9. WIDE FISHING RIVER (Eastern Edge) */}
+      {/* 9. WIDE 3D FISHING RIVER (Eastern Edge) */}
+      {/* 3D River Bank (Inner Cliff) */}
       <polygon
         points={`
           ${pTop.x + 80},${pTop.y - 40}
           ${pRight.x + 120},${pRight.y + 20}
           ${pBottom.x + 120},${pBottom.y + 90}
-          ${pRight.x + 40},${pRight.y + 70}
-          ${pTop.x + 50},${pTop.y - 10}
+          ${pBottom.x + 105},${pBottom.y + 80}
+          ${pRight.x + 105},${pRight.y + 10}
+          ${pTop.x + 65},${pTop.y - 50}
         `}
-        fill="#29B6F6"
-        stroke="#0288D1"
-        strokeWidth="2"
-        opacity="0.85"
+        fill="url(#river-bank-3d)"
+        stroke="#3E2723"
+        strokeWidth="1.5"
       />
+      {/* Deep Water Polygon */}
+      <polygon
+        points={`
+          ${pTop.x + 65},${pTop.y - 25}
+          ${pRight.x + 105},${pRight.y + 35}
+          ${pBottom.x + 105},${pBottom.y + 105}
+          ${pRight.x + 25},${pRight.y + 85}
+          ${pTop.x + 35},${pTop.y + 5}
+        `}
+        fill="url(#river-water-3d)"
+        stroke="#01579B"
+        strokeWidth="2"
+      />
+      {/* Animated Caustics & Flow */}
+      <path d={`M ${pRight.x + 60} ${pRight.y + 35} Q ${pRight.x + 75} ${pRight.y + 40} ${pRight.x + 90} ${pRight.y + 35}`} stroke="#81D4FA" strokeWidth="2.5" fill="none" opacity="0.7" className="animate-pulse" strokeLinecap="round" />
+      <path d={`M ${pRight.x + 40} ${pRight.y + 60} Q ${pRight.x + 55} ${pRight.y + 65} ${pRight.x + 70} ${pRight.y + 60}`} stroke="#81D4FA" strokeWidth="2" fill="none" opacity="0.6" className="animate-pulse" strokeLinecap="round" style={{animationDelay: '1s'}} />
+
+      {/* Flora & Details (Eastern Edge) */}
+      <WaterLily x={pRight.x + 70} y={pRight.y + 45} scale={0.9} />
+      <Cattails x={pTop.x + 50} y={pTop.y - 15} />
+      <Cattails x={pRight.x + 40} y={pRight.y + 70} />
+      <RiverStone x={pTop.x + 55} y={pTop.y - 10} scale={1.5} />
+      
+      {/* Animated Jumping Fish! */}
+      <AnimatedJumpingFish x={pRight.x + 75} y={pRight.y + 55} delay="1.5s" />
+
       {/* River Shore Sand/Dirt */}
       <polygon
         points={`
@@ -430,24 +498,33 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
         stroke="#BCAAA4"
         strokeWidth="1.5"
       />
-      {/* Water Ripples / Waves */}
-      <path d={`M ${pRight.x + 60} ${pRight.y + 10} Q ${pRight.x + 70} ${pRight.y + 15} ${pRight.x + 80} ${pRight.y + 10}`} stroke="#81D4FA" strokeWidth="2" fill="none" opacity="0.6" strokeLinecap="round" />
-      <path d={`M ${pRight.x + 80} ${pRight.y + 40} Q ${pRight.x + 90} ${pRight.y + 45} ${pRight.x + 100} ${pRight.y + 40}`} stroke="#81D4FA" strokeWidth="2" fill="none" opacity="0.6" strokeLinecap="round" />
 
-      {/* 10. WOODEN PIER & FISHING BOAT */}
+      {/* 10. WOODEN PIER & FISHING BOAT (Fully 3D) */}
       <g transform={`translate(${pRight.x + 25}, ${pRight.y + 40})`} className="cursor-pointer pointer-events-auto" onClick={onBoatClick}>
-        {/* Pier Structure */}
+        {/* Pier Structure (Top Deck) */}
         <polygon points="0,0 20,-10 35,0 15,10" fill="#795548" stroke="#3E2723" strokeWidth="1.5" />
+        {/* Pier Depth / Sides */}
+        <polygon points="15,10 35,0 35,5 15,15" fill="#4E342E" />
+        <polygon points="0,0 15,10 15,15 0,5" fill="#5D4037" />
+        
+        {/* Wood planks */}
         <line x1="5" y1="-2" x2="25" y2="8" stroke="#5D4037" strokeWidth="1" />
         <line x1="10" y1="-7" x2="30" y2="3" stroke="#5D4037" strokeWidth="1" />
-        {/* Pier Pilings */}
-        <rect x="18" y="-10" width="3" height="15" fill="#4E342E" />
-        <rect x="33" y="0" width="3" height="15" fill="#4E342E" />
+        
+        {/* Pier Pilings (Posts going into deep water) */}
+        <rect x="18" y="-10" width="3" height="22" fill="#3E2723" />
+        <rect x="33" y="0" width="3" height="22" fill="#3E2723" />
+        <rect x="13" y="10" width="3" height="15" fill="#3E2723" />
+        <rect x="-2" y="0" width="3" height="15" fill="#3E2723" />
+        
+        {/* Ropes tying to posts */}
+        <ellipse cx="34.5" cy="0" rx="3" ry="1.5" fill="none" stroke="#D7CCC8" strokeWidth="1" />
+        <ellipse cx="14.5" cy="10" rx="3" ry="1.5" fill="none" stroke="#D7CCC8" strokeWidth="1" />
         
         {/* Fishing Boat */}
         <g transform="translate(45, -5)">
           {/* Boat Shadow */}
-          <ellipse cx="0" cy="8" rx="15" ry="6" fill="rgba(0,0,0,0.3)" />
+          <ellipse cx="0" cy="12" rx="15" ry="6" fill="rgba(0,0,0,0.4)" />
           
           {fishingBoatStatus === 'broken' && (
             <g>
@@ -479,17 +556,18 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
 
           {fishingBoatStatus === 'repaired' && (
             <g>
-              {/* Pristine hull */}
+              {/* Pristine 3D hull */}
               <path d="M -15 0 Q 0 10 15 0 L 12 -8 Q 0 -4 -12 -8 Z" fill="#FAFAFA" stroke="#9E9E9E" strokeWidth="1.5" />
+              <path d="M -15 0 Q 0 10 15 0 L 10 3 Q 0 12 -12 3 Z" fill="#E0E0E0" />
               {/* Red Trim */}
               <path d="M -14 -1 Q 0 8 14 -1" fill="none" stroke="#E53935" strokeWidth="1.5" />
               {/* Outboard Motor */}
-              <rect x="-18" y="-4" width="4" height="8" fill="#424242" rx="1" />
-              <rect x="-17" y="4" width="2" height="6" fill="#757575" />
-              <path d="M -18 9 Q -19 11 -16 11" fill="none" stroke="#BDBDBD" strokeWidth="1" />
+              <rect x="-18" y="-4" width="5" height="10" fill="#424242" rx="1.5" />
+              <rect x="-17" y="6" width="3" height="8" fill="#757575" />
+              <path d="M -18 12 Q -19 14 -16 14" fill="none" stroke="#BDBDBD" strokeWidth="1.5" />
               {/* Tiny Steering Wheel & Seats */}
               <rect x="-2" y="-6" width="6" height="4" fill="#8D6E63" />
-              <circle cx="2" cy="-6" r="2" fill="#212121" />
+              <circle cx="2" cy="-6" r="2.5" fill="#212121" />
             </g>
           )}
         </g>
@@ -589,6 +667,88 @@ const ButterflyCartoon: React.FC<{ x: number; y: number; wingColor: string }> = 
       <circle cx="-4" cy="-0.5" r="1" fill="#FFFFFF" />
       <circle cx="4" cy="-0.5" r="1" fill="#FFFFFF" />
       <line x1="0" y1="-4" x2="0" y2="4" stroke="#212121" strokeWidth="1.5" strokeLinecap="round" />
+    </g>
+  );
+};
+
+// --- NEW HAY DAY FLORA & ENVIRONMENTAL DETAILS ---
+
+// 3D Water Lily (Vitória-Régia)
+const WaterLily: React.FC<{ x: number; y: number; scale?: number }> = ({ x, y, scale = 1 }) => {
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+      {/* Lily Pad Leaf */}
+      <path d="M 0 -8 C 8 -8 15 -2 15 5 C 15 10 9 14 0 14 C -9 14 -15 10 -15 5 C -15 -2 -8 -8 0 -8 Z" fill="#4CAF50" stroke="#1B5E20" strokeWidth="1" />
+      <path d="M 0 5 L -10 12" stroke="#1B5E20" strokeWidth="1" />
+      {/* Pink Flower */}
+      <polygon points="0,-4 -3,-8 0,-12 3,-8" fill="#F48FB1" stroke="#C2185B" strokeWidth="0.5" />
+      <polygon points="0,-4 -6,-5 -4,-10 0,-7" fill="#F48FB1" stroke="#C2185B" strokeWidth="0.5" />
+      <polygon points="0,-4 6,-5 4,-10 0,-7" fill="#F48FB1" stroke="#C2185B" strokeWidth="0.5" />
+      <circle cx="0" cy="-4" r="1.5" fill="#FFEB3B" />
+    </g>
+  );
+};
+
+// 3D Cattails (Taboas)
+const Cattails: React.FC<{ x: number; y: number; scale?: number }> = ({ x, y, scale = 1 }) => {
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+      {/* Green Stalks */}
+      <path d="M -5 10 Q -8 0 -10 -15" fill="none" stroke="#689F38" strokeWidth="1.5" />
+      <path d="M 0 10 Q 0 0 2 -18" fill="none" stroke="#689F38" strokeWidth="1.5" />
+      <path d="M 5 10 Q 8 0 12 -12" fill="none" stroke="#689F38" strokeWidth="1.5" />
+      {/* Brown Fuzzy Heads */}
+      <rect x="-11.5" y="-12" width="3" height="8" rx="1.5" fill="#5D4037" transform="rotate(-15 -10 -12)" />
+      <rect x="0.5" y="-14" width="3.5" height="10" rx="1.5" fill="#5D4037" />
+      <rect x="10.5" y="-8" width="3" height="7" rx="1.5" fill="#5D4037" transform="rotate(20 12 -8)" />
+      {/* Small Grass Blades at base */}
+      <path d="M -5 10 Q -10 5 -12 0" fill="none" stroke="#7CB342" strokeWidth="1" />
+      <path d="M 5 10 Q 10 5 14 2" fill="none" stroke="#7CB342" strokeWidth="1" />
+    </g>
+  );
+};
+
+// Smooth River Stone
+const RiverStone: React.FC<{ x: number; y: number; scale?: number }> = ({ x, y, scale = 1 }) => {
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+      <ellipse cx="0" cy="4" rx="12" ry="5" fill="rgba(0,0,0,0.3)" />
+      <path d="M -10 2 C -10 -6 0 -8 12 -2 C 14 4 6 8 -2 8 C -8 8 -10 6 -10 2 Z" fill="#9E9E9E" stroke="#616161" strokeWidth="1" />
+      {/* Moss patch */}
+      <path d="M -6 0 C -4 -4 4 -2 6 2 C 2 4 -4 3 -6 0 Z" fill="#558B2F" opacity="0.8" />
+    </g>
+  );
+};
+
+// --- ANIMATED JUMPING FISH (Hay Day Style) ---
+// This uses a keyframe animation in CSS that we inject dynamically or rely on Tailwind.
+// Since we can't easily add arbitrary @keyframes, we'll use SVG <animateMotion> or <animateTransform>
+const AnimatedJumpingFish: React.FC<{ x: number; y: number; delay?: string }> = ({ x, y, delay = "0s" }) => {
+  return (
+    <g transform={`translate(${x}, ${y})`}>
+      {/* Splash Ring (Expands when fish lands/jumps) */}
+      <ellipse cx="0" cy="0" rx="15" ry="5" fill="none" stroke="#E1F5FE" strokeWidth="1.5" opacity="0">
+        <animate attributeName="rx" values="0;15;20" dur="4s" begin={delay} repeatCount="indefinite" />
+        <animate attributeName="ry" values="0;5;7" dur="4s" begin={delay} repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0;0.8;0" dur="4s" begin={delay} repeatCount="indefinite" />
+      </ellipse>
+      
+      {/* The Fish Sprite */}
+      <g opacity="0">
+        <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.05;0.25;0.3;1" dur="4s" begin={delay} repeatCount="indefinite" />
+        <animateTransform attributeName="transform" type="translate" values="0,0; -10,-30; -20,0" keyTimes="0;0.15;0.3" dur="4s" begin={delay} repeatCount="indefinite" />
+        <animateTransform attributeName="transform" type="rotate" values="-45; 0; 45" keyTimes="0;0.15;0.3" dur="4s" begin={delay} repeatCount="indefinite" additive="sum" />
+        
+        {/* Fish Body */}
+        <path d="M -6 0 C -6 -4 6 -4 10 0 C 6 4 -6 4 -6 0 Z" fill="#00BCD4" stroke="#00838F" strokeWidth="0.5" />
+        {/* Tail */}
+        <polygon points="-6,0 -10,-4 -10,4" fill="#00E5FF" stroke="#00838F" strokeWidth="0.5" />
+        {/* Eye */}
+        <circle cx="6" cy="-1.5" r="1" fill="#FFFFFF" />
+        <circle cx="6.5" cy="-1.5" r="0.5" fill="#000000" />
+        {/* Fin */}
+        <path d="M 0 -2 L -2 -5 L 2 -2 Z" fill="#00E5FF" />
+      </g>
     </g>
   );
 };

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { GameState, ItemId } from '../types/game';
+import { ITEMS } from '../constants/gameData';
 import { sound } from '../utils/sound';
 import { FishingCanvas } from './FishingCanvas';
+import { FishCollectionModal } from './FishCollectionModal';
 
 interface FishingLakeViewProps {
   gameState: GameState;
@@ -20,6 +22,7 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
   const [minigameClicks, setMinigameClicks] = useState(0);
   const [fishPos, setFishPos] = useState({ x: 50, y: 50 });
   const [fishCaught, setFishCaught] = useState<{ id: ItemId; name: string } | null>(null);
+  const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
 
   const availableLures = [
     { id: 'red_lure' as ItemId, name: 'Isca Vermelha', icon: '🪱' },
@@ -91,12 +94,20 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
       sound.playSuccess();
       
       let caughtId: ItemId = 'fish_fillet';
-      let caughtName = 'Filé de Peixe';
 
-      if (selectedLure === 'green_lure' && Math.random() > 0.4) {
-        caughtId = 'salmon';
-        caughtName = 'Salmão';
+      if (selectedLure === 'green_lure') {
+        const r = Math.random();
+        if (r > 0.85) caughtId = 'bass';
+        else if (r > 0.6) caughtId = 'salmon';
+        else if (r > 0.3) caughtId = 'trout';
+        else if (r > 0.1) caughtId = 'catfish';
+      } else {
+        const r = Math.random();
+        if (r > 0.9) caughtId = 'trout';
+        else if (r > 0.7) caughtId = 'catfish';
       }
+
+      const caughtName = ITEMS[caughtId]?.name || 'Filé de Peixe';
 
       setFishCaught({ id: caughtId, name: caughtName });
       
@@ -138,6 +149,10 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
             selectedLure={selectedLure}
             onSpotClick={handleSpotClick}
             onReturnToFarm={onReturnToFarm}
+            onHutClick={() => {
+              sound.playClick();
+              setIsCollectionModalOpen(true);
+            }}
          />
       </div>
 
@@ -147,7 +162,7 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
             {fishCaught ? (
               <div className="flex flex-col items-center animate-in zoom-in-50 duration-500">
                 <div className="text-9xl drop-shadow-2xl mb-4 animate-bounce">
-                  {fishCaught.id === 'salmon' ? '🍣' : '🐟'}
+                  {ITEMS[fishCaught.id]?.icon || '🐟'}
                 </div>
                 <div className="bg-green-500 text-white px-8 py-4 rounded-full font-black text-3xl border-4 border-white shadow-[0_0_30px_rgba(34,197,94,0.8)] text-center">
                   Você pescou:<br/>{fishCaught.name}!
@@ -224,6 +239,13 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
           )}
         </div>
       </div>
+
+      {isCollectionModalOpen && (
+        <FishCollectionModal
+          gameState={gameState}
+          onClose={() => setIsCollectionModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

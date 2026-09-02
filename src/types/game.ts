@@ -57,6 +57,9 @@ export type ItemId =
   | 'green_lure'
   | 'fish_fillet'
   | 'salmon'
+  | 'trout'
+  | 'bass'
+  | 'catfish'
   | 'lobster_tail'
   | 'fishing_net'
   | 'shrimp_trap'
@@ -349,6 +352,7 @@ export interface GameState {
   graphicsStyle?: '2d_flat' | '3d_rendered';
   unlockedParcelIds?: string[]; // IDs of unlocked expansion parcels
   fishingBoat?: FishingBoat;
+  fishCollection?: Record<string, { caught: number, largestWeight?: number }>;
   deliveryBoat?: {
     status: 'away' | 'docked';
     arrivesAt?: number; // Time it will arrive (if away)
