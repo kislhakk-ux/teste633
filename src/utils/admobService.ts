@@ -14,7 +14,7 @@ export const ADMOB_CONFIG = {
   testRewardedAdUnitId: 'ca-app-pub-3940256099942544/5224354917',
 
   // Use test ID in development / non-production builds to avoid AdMob policy violations
-  useTestAds: true,
+  useTestAds: false,
 
   rewardAmount: 5, // 5 Gems per rewarded ad completed
 };
