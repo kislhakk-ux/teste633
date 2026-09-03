@@ -6,9 +6,11 @@ import {
 } from '@capacitor-community/admob';
 
 export const ADMOB_CONFIG = {
-  // Official Google AdMob Production IDs
+  // Official Google AdMob & AdSense Publisher IDs
+  publisherId: 'ca-pub-2377512488351478',
   appId: 'ca-app-pub-2377512488351478~9895529416',
   rewardedAdUnitId: 'ca-app-pub-2377512488351478/8190958508',
+  webSlotId: '8190958508',
 
   // Official Google Mobile Ads Test Unit ID for development & testing
   testRewardedAdUnitId: 'ca-app-pub-3940256099942544/5224354917',
@@ -35,18 +37,19 @@ class AdMobService {
   }
 
   /**
-   * Initialize Google Mobile Ads SDK
+   * Initialize Google Mobile Ads SDK (Native) or verify AdSense (Web)
    */
   public async initialize(): Promise<boolean> {
     if (this.isInitialized) return true;
 
-    console.log('[AdMob/Init] Initializing Google Mobile Ads SDK...');
+    console.log('[AdMob/Init] Initializing Google Mobile Ads / AdSense SDK...');
     try {
       if (!this.isNative()) {
-        console.warn(
-          '[AdMob/Init] Ambiente Web/Navegador detectado. O Google Mobile Ads SDK nativo requer ambiente Android/iOS (APK).'
+        console.log(
+          '[AdMob/Init] Ambiente Web/Navegador detectado. Google AdSense / H5 Ads ativo para ca-pub-2377512488351478.'
         );
-        return false;
+        this.isInitialized = true;
+        return true;
       }
 
       await AdMob.initialize({
@@ -67,11 +70,16 @@ class AdMobService {
    */
   public async prepareRewardedAd(): Promise<{ success: boolean; error?: string }> {
     try {
+      if (!this.isNative()) {
+        // Na Web, o carregamento é gerido pelo AdSense / H5 Ads
+        return { success: true };
+      }
+
       const initialized = await this.initialize();
       if (!initialized) {
         return {
           success: false,
-          error: 'Google AdMob nativo indisponível no navegador web. Instale o APK no Android para testar anúncios reais.',
+          error: 'Falha ao inicializar o Google AdMob.',
         };
       }
 
@@ -104,14 +112,83 @@ class AdMobService {
   }
 
   /**
-   * Show the Rewarded Ad and await official reward callback from Google Mobile Ads SDK
+   * Show the Rewarded Ad and await official reward callback from Google Mobile Ads SDK or Web AdSense
    * @param onReward Official callback fired only when user completes watching the full ad
    */
   public async showRewardedAd(
     onReward: (rewardAmount: number) => void
-  ): Promise<{ success: boolean; rewarded: boolean; error?: string }> {
+  ): Promise<{ success: boolean; rewarded: boolean; isWeb?: boolean; error?: string }> {
     console.log('[AdMob/Show] Iniciando exibição do anúncio premiado...');
 
+    // 1. Tratamento para Ambiente Web (Google AdSense / H5 Games Ads)
+    if (!this.isNative()) {
+      console.log('[AdMob/Show] Ambiente Web detectado. Acionando anúncio Google AdSense / H5 Games Ads...');
+      const win = typeof window !== 'undefined' ? (window as any) : null;
+
+      // Tentativa 1: Google H5 Games adBreak (se disponível no navegador)
+      if (win && typeof win.adBreak === 'function') {
+        const h5Promise = new Promise<{ success: boolean; rewarded: boolean; isWeb?: boolean; error?: string }>((resolve) => {
+          let rewarded = false;
+          let handled = false;
+          try {
+            win.adBreak({
+              type: 'reward',
+              name: 'fazenda_reward_gems',
+              beforeAd: () => {
+                console.log('[AdSense/H5] Exibindo anúncio Google H5 Games...');
+              },
+              afterAd: () => {
+                console.log('[AdSense/H5] Anúncio H5 finalizado.');
+              },
+              beforeReward: (showAdFn: () => void) => {
+                showAdFn();
+              },
+              adViewed: () => {
+                console.log('[AdSense/H5] Recompensa concedida via Google H5 Games!');
+                rewarded = true;
+                handled = true;
+                onReward(ADMOB_CONFIG.rewardAmount);
+                resolve({ success: true, rewarded: true });
+              },
+              adDismissed: () => {
+                handled = true;
+                if (rewarded) {
+                  resolve({ success: true, rewarded: true });
+                } else {
+                  resolve({
+                    success: true,
+                    rewarded: false,
+                    error: 'Você fechou o anúncio antes de concluir. Assista até o final.',
+                  });
+                }
+              },
+            });
+
+            // Se adBreak não responder em 3s, delegar para o Web AdSense Player
+            setTimeout(() => {
+              if (!handled) {
+                resolve({ success: true, rewarded: false, isWeb: true });
+              }
+            }, 3000);
+          } catch (e: any) {
+            resolve({ success: true, rewarded: false, isWeb: true });
+          }
+        });
+
+        const h5Result = await h5Promise;
+        if (h5Result.rewarded) {
+          return h5Result;
+        }
+        if (h5Result.error && !h5Result.isWeb) {
+          return h5Result;
+        }
+      }
+
+      // Tentativa 2: Abre o player de anúncio AdSense interativo no navegador
+      return { success: true, rewarded: false, isWeb: true };
+    }
+
+    // 2. Tratamento Nativo para Android / iOS (APK via Capacitor)
     try {
       const prepRes = await this.prepareRewardedAd();
       if (!prepRes.success) {
