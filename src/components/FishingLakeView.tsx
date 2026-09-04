@@ -203,6 +203,20 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  const handleExpansionUnlock = (name: string, cost: number) => {
+    if (gameState.coins < cost) {
+      sound.playError();
+      setToastMessage(`❌ Você precisa de ${cost} moedas para desbloquear a ${name}!`);
+      setTimeout(() => setToastMessage(null), 3500);
+      return;
+    }
+    gameState.coins -= cost;
+    sound.playDing();
+    confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
+    setToastMessage(`🎉 Incrível! Você expandiu seu lago com a ${name}!`);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
   const spots = gameState.fishingBoat?.spots || [
     { id: 'spot_1', x: 6, y: 10, status: 'ready' },
     { id: 'spot_2', x: 10, y: 6, status: 'ready' },
@@ -272,6 +286,7 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
             sound.playClick();
             setIsNetMakerOpen(true);
           }}
+          onExpansionUnlock={handleExpansionUnlock}
         />
       </div>
 

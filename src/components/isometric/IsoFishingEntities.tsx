@@ -579,3 +579,220 @@ export const IsoFishSpot: React.FC<{
     </div>
   );
 };
+
+// 8. 3D FISHERMAN (Angus - Pescador com Vara de Pescar e Caixa de Iscas)
+export const IsoFisherman: React.FC<{
+  x: number;
+  y: number;
+  offsetY?: number;
+}> = ({ x, y, offsetY = -65 }) => {
+  const [cutoutSrc, setCutoutSrc] = useState<string | null>(null);
+  const [talkBubble, setTalkBubble] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    getCutoutSprite(HD_BUILDING_SPRITES.fisherman).then((res) => {
+      if (active) setCutoutSrc(res);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const fishermanTips = [
+    '🎣 Use iscas douradas para capturar peixes raros e pesados!',
+    '🐟 Olhe as ondulações na água, os melhores peixes saltam lá!',
+    '✨ Você sabia que cada espécie de peixe tem um peso recorde no Álbum?',
+    '🦆 As penas de pato do Salão servem para fazer travesseiros fofinhos!',
+    '🦞 As lagostas adoram águas calmas perto dos troncos submersos!',
+  ];
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    sound.playPop();
+    const randomTip = fishermanTips[Math.floor(Math.random() * fishermanTips.length)];
+    setTalkBubble(randomTip);
+    setTimeout(() => setTalkBubble(null), 4000);
+  };
+
+  return (
+    <IsoEntityWrapper x={x} y={y} width={1.8} height={1.8} offsetY={offsetY} className="pointer-events-auto cursor-pointer">
+      <div
+        className="relative group transition-transform duration-200 hover:scale-105 active:scale-95 flex flex-col items-center justify-end"
+        onClick={handleClick}
+        title="Toque no pescador Angus!"
+      >
+        {/* Soft Ground Shadow */}
+        <div className="absolute -bottom-2 w-24 h-8 bg-amber-950/40 rounded-[50%] blur-sm pointer-events-none" />
+
+        {/* 3D Fisherman Sprite */}
+        <img
+          src={cutoutSrc || HD_BUILDING_SPRITES.fisherman}
+          alt="Pescador Angus"
+          className="w-32 sm:w-36 h-auto object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.35)] pointer-events-none"
+          style={{
+            mixBlendMode: !cutoutSrc ? 'multiply' : 'normal',
+          }}
+        />
+
+        {/* Floating Line & Bobber in Water beside the fisherman */}
+        <div className="absolute -left-6 bottom-1 flex items-center pointer-events-none">
+          <div className="w-5 h-5 bg-red-500 rounded-full border-2 border-white shadow-md animate-bounce flex items-center justify-center text-[10px]">
+            ⚪
+          </div>
+          <div className="w-6 h-6 border-2 border-cyan-200/60 rounded-full animate-ping -ml-5.5 -mt-0.5" />
+        </div>
+
+        {/* Speech Bubble with Helpful Fishing Tip */}
+        {talkBubble && (
+          <div className="absolute -top-16 z-50 bg-amber-100 text-amber-950 font-bold text-xs px-3.5 py-2 rounded-2xl border-2 border-amber-800/60 shadow-2xl max-w-[220px] text-center animate-in zoom-in-95 duration-200 pointer-events-none">
+            {talkBubble}
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-x-6 border-x-transparent border-t-8 border-t-amber-100" />
+          </div>
+        )}
+      </div>
+    </IsoEntityWrapper>
+  );
+};
+
+// 9. 3D HOLLOW WATER LOG & BARREL (Tronco de Madeira Oco e Barril Submerso)
+export const IsoWaterLog: React.FC<{
+  x: number;
+  y: number;
+  offsetY?: number;
+  scale?: number;
+}> = ({ x, y, offsetY = -40, scale = 1 }) => {
+  const [cutoutSrc, setCutoutSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    getCutoutSprite(HD_BUILDING_SPRITES.water_log).then((res) => {
+      if (active) setCutoutSrc(res);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    sound.playWaterSplash();
+  };
+
+  return (
+    <IsoEntityWrapper x={x} y={y} width={2} height={2} offsetY={offsetY} className="pointer-events-auto cursor-pointer">
+      <div
+        className="relative group transition-transform duration-200 hover:scale-105 active:scale-95 flex flex-col items-center justify-end"
+        onClick={handleClick}
+        title="Tronco antigo no lago"
+        style={{ transform: `scale(${scale})` }}
+      >
+        {/* Water Ripple Wake underneath the submerged log */}
+        <div className="absolute -bottom-3 w-36 h-12 bg-cyan-300/30 rounded-[50%] blur-sm pointer-events-none animate-pulse" />
+
+        {/* 3D Water Log and Barrel Sprite */}
+        <img
+          src={cutoutSrc || HD_BUILDING_SPRITES.water_log}
+          alt="Tronco Oco no Lago"
+          className="w-40 sm:w-44 h-auto object-contain filter drop-shadow-[0_6px_14px_rgba(0,0,0,0.4)] pointer-events-none"
+          style={{
+            mixBlendMode: !cutoutSrc ? 'multiply' : 'normal',
+          }}
+        />
+
+        {/* Foam around the log */}
+        <div className="absolute -bottom-1 w-28 h-4 border border-white/60 rounded-full animate-pulse opacity-70 pointer-events-none" />
+      </div>
+    </IsoEntityWrapper>
+  );
+};
+
+// 10. 3D DUCK SALON (Salão de Patos / Tratamento)
+export const IsoDuckSalon: React.FC<{
+  x: number;
+  y: number;
+  offsetY?: number;
+  onClick?: () => void;
+}> = ({ x, y, offsetY = -95, onClick }) => {
+  const [cutoutSrc, setCutoutSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    getCutoutSprite(HD_BUILDING_SPRITES.duck_salon).then((res) => {
+      if (active) setCutoutSrc(res);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <IsoEntityWrapper x={x} y={y} width={2.4} height={2.4} offsetY={offsetY} className="pointer-events-auto cursor-pointer">
+      <div
+        className="relative group transition-transform duration-200 hover:scale-105 active:scale-95 flex flex-col items-center justify-end"
+        onClick={(e) => {
+          e.stopPropagation();
+          sound.playPop();
+          onClick?.();
+        }}
+        title="Salão dos Patos"
+      >
+        <div className="absolute -bottom-3 w-32 h-10 bg-amber-950/40 rounded-[50%] blur-sm pointer-events-none" />
+        <img
+          src={cutoutSrc || HD_BUILDING_SPRITES.duck_salon}
+          alt="Salão dos Patos"
+          className="w-40 sm:w-44 h-auto object-contain filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.35)] pointer-events-none"
+          style={{
+            mixBlendMode: !cutoutSrc ? 'multiply' : 'normal',
+          }}
+        />
+
+        <div className="absolute -top-4 bg-gradient-to-r from-amber-500 to-yellow-400 text-amber-950 font-black text-[11px] px-3 py-0.5 rounded-full border border-white shadow-md flex items-center gap-1">
+          <span>🦆</span>
+          <span>Salão dos Patos</span>
+        </div>
+      </div>
+    </IsoEntityWrapper>
+  );
+};
+
+// 11. EXPANSION FISHING SPOT (Área de Expansão do Lago com Estaca de Madeira)
+export const IsoExpansionSpot: React.FC<{
+  x: number;
+  y: number;
+  name: string;
+  cost: number;
+  onUnlock: () => void;
+}> = ({ x, y, name, cost, onUnlock }) => {
+  return (
+    <IsoEntityWrapper x={x} y={y} width={2} height={2} offsetY={-50} className="pointer-events-auto cursor-pointer">
+      <div
+        className="relative group flex flex-col items-center justify-center transition-transform hover:scale-105 active:scale-95"
+        onClick={(e) => {
+          e.stopPropagation();
+          onUnlock();
+        }}
+        title={`Desbloquear ${name}`}
+      >
+        {/* Water Ripple under expansion marker */}
+        <div className="w-24 h-12 bg-blue-900/40 rounded-[50%] border border-cyan-400/40 animate-pulse flex items-center justify-center">
+          {/* Wooden Expansion Stake */}
+          <div className="relative flex flex-col items-center -mt-6">
+            <div className="w-4 h-14 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-800 rounded-sm border border-amber-900 shadow-md flex items-center justify-center">
+              <span className="text-white text-xs font-black">📍</span>
+            </div>
+
+            {/* Expansion Sign Banner */}
+            <div className="absolute -top-7 bg-gradient-to-r from-amber-800 to-amber-950 text-amber-100 font-extrabold text-[10px] px-3 py-1 rounded-lg border-2 border-amber-400 shadow-xl flex items-center gap-1.5 whitespace-nowrap animate-bounce">
+              <span>🔒</span>
+              <span>{name}</span>
+              <span className="bg-amber-400 text-amber-950 px-1.5 py-0.2 rounded font-black text-[9px]">
+                {cost} 🪙
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </IsoEntityWrapper>
+  );
+};

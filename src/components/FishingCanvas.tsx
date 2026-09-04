@@ -12,6 +12,10 @@ import {
   IsoShrimpTrap,
   IsoPineTree,
   IsoLakeTree,
+  IsoFisherman,
+  IsoWaterLog,
+  IsoDuckSalon,
+  IsoExpansionSpot,
 } from './isometric/IsoFishingEntities';
 import { IsoFishingScenery } from './isometric/IsoFishingScenery';
 
@@ -26,6 +30,7 @@ interface FishingCanvasProps {
   onHutClick: () => void;
   onLureMakerClick?: () => void;
   onNetMakerClick?: () => void;
+  onExpansionUnlock?: (name: string, cost: number) => void;
 }
 
 interface WaterClickRipple {
@@ -42,10 +47,11 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
   onHutClick,
   onLureMakerClick,
   onNetMakerClick,
+  onExpansionUnlock,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState<number>(1.2);
+  const [zoom, setZoom] = useState<number>(1.55);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -59,11 +65,11 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
     if (!isInitialized && containerRef.current) {
       const width = containerRef.current.clientWidth;
       const height = containerRef.current.clientHeight;
-      const centerScreen = gridToScreen(FISHING_MAP_SIZE / 2, FISHING_MAP_SIZE / 2);
+      const centerScreen = gridToScreen(7.5, 7.5);
 
       setPan({
-        x: width / 2 - centerScreen.x * 1.2,
-        y: height / 2 - centerScreen.y * 1.2 + 200, // Position nicely centered on the lake
+        x: width / 2 - centerScreen.x * 1.55,
+        y: height / 2 - centerScreen.y * 1.55 + 50,
       });
       setIsInitialized(true);
     }
@@ -176,10 +182,11 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
   };
 
   const spotPositions = [
-    { gridX: 6, gridY: 10 },
-    { gridX: 10, gridY: 6 },
-    { gridX: 12, gridY: 12 },
     { gridX: 7, gridY: 6.5 },
+    { gridX: 10.5, gridY: 6.5 },
+    { gridX: 6.5, gridY: 10.5 },
+    { gridX: 12, gridY: 11.5 },
+    { gridX: 8.5, gridY: 13 },
   ];
 
   return (
@@ -204,36 +211,52 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
           transition: isDragging ? 'none' : 'transform 0.1s ease-out',
         }}
       >
-        {/* Scenery: Lush Grass Mountains, Shoreline & Deep Crystal Lake */}
+        {/* Scenery: Rocky Mountains Ridge, Shorelines, Island & Crystal Detailed Lake */}
         <IsoFishingScenery />
 
-        {/* 1. 3D Mountain Waterfall */}
-        <IsoWaterfall x={0} y={13.5} />
+        {/* 1. 3D MOUNTAIN WATERFALL (Integrated in Cliff, Facing Forward into Lake) */}
+        <IsoWaterfall x={1.2} y={0.8} />
 
-        {/* 3D Cartoon Trees: Mountain Pines & Lush Lakeside Trees */}
-        {/* Ridge / Mountain Background Trees */}
-        <IsoPineTree x={-0.8} y={0.5} scale={1.3} offsetY={-60} />
-        <IsoPineTree x={0.8} y={-0.6} scale={1.5} offsetY={-70} />
-        <IsoLakeTree x={2.8} y={-0.6} scale={1.2} offsetY={-60} />
-        <IsoPineTree x={14.6} y={-0.5} scale={1.4} offsetY={-70} />
-        <IsoLakeTree x={16.2} y={0.8} scale={1.3} offsetY={-60} />
-        <IsoPineTree x={16.5} y={2.6} scale={1.2} offsetY={-60} />
+        {/* Dense Mountain Ridge Evergreen Forest (No empty green plane visible!) */}
+        {/* Upper Mountain Crest */}
+        <IsoPineTree x={-1.5} y={-1.2} scale={1.5} offsetY={-70} />
+        <IsoPineTree x={-0.2} y={-1.5} scale={1.6} offsetY={-75} />
+        <IsoLakeTree x={1.8} y={-1.6} scale={1.4} offsetY={-70} />
+        <IsoPineTree x={3.6} y={-1.8} scale={1.5} offsetY={-75} />
+        <IsoPineTree x={5.5} y={-1.8} scale={1.6} offsetY={-80} />
+        <IsoLakeTree x={7.5} y={-1.8} scale={1.5} offsetY={-75} />
+        <IsoPineTree x={9.5} y={-1.6} scale={1.6} offsetY={-75} />
+        <IsoPineTree x={11.8} y={-1.5} scale={1.5} offsetY={-70} />
+        <IsoLakeTree x={13.8} y={-1.2} scale={1.4} offsetY={-65} />
+        <IsoPineTree x={15.5} y={-0.8} scale={1.5} offsetY={-70} />
 
-        {/* Beside Waterfall & Mountain Cliffs */}
-        <IsoPineTree x={-0.5} y={11} scale={1.3} offsetY={-60} />
-        <IsoLakeTree x={-0.5} y={15.5} scale={1.3} offsetY={-50} />
+        {/* Left Rocky Mountain Flank */}
+        <IsoPineTree x={-1.2} y={1.5} scale={1.4} offsetY={-65} />
+        <IsoPineTree x={-1.4} y={4} scale={1.5} offsetY={-70} />
+        <IsoLakeTree x={-1.2} y={7} scale={1.3} offsetY={-60} />
+        <IsoPineTree x={-1.4} y={10} scale={1.4} offsetY={-65} />
+        <IsoLakeTree x={-1.2} y={13.5} scale={1.4} offsetY={-60} />
+        <IsoPineTree x={-0.8} y={15.5} scale={1.3} offsetY={-50} />
 
-        {/* Shoreline & Foreground Trees */}
-        <IsoPineTree x={15.8} y={10.5} scale={1.3} offsetY={-60} />
-        <IsoLakeTree x={15.5} y={13.8} scale={1.2} offsetY={-50} />
-        <IsoLakeTree x={4.5} y={15.8} scale={1.2} offsetY={-40} />
-        <IsoPineTree x={9} y={15.8} scale={1.3} offsetY={-40} />
-        <IsoLakeTree x={13.8} y={15.5} scale={1.2} offsetY={-40} />
+        {/* Right Mountain & Cove Flank */}
+        <IsoPineTree x={16.2} y={1.5} scale={1.4} offsetY={-65} />
+        <IsoLakeTree x={16.5} y={4.5} scale={1.3} offsetY={-60} />
+        <IsoPineTree x={16.2} y={8} scale={1.4} offsetY={-65} />
+        <IsoPineTree x={16} y={11} scale={1.3} offsetY={-60} />
+        <IsoLakeTree x={15.8} y={14} scale={1.3} offsetY={-50} />
 
-        {/* 2. 3D Fishing Cabin on Pier Dock */}
+        {/* Lower Foreshore Framing */}
+        <IsoLakeTree x={5.5} y={16.2} scale={1.2} offsetY={-40} />
+        <IsoPineTree x={9} y={16.2} scale={1.3} offsetY={-40} />
+        <IsoLakeTree x={12.5} y={16} scale={1.2} offsetY={-40} />
+
+        {/* 2. THE LONE PINE ISLAND (Ilhota no Lago com Pinheiro Hay Day) */}
+        <IsoPineTree x={3.8} y={11.8} scale={1.15} offsetY={-65} />
+
+        {/* 3. 3D FISHING CABIN (Cabana de Pesca no Píer de Madeira) */}
         <IsoFishingHut
           x={3}
-          y={2.5}
+          y={2.6}
           onClick={() => {
             if (!wasMapDraggedRef.current) {
               onHutClick();
@@ -241,9 +264,12 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
           }}
         />
 
-        {/* 3. 3D Lure Maker Workbench */}
+        {/* 4. 3D FISHERMAN (Angus com Vara de Pescar e Caixa de Iscas no Píer) */}
+        <IsoFisherman x={4.3} y={3.4} offsetY={-60} />
+
+        {/* 5. 3D LURE MAKER WORKBENCH (Bancada de Iscas) */}
         <IsoLureMaker
-          x={5.5}
+          x={5.8}
           y={1.8}
           onClick={() => {
             if (!wasMapDraggedRef.current) {
@@ -252,7 +278,7 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
           }}
         />
 
-        {/* 4. 3D Net Maker Machine */}
+        {/* 6. 3D NET MAKER MACHINE (Fabricador de Redes) */}
         <IsoNetMaker
           x={1.8}
           y={4.5}
@@ -263,14 +289,27 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
           }}
         />
 
-        {/* 5. 3D Swimming Mallard Ducks with water wakes */}
-        <IsoDuckTrap x={8.5} y={4} />
-        <IsoDuckTrap x={12.5} y={7.5} />
+        {/* 7. 3D DUCK SALON (Salão de Tratamento de Patos no Hay Day) */}
+        <IsoDuckSalon
+          x={14.8}
+          y={3.6}
+          onClick={() => {
+            sound.playDuckQuack?.();
+          }}
+        />
 
-        {/* 6. 3D Lobster Pot Cage with floating buoy */}
-        <IsoShrimpTrap x={3.5} y={9.5} />
+        {/* 8. 3D HOLLOW WATER LOGS & BARRELS (Troncos Submersos no Lago) */}
+        <IsoWaterLog x={11.5} y={5.2} offsetY={-40} scale={1.05} />
+        <IsoWaterLog x={4.2} y={8.2} offsetY={-40} scale={0.9} />
 
-        {/* 7. Vivid 3D Fishing Spots with jumping fish */}
+        {/* 9. 3D Swimming Mallard Ducks with water wakes */}
+        <IsoDuckTrap x={8.5} y={4.2} />
+        <IsoDuckTrap x={13} y={7.8} />
+
+        {/* 10. 3D Lobster Pot Cage with floating buoy */}
+        <IsoShrimpTrap x={3.2} y={9.5} />
+
+        {/* 11. Vivid 3D Fishing Spots with jumping 3D fish */}
         {spots.map((spot, index) => {
           const gridPos = spotPositions[index % spotPositions.length];
           return (
@@ -289,6 +328,29 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
             />
           );
         })}
+
+        {/* 12. EXPANSION FISHING BAYS (Lagos de Expansão com Estacas de Madeira Hay Day) */}
+        <IsoExpansionSpot
+          x={14.2}
+          y={13.5}
+          name="Baía do Leste"
+          cost={150}
+          onUnlock={() => onExpansionUnlock?.('Baía do Leste', 150)}
+        />
+        <IsoExpansionSpot
+          x={5}
+          y={14.5}
+          name="Enseada do Sul"
+          cost={100}
+          onUnlock={() => onExpansionUnlock?.('Enseada do Sul', 100)}
+        />
+        <IsoExpansionSpot
+          x={9.5}
+          y={14.5}
+          name="Águas Profundas"
+          cost={200}
+          onUnlock={() => onExpansionUnlock?.('Águas Profundas', 200)}
+        />
 
         {/* Dynamic Interactive Water Ripples on Player Tap */}
         {ripples.map((ripple) => (
