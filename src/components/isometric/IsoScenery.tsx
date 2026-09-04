@@ -1,4 +1,6 @@
 import React from 'react';
+import { Iso3DBoat } from './Iso3DBoat';
+import { Iso3DDeliveryBoat } from './Iso3DDeliveryBoat';
 
 interface IsoSceneryProps {
   mapSize: number;
@@ -89,6 +91,13 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
           <stop offset="40%" stopColor="#FFEE58" />
           <stop offset="80%" stopColor="#FDD835" />
           <stop offset="100%" stopColor="#F57F17" />
+        </linearGradient>
+
+        {/* Boat Notification Badge Gradient */}
+        <linearGradient id="boat-badge-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FFF9C4" />
+          <stop offset="50%" stopColor="#FFF176" />
+          <stop offset="100%" stopColor="#FFD54F" />
         </linearGradient>
       </defs>
 
@@ -316,27 +325,13 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
               <ellipse cx="-40" cy="20" rx="5" ry="2" fill="none" stroke="#D7CCC8" strokeWidth="1.5" />
               <ellipse cx="20" cy="50" rx="5" ry="2" fill="none" stroke="#D7CCC8" strokeWidth="1.5" />
 
-              {/* FISHING BOAT */}
-              <g transform="translate(40, 50)">
-                {fishingBoatStatus === 'broken' ? (
-                  <g id="boat-broken">
-                    <path d="M -30,-15 L 10,5 L 0,15 L -40,-5 Z" fill="#795548" stroke="#4E342E" strokeWidth="2" opacity="0.8" />
-                    <line x1="-15" y1="0" x2="-25" y2="10" stroke="#3E2723" strokeWidth="3" />
-                    <text x="-15" y="5" fontSize="18" className="animate-pulse pointer-events-none">🔨</text>
-                  </g>
-                ) : fishingBoatStatus === 'repairing' ? (
-                  <g id="boat-repairing">
-                    <path d="M -30,-15 L 10,5 L 0,15 L -40,-5 Z" fill="#8D6E63" stroke="#4E342E" strokeWidth="2" />
-                    <text x="-15" y="5" fontSize="18" className="animate-spin pointer-events-none">⚙️</text>
-                  </g>
-                ) : (
-                  <g id="boat-repaired">
-                    <path d="M -30,-15 L 10,5 L 0,15 L -40,-5 Z" fill="#FFC107" stroke="#FF8F00" strokeWidth="2" />
-                    <rect x="-20" y="-5" width="10" height="10" fill="#FFFFFF" stroke="#B0BEC5" />
-                    <text x="-15" y="5" fontSize="18" className="pointer-events-none">🎣</text>
-                  </g>
-                )}
-              </g>
+              {/* AUTHENTIC 3D CARTOON FISHING BOAT (Hay Day Style) */}
+              <Iso3DBoat
+                status={fishingBoatStatus}
+                x={10}
+                y={22}
+                onClick={onBoatClick}
+              />
             </g>
 
             {/* Delivery Boat Pier */}
@@ -352,24 +347,13 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
               <rect x="-54" y="25" width="8" height="30" fill="#4E342E" />
               <ellipse cx="30" cy="65" rx="6" ry="3" fill="none" stroke="#D7CCC8" strokeWidth="2" />
 
-              {/* DELIVERY BOAT */}
-              {deliveryBoatStatus === 'docked' && (
-                <g transform="translate(60, 60)">
-                  {/* Big Boat Hull */}
-                  <path d="M -60,-30 L 20,10 L 0,30 L -80,-10 Z" fill="#F44336" stroke="#B71C1C" strokeWidth="2" />
-                  <path d="M 0,30 L -80,-10 L -80,-5 L 0,35 Z" fill="#B71C1C" />
-                  <path d="M 20,10 L 0,30 L 0,35 L 20,15 Z" fill="#D32F2F" />
-                  {/* Boat Cabin */}
-                  <path d="M -40,-20 L 0,0 L -10,15 L -50,-5 Z" fill="#FFFFFF" stroke="#B0BEC5" strokeWidth="2" />
-                  <rect x="-30" y="-10" width="10" height="15" fill="#4FC3F7" transform="skewY(26)" />
-                  <rect x="-15" y="-3" width="10" height="15" fill="#4FC3F7" transform="skewY(26)" />
-                  {/* Smoke stack */}
-                  <rect x="-25" y="-35" width="8" height="20" fill="#424242" stroke="#212121" />
-                  <circle cx="-21" cy="-40" r="4" fill="#9E9E9E" opacity="0.6" className="animate-pulse" />
-                  <circle cx="-20" cy="-45" r="6" fill="#9E9E9E" opacity="0.4" className="animate-pulse" />
-                  <text x="-35" y="15" fontSize="24" className="pointer-events-none animate-bounce">📦</text>
-                </g>
-              )}
+              {/* AUTHENTIC 3D CARTOON DELIVERY STEAMBOAT */}
+              <Iso3DDeliveryBoat
+                status={deliveryBoatStatus}
+                x={20}
+                y={30}
+                onClick={onDeliveryBoatClick}
+              />
             </g>
 
           </g>

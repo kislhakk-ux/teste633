@@ -24,6 +24,11 @@ import imgNectarBush from '../assets/images/hayday_nectarbush_3d.jpg';
 import imgNectarBushWilted from '../assets/images/hayday_nectarbush_wilted_3d.jpg';
 import imgDeadTree from '../assets/images/hayday_deadtree_3d.jpg';
 
+// Fishing & River System 3D assets
+import imgBrokenBoat from '../assets/images/broken_boat_3d_1788484996630.jpg';
+import imgRepairedBoat from '../assets/images/repaired_boat_3d_1788485011545.jpg';
+import imgDeliveryBoat from '../assets/images/delivery_steamboat_3d_1788485024400.jpg';
+
 export const HD_BUILDING_SPRITES = {
   farmhouse: imgFarmhouse,
   barn: imgBarn,
@@ -46,6 +51,9 @@ export const HD_BUILDING_SPRITES = {
   dead_tree: imgDeadTree,
 
   // Fishing System
+  broken_boat: imgBrokenBoat,
+  repaired_boat: imgRepairedBoat,
+  delivery_boat: imgDeliveryBoat,
   lure_maker: imgWoodBase,
 
   // Ground Bases

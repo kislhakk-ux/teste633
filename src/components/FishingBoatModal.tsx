@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { GameState } from '../types/game';
 import { sound } from '../utils/sound';
+import { HD_BUILDING_SPRITES } from '../constants/buildingSprites';
 
 interface FishingBoatModalProps {
   gameState: GameState;
   onClose: () => void;
   onStartRepair: (costCoins: number) => void;
   onSpeedUpRepair: (costGems: number) => void;
+  onOpenLake?: () => void;
+  onToggleBroken?: () => void;
 }
 
 const REPAIR_TIME_MS = 36 * 60 * 60 * 1000; // 36 hours
@@ -19,6 +22,8 @@ export const FishingBoatModal: React.FC<FishingBoatModalProps> = ({
   onClose,
   onStartRepair,
   onSpeedUpRepair,
+  onOpenLake,
+  onToggleBroken,
 }) => {
   const [timeLeft, setTimeLeft] = useState<number>(0);
 
@@ -105,11 +110,23 @@ export const FishingBoatModal: React.FC<FishingBoatModalProps> = ({
         </div>
 
         <div className="flex flex-col items-center text-center gap-3 w-full">
+          {/* 3D Realistic Cartoon Boat Preview */}
+          <div className="relative w-44 h-32 flex items-center justify-center bg-sky-200/50 rounded-2xl border-2 border-[#4fc3f7] shadow-inner p-1 overflow-hidden">
+            <img
+              src={status === 'repaired' ? HD_BUILDING_SPRITES.repaired_boat : HD_BUILDING_SPRITES.broken_boat}
+              alt={status === 'repaired' ? 'Barco 3D Reparado' : 'Barco 3D Quebrado'}
+              className="w-full h-full object-contain filter drop-shadow-md hover:scale-105 transition-transform duration-300"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute top-1 right-2 bg-sky-900/80 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+              3D Realista
+            </div>
+          </div>
+
           {status === 'broken' && (
             <>
-              <div className="text-5xl drop-shadow-md">🏚️</div>
               <p className="text-[#01579b] font-semibold text-sm px-2">
-                Este velho barco pode levar você ao Lago de Pesca, mas precisa ser consertado primeiro!
+                Este velho barco de madeira pode levar você ao Lago de Pesca, mas precisa ser consertado primeiro!
               </p>
 
               {isLevelLocked ? (
@@ -130,7 +147,7 @@ export const FishingBoatModal: React.FC<FishingBoatModalProps> = ({
                   <button
                     onClick={handleStartRepair}
                     disabled={gameState.coins < REPAIR_COST_COINS}
-                    className={`w-full py-3 px-4 rounded-xl font-black text-lg text-white shadow-lg flex items-center justify-center gap-2 mt-4 transition-transform ${
+                    className={`w-full py-3 px-4 rounded-xl font-black text-lg text-white shadow-lg flex items-center justify-center gap-2 mt-4 transition-transform cursor-pointer ${
                       gameState.coins >= REPAIR_COST_COINS
                         ? 'bg-blue-600 hover:bg-blue-500 hover:scale-105 active:scale-95 border-b-4 border-blue-800'
                         : 'bg-gray-400 border-b-4 border-gray-500 cursor-not-allowed opacity-80'
@@ -145,8 +162,7 @@ export const FishingBoatModal: React.FC<FishingBoatModalProps> = ({
 
           {status === 'repairing' && (
             <>
-              <div className="text-5xl animate-bounce drop-shadow-md">🛠️</div>
-              <h2 className="text-[#01579b] font-black text-xl">Consertando...</h2>
+              <h2 className="text-[#01579b] font-black text-xl">Consertando o Barco...</h2>
               
               <div className="w-full bg-white/70 p-4 rounded-2xl border border-[#4fc3f7] shadow-inner mt-2">
                 <div className="text-3xl font-black text-[#0277bd] drop-shadow-sm mb-2 font-mono">
@@ -168,7 +184,7 @@ export const FishingBoatModal: React.FC<FishingBoatModalProps> = ({
                 <button
                   onClick={handleSpeedUp}
                   disabled={gameState.gems < speedUpCost}
-                  className={`w-full py-3 px-4 rounded-xl font-black text-lg text-white shadow-lg flex items-center justify-center gap-2 transition-transform ${
+                  className={`w-full py-3 px-4 rounded-xl font-black text-lg text-white shadow-lg flex items-center justify-center gap-2 transition-transform cursor-pointer ${
                     gameState.gems >= speedUpCost
                       ? 'bg-purple-600 hover:bg-purple-500 hover:scale-105 active:scale-95 border-b-4 border-purple-800'
                       : 'bg-gray-400 border-b-4 border-gray-500 cursor-not-allowed opacity-80'
@@ -178,6 +194,31 @@ export const FishingBoatModal: React.FC<FishingBoatModalProps> = ({
                 </button>
               </div>
             </>
+          )}
+
+          {status === 'repaired' && (
+            <div className="w-full flex flex-col gap-3">
+              <p className="text-[#01579b] font-semibold text-sm px-2">
+                Seu barco 3D está totalmente reparado e pronto para navegar até a Área de Pesca!
+              </p>
+
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenLake?.();
+                }}
+                className="w-full py-3.5 px-4 rounded-xl font-black text-base text-white shadow-lg flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 border-b-4 border-emerald-800 active:scale-95 transition-all cursor-pointer"
+              >
+                🎣 Ir para a Área de Pesca
+              </button>
+
+              <button
+                onClick={() => onToggleBroken?.()}
+                className="w-full py-2 px-3 rounded-xl font-bold text-xs text-amber-950 bg-amber-200/80 hover:bg-amber-300 border border-amber-400/80 transition-all cursor-pointer"
+              >
+                🏚️ Alternar para Barco Quebrado 3D
+              </button>
+            </div>
           )}
         </div>
       </div>

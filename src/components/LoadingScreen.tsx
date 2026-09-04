@@ -16,6 +16,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
   errorMessage = null,
   onRetry,
   onCancel,
+  onPlayOffline,
   isFadingOut = false,
 }) => {
   const [dots, setDots] = useState('');
@@ -233,6 +234,14 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
                 </button>
               )}
             </div>
+            {onPlayOffline && (
+              <button
+                onClick={onPlayOffline}
+                className="w-full bg-amber-200/70 hover:bg-amber-200 text-amber-900 font-bold text-xs py-2 px-3 rounded-xl border border-amber-400/80 transition-all active:scale-95 cursor-pointer"
+              >
+                🌾 Jogar no Modo Local (Offline)
+              </button>
+            )}
           </div>
         )}
       </div>

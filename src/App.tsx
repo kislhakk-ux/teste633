@@ -76,7 +76,7 @@ function applyWongamerVip(state: GameState, email?: string): GameState {
       gems: Math.max(state.gems || 0, 10000),
       siloLevel: Math.max(state.siloLevel || 1, 100),
       barnLevel: Math.max(state.barnLevel || 1, 100),
-      fishingBoat: { ...(state.fishingBoat || { spots: [] }), status: 'repaired' },
+      fishingBoat: { ...(state.fishingBoat || { spots: [] }), status: 'broken' },
       inventory: {
         ...state.inventory,
         land_map: Math.max(state.inventory?.land_map || 0, 50),
@@ -2360,11 +2360,7 @@ export default function App() {
   };
 
   const handleFishingBoatClick = () => {
-    if (gameState.fishingBoat?.status === 'repaired') {
-      setIsFishingLakeMode(true);
-    } else {
-      setIsFishingBoatModalOpen(true);
-    }
+    setIsFishingBoatModalOpen(true);
   };
 
   if (isFishingLakeMode) {
@@ -2799,6 +2795,16 @@ export default function App() {
           onClose={() => setIsFishingBoatModalOpen(false)}
           onStartRepair={handleStartFishingBoatRepair}
           onSpeedUpRepair={handleSpeedUpFishingBoatRepair}
+          onOpenLake={() => setIsFishingLakeMode(true)}
+          onToggleBroken={() => {
+            setGameState((prev) => ({
+              ...prev,
+              fishingBoat: {
+                ...(prev.fishingBoat || { spots: [] }),
+                status: prev.fishingBoat?.status === 'broken' ? 'repaired' : 'broken',
+              },
+            }));
+          }}
         />
       )}
     </div>

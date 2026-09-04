@@ -10,12 +10,12 @@ import { GameState } from '../types/game';
 import { getInitialGameState } from './storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBUdH7wEtis4LzVII69oXK0uSFQfu80EpM",
-  authDomain: "fazenda-5eaec.firebaseapp.com",
-  projectId: "fazenda-5eaec",
-  storageBucket: "fazenda-5eaec.firebasestorage.app",
-  messagingSenderId: "1091471592373",
-  appId: "1:1091471592373:android:c651a8970661fe1109e7fc"
+  apiKey: (import.meta.env.VITE_FIREBASE_API_KEY as string) || "AIzaSyBUdH7wEtis4LzVII69oXK0uSFQfu80EpM",
+  authDomain: (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string) || "fazenda-5eaec.firebaseapp.com",
+  projectId: (import.meta.env.VITE_FIREBASE_PROJECT_ID as string) || "fazenda-5eaec",
+  storageBucket: (import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string) || "fazenda-5eaec.firebasestorage.app",
+  messagingSenderId: (import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID as string) || "1091471592373",
+  appId: (import.meta.env.VITE_FIREBASE_APP_ID as string) || "1:1091471592373:android:c651a8970661fe1109e7fc"
 };
 
 export const app = initializeApp(firebaseConfig);
