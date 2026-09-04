@@ -4,6 +4,8 @@ import { ITEMS } from '../constants/gameData';
 import { sound } from '../utils/sound';
 import { FishingCanvas } from './FishingCanvas';
 import { FishCollectionModal } from './FishCollectionModal';
+import { HD_BUILDING_SPRITES } from '../constants/buildingSprites';
+import { getCutoutSprite } from '../utils/spriteCutout';
 import confetti from 'canvas-confetti';
 
 interface FishingLakeViewProps {
@@ -27,6 +29,17 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
   const [reelProgress, setReelProgress] = useState(0);
   const [fishPos, setFishPos] = useState({ x: 50, y: 50 });
   const [fishCaught, setFishCaught] = useState<{ id: ItemId; name: string; weight: number; isNewRecord: boolean } | null>(null);
+  const [fish3dCutout, setFish3dCutout] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    getCutoutSprite(HD_BUILDING_SPRITES.fish_3d).then((res) => {
+      if (active) setFish3dCutout(res);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Modals
   const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
@@ -327,10 +340,15 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
                   onClick={handleReelIn}
                 >
                   <div className="relative flex flex-col items-center">
-                    <span className="text-5xl sm:text-6xl filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)] animate-bounce">
-                      {selectedLure === 'green_lure' ? '🐠' : '🐟'}
-                    </span>
-                    <span className="text-xs bg-red-600 text-white font-black px-2 py-0.5 rounded-full border border-white shadow-md animate-pulse">
+                    <img
+                      src={fish3dCutout || HD_BUILDING_SPRITES.fish_3d}
+                      alt="Peixe 3D"
+                      className="w-20 h-20 sm:w-24 sm:h-24 object-contain filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)] animate-bounce"
+                      style={{
+                        mixBlendMode: !fish3dCutout ? 'multiply' : 'normal',
+                      }}
+                    />
+                    <span className="text-xs bg-red-600 text-white font-black px-2.5 py-0.5 rounded-full border border-white shadow-md animate-pulse -mt-1">
                       PUXE!
                     </span>
                   </div>
@@ -377,9 +395,17 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
                 🎉 PEIXE CAPTURADO!
               </div>
 
-              {/* Fish Icon / Jumping Visual */}
-              <div className="text-8xl drop-shadow-2xl my-4 animate-bounce">
-                {ITEMS[fishCaught.id]?.icon || '🐟'}
+              {/* 3D Fish Trophy Visual */}
+              <div className="relative my-3 flex flex-col items-center">
+                <div className="absolute -bottom-2 w-32 h-10 bg-amber-950/25 rounded-[50%] blur-sm pointer-events-none" />
+                <img
+                  src={fish3dCutout || HD_BUILDING_SPRITES.fish_3d}
+                  alt={fishCaught.name}
+                  className="w-36 h-36 object-contain filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.45)] animate-bounce"
+                  style={{
+                    mixBlendMode: !fish3dCutout ? 'multiply' : 'normal',
+                  }}
+                />
               </div>
 
               {/* Fish Name */}

@@ -10,6 +10,8 @@ import {
   IsoFishSpot,
   IsoDuckTrap,
   IsoShrimpTrap,
+  IsoPineTree,
+  IsoLakeTree,
 } from './isometric/IsoFishingEntities';
 import { IsoFishingScenery } from './isometric/IsoFishingScenery';
 
@@ -207,6 +209,26 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
 
         {/* 1. 3D Mountain Waterfall */}
         <IsoWaterfall x={0} y={13.5} />
+
+        {/* 3D Cartoon Trees: Mountain Pines & Lush Lakeside Trees */}
+        {/* Ridge / Mountain Background Trees */}
+        <IsoPineTree x={-0.8} y={0.5} scale={1.3} offsetY={-60} />
+        <IsoPineTree x={0.8} y={-0.6} scale={1.5} offsetY={-70} />
+        <IsoLakeTree x={2.8} y={-0.6} scale={1.2} offsetY={-60} />
+        <IsoPineTree x={14.6} y={-0.5} scale={1.4} offsetY={-70} />
+        <IsoLakeTree x={16.2} y={0.8} scale={1.3} offsetY={-60} />
+        <IsoPineTree x={16.5} y={2.6} scale={1.2} offsetY={-60} />
+
+        {/* Beside Waterfall & Mountain Cliffs */}
+        <IsoPineTree x={-0.5} y={11} scale={1.3} offsetY={-60} />
+        <IsoLakeTree x={-0.5} y={15.5} scale={1.3} offsetY={-50} />
+
+        {/* Shoreline & Foreground Trees */}
+        <IsoPineTree x={15.8} y={10.5} scale={1.3} offsetY={-60} />
+        <IsoLakeTree x={15.5} y={13.8} scale={1.2} offsetY={-50} />
+        <IsoLakeTree x={4.5} y={15.8} scale={1.2} offsetY={-40} />
+        <IsoPineTree x={9} y={15.8} scale={1.3} offsetY={-40} />
+        <IsoLakeTree x={13.8} y={15.5} scale={1.2} offsetY={-40} />
 
         {/* 2. 3D Fishing Cabin on Pier Dock */}
         <IsoFishingHut

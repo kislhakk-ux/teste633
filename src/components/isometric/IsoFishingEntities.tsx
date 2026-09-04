@@ -6,7 +6,7 @@ import { getCutoutSprite } from '../../utils/spriteCutout';
 import { sound } from '../../utils/sound';
 
 // Base wrapper for isometric entities
-const IsoEntityWrapper: React.FC<{
+export const IsoEntityWrapper: React.FC<{
   x: number;
   y: number;
   width: number;
@@ -86,7 +86,7 @@ export const IsoFishingHut: React.FC<{ x: number; y: number; onClick?: () => voi
   );
 };
 
-// 2. 3D MOUNTAIN WATERFALL (Cachoeira das Montanhas com Espuma e Névoa)
+// 2. 3D CARTOON MOUNTAIN WATERFALL (Cachoeira 3D Estilizada Hay Day)
 export const IsoWaterfall: React.FC<{ x: number; y: number }> = ({ x, y }) => {
   const [cutoutSrc, setCutoutSrc] = useState<string | null>(null);
   const [splashCount, setSplashCount] = useState(0);
@@ -108,39 +108,42 @@ export const IsoWaterfall: React.FC<{ x: number; y: number }> = ({ x, y }) => {
   };
 
   return (
-    <IsoEntityWrapper x={x} y={y} width={3} height={3} offsetY={-120} className="pointer-events-auto cursor-pointer">
+    <IsoEntityWrapper x={x} y={y} width={3.2} height={3.2} offsetY={-130} className="pointer-events-auto cursor-pointer">
       <div
         className="relative flex flex-col items-center justify-end select-none group"
         onClick={handleWaterfallClick}
         title="Toque na cachoeira para ouvir o som da água!"
       >
-        {/* Waterfall 3D image */}
+        {/* Waterfall Soft Depth Shadow */}
+        <div className="absolute -bottom-4 w-52 h-16 bg-[#001f3f]/50 rounded-[50%] blur-md pointer-events-none" />
+
+        {/* Waterfall 3D Cartoon Image */}
         <img
           src={cutoutSrc || HD_BUILDING_SPRITES.fishing_waterfall}
-          alt="Cachoeira 3D"
-          className="w-72 sm:w-80 h-auto object-contain filter drop-shadow-[0_14px_28px_rgba(0,0,0,0.5)] pointer-events-none transition-transform duration-200 group-hover:scale-105"
+          alt="Cachoeira 3D Cartoon"
+          className="w-80 sm:w-96 h-auto object-contain filter drop-shadow-[0_16px_32px_rgba(0,0,0,0.45)] pointer-events-none transition-transform duration-200 group-hover:scale-105"
           style={{
             mixBlendMode: !cutoutSrc ? 'multiply' : 'normal',
           }}
         />
 
-        {/* Rushing Water White Streams Overlay */}
-        <div className="absolute inset-x-8 bottom-12 top-10 pointer-events-none overflow-hidden opacity-30 mix-blend-overlay flex justify-center gap-3">
-          <div className="w-2 h-full bg-gradient-to-b from-white via-cyan-200 to-white animate-pulse" style={{ animationDuration: '0.8s' }} />
-          <div className="w-3 h-full bg-gradient-to-b from-white via-cyan-100 to-white animate-pulse" style={{ animationDuration: '1.2s' }} />
-          <div className="w-2 h-full bg-gradient-to-b from-white via-cyan-200 to-white animate-pulse" style={{ animationDuration: '0.9s' }} />
+        {/* Dynamic Water Streams Overlay */}
+        <div className="absolute inset-x-12 bottom-12 top-14 pointer-events-none overflow-hidden opacity-40 mix-blend-overlay flex justify-center gap-4">
+          <div className="w-2.5 h-full bg-gradient-to-b from-white via-cyan-200 to-white animate-pulse" style={{ animationDuration: '0.7s' }} />
+          <div className="w-4 h-full bg-gradient-to-b from-white via-cyan-100 to-white animate-pulse" style={{ animationDuration: '1.1s' }} />
+          <div className="w-3 h-full bg-gradient-to-b from-white via-cyan-200 to-white animate-pulse" style={{ animationDuration: '0.85s' }} />
         </div>
 
-        {/* Churning Splash Pool & Mist at Base */}
-        <div className="absolute -bottom-4 w-44 h-14 bg-white/75 rounded-full blur-md animate-pulse pointer-events-none" />
-        <div className="absolute -bottom-2 w-36 h-10 bg-cyan-200/60 rounded-full blur-sm animate-ping pointer-events-none" style={{ animationDuration: '2.5s' }} />
+        {/* Churning Splash Pool & Rising Foam Mist at Base */}
+        <div className="absolute -bottom-5 w-48 h-14 bg-cyan-200/80 rounded-full blur-md animate-pulse pointer-events-none" />
+        <div className="absolute -bottom-2 w-40 h-10 bg-white/90 rounded-full blur-xs animate-ping pointer-events-none" style={{ animationDuration: '2s' }} />
 
-        {/* Interactive Splash Droplets on Click */}
+        {/* Water Spray Droplets popping on Click */}
         {splashCount > 0 && (
-          <div key={splashCount} className="absolute bottom-6 flex gap-2 pointer-events-none animate-in zoom-in fade-in duration-300">
-            <span className="text-xl animate-bounce">💦</span>
-            <span className="text-2xl animate-ping">🫧</span>
-            <span className="text-xl animate-bounce" style={{ animationDelay: '0.1s' }}>💦</span>
+          <div key={splashCount} className="absolute bottom-8 flex gap-3 pointer-events-none animate-in zoom-in fade-in duration-300">
+            <span className="text-2xl animate-bounce">💦</span>
+            <span className="text-3xl animate-ping">🫧</span>
+            <span className="text-2xl animate-bounce" style={{ animationDelay: '0.1s' }}>💦</span>
           </div>
         )}
       </div>
@@ -148,7 +151,110 @@ export const IsoWaterfall: React.FC<{ x: number; y: number }> = ({ x, y }) => {
   );
 };
 
-// 3. 3D LURE MAKER WORKBENCH (Fabricador de Iscas)
+// 3. 3D CARTOON PINE EVERGREEN TREE (Pinheiro 3D Hay Day)
+export const IsoPineTree: React.FC<{
+  x: number;
+  y: number;
+  scale?: number;
+  offsetY?: number;
+}> = ({ x, y, scale = 1, offsetY = -70 }) => {
+  const [cutoutSrc, setCutoutSrc] = useState<string | null>(null);
+  const [sway, setSway] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getCutoutSprite(HD_BUILDING_SPRITES.pine_tree).then((res) => {
+      if (active) setCutoutSrc(res);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    sound.playWoodHit();
+    setSway(true);
+    setTimeout(() => setSway(false), 700);
+  };
+
+  return (
+    <IsoEntityWrapper x={x} y={y} width={2 * scale} height={2 * scale} offsetY={offsetY} className="pointer-events-auto cursor-pointer">
+      <div
+        className={`relative flex flex-col items-center justify-end select-none group transition-transform duration-300 ${
+          sway ? 'scale-110 -rotate-3' : 'hover:scale-105 active:scale-95'
+        }`}
+        onClick={handleClick}
+        title="Pinheiro das Montanhas 3D"
+      >
+        {/* Soft ground shadow */}
+        <div className="absolute -bottom-1 w-32 h-12 bg-emerald-950/40 rounded-[50%] blur-sm pointer-events-none" />
+
+        <img
+          src={cutoutSrc || HD_BUILDING_SPRITES.pine_tree}
+          alt="Pinheiro 3D"
+          className="w-48 sm:w-56 h-auto object-contain filter drop-shadow-[0_12px_22px_rgba(0,0,0,0.35)] pointer-events-none origin-bottom"
+          style={{
+            mixBlendMode: !cutoutSrc ? 'multiply' : 'normal',
+          }}
+        />
+      </div>
+    </IsoEntityWrapper>
+  );
+};
+
+// 4. 3D CARTOON LUSH LAKE TREE (Árvore Frondosa 3D Hay Day)
+export const IsoLakeTree: React.FC<{
+  x: number;
+  y: number;
+  scale?: number;
+  offsetY?: number;
+}> = ({ x, y, scale = 1, offsetY = -70 }) => {
+  const [cutoutSrc, setCutoutSrc] = useState<string | null>(null);
+  const [sway, setSway] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getCutoutSprite(HD_BUILDING_SPRITES.lake_tree).then((res) => {
+      if (active) setCutoutSrc(res);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    sound.playWoodHit();
+    setSway(true);
+    setTimeout(() => setSway(false), 700);
+  };
+
+  return (
+    <IsoEntityWrapper x={x} y={y} width={2.2 * scale} height={2.2 * scale} offsetY={offsetY} className="pointer-events-auto cursor-pointer">
+      <div
+        className={`relative flex flex-col items-center justify-end select-none group transition-transform duration-300 ${
+          sway ? 'scale-110 rotate-3' : 'hover:scale-105 active:scale-95'
+        }`}
+        onClick={handleClick}
+        title="Árvore Frondosa do Lago 3D"
+      >
+        <div className="absolute -bottom-1 w-36 h-12 bg-emerald-950/40 rounded-[50%] blur-sm pointer-events-none" />
+
+        <img
+          src={cutoutSrc || HD_BUILDING_SPRITES.lake_tree}
+          alt="Árvore 3D"
+          className="w-52 sm:w-60 h-auto object-contain filter drop-shadow-[0_12px_22px_rgba(0,0,0,0.35)] pointer-events-none origin-bottom"
+          style={{
+            mixBlendMode: !cutoutSrc ? 'multiply' : 'normal',
+          }}
+        />
+      </div>
+    </IsoEntityWrapper>
+  );
+};
+
+// 5. 3D LURE MAKER WORKBENCH (Fabricador de Iscas)
 export const IsoLureMaker: React.FC<{ x: number; y: number; onClick?: () => void }> = ({ x, y, onClick }) => {
   const [cutoutSrc, setCutoutSrc] = useState<string | null>(null);
 
@@ -194,7 +300,7 @@ export const IsoLureMaker: React.FC<{ x: number; y: number; onClick?: () => void
   );
 };
 
-// 4. 3D NET MAKER MACHINE (Fabricador de Redes)
+// 6. 3D NET MAKER MACHINE (Fabricador de Redes)
 export const IsoNetMaker: React.FC<{ x: number; y: number; onClick?: () => void }> = ({ x, y, onClick }) => {
   const [cutoutSrc, setCutoutSrc] = useState<string | null>(null);
 
@@ -238,7 +344,7 @@ export const IsoNetMaker: React.FC<{ x: number; y: number; onClick?: () => void 
   );
 };
 
-// 5. 3D SWIMMING MALLARD DUCK (Pato Nadando com Ondulações)
+// 7. 3D SWIMMING MALLARD DUCK (Pato Nadando com Ondulações)
 export const IsoDuckTrap: React.FC<{ x: number; y: number }> = ({ x, y }) => {
   const [cutoutSrc, setCutoutSrc] = useState<string | null>(null);
   const [quackCount, setQuackCount] = useState(0);
@@ -286,7 +392,7 @@ export const IsoDuckTrap: React.FC<{ x: number; y: number }> = ({ x, y }) => {
           />
         </div>
 
-        {/* Quack Bubble or Hearts when clicked */}
+        {/* Quack Bubble when clicked */}
         {quackCount > 0 && (
           <div key={quackCount} className="absolute -top-8 bg-white/95 text-emerald-800 font-black text-xs px-2.5 py-1 rounded-full border-2 border-emerald-500 shadow-xl animate-bounce pointer-events-none flex items-center gap-1">
             <span>Quack! 🌾</span>
@@ -297,7 +403,7 @@ export const IsoDuckTrap: React.FC<{ x: number; y: number }> = ({ x, y }) => {
   );
 };
 
-// 6. 3D LOBSTER TRAP CAGE (Armadilha de Lagostas com Bóia Flutuante)
+// 8. 3D LOBSTER TRAP CAGE (Armadilha de Lagostas com Bóia Flutuante)
 export const IsoShrimpTrap: React.FC<{ x: number; y: number }> = ({ x, y }) => {
   const [cutoutSrc, setCutoutSrc] = useState<string | null>(null);
   const [bubbleCount, setBubbleCount] = useState(0);
@@ -353,7 +459,7 @@ export const IsoShrimpTrap: React.FC<{ x: number; y: number }> = ({ x, y }) => {
   );
 };
 
-// 7. VIVID 3D FISHING SPOT (Ponto de Pesca com Peixes Saltando e Ondulações)
+// 9. VIVID 3D FISHING SPOT COM PEIXE 3D CARTOON SALTANDO (Hay Day Fish Spot)
 export const IsoFishSpot: React.FC<{
   x: number;
   y: number;
@@ -365,6 +471,18 @@ export const IsoFishSpot: React.FC<{
   const isCooldown = spot.status === 'cooldown';
   const anchor = { widthPx: TILE_WIDTH * 1.5, heightPx: TILE_HEIGHT * 1.5, anchorX: 0.5, anchorY: 0.5, shadow: { width: 0, height: 0, opacity: 0 } };
   const { left, top, zIndex } = calculateIsoPlacement(x, y, 1.5, 1.5, anchor);
+
+  const [fishCutout, setFishCutout] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    getCutoutSprite(HD_BUILDING_SPRITES.fish_3d).then((res) => {
+      if (active) setFishCutout(res);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <div
@@ -402,70 +520,52 @@ export const IsoFishSpot: React.FC<{
         <div className="relative w-full h-full flex items-center justify-center">
           {/* Concentric Expanding Water Ripples */}
           <div
-            className="absolute w-28 h-28 border-2 border-cyan-300 rounded-full animate-ping opacity-60 pointer-events-none"
-            style={{ transform: 'rotateX(55deg)', animationDuration: '2.8s' }}
+            className="absolute w-32 h-32 border-2 border-cyan-200 rounded-full animate-ping opacity-65 pointer-events-none"
+            style={{ transform: 'rotateX(55deg)', animationDuration: '2.5s' }}
           />
           <div
-            className="absolute w-20 h-20 border-[3px] border-cyan-400 rounded-full animate-pulse opacity-75 pointer-events-none"
-            style={{ transform: 'rotateX(55deg)', animationDuration: '1.8s' }}
+            className="absolute w-24 h-24 border-[3px] border-cyan-300 rounded-full animate-pulse opacity-80 pointer-events-none"
+            style={{ transform: 'rotateX(55deg)', animationDuration: '1.6s' }}
           />
 
           {/* Deep Turquoise Water Pool with Sun Caustics */}
           <div
-            className="w-24 h-16 bg-gradient-to-br from-cyan-400/60 via-blue-600/70 to-blue-900/80 rounded-[50%] border-2 border-cyan-200 shadow-[0_0_25px_rgba(34,211,238,0.7),inset_0_2px_8px_rgba(255,255,255,0.4)] relative overflow-hidden flex items-center justify-center backdrop-blur-xs"
+            className="w-28 h-18 bg-gradient-to-br from-cyan-300/70 via-blue-500/80 to-blue-950/90 rounded-[50%] border-2 border-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.8),inset_0_2px_10px_rgba(255,255,255,0.5)] relative overflow-hidden flex items-center justify-center backdrop-blur-xs"
             style={{ transform: 'rotateX(55deg)' }}
           >
-            {/* Darting Fish Shadows circling under the water */}
-            <div className="absolute inset-0 animate-spin" style={{ animationDuration: '3.5s' }}>
-              <div className="absolute top-2 left-4 w-5 h-2 bg-blue-950/80 rounded-full blur-[1px] transform -rotate-12" />
-              <div className="absolute bottom-2 right-4 w-4 h-1.5 bg-blue-950/70 rounded-full blur-[1px] transform rotate-45" />
+            {/* Darting 3D Fish Shadows circling under the water */}
+            <div className="absolute inset-0 animate-spin" style={{ animationDuration: '3.2s' }}>
+              <div className="absolute top-2 left-4 w-6 h-2.5 bg-blue-950/90 rounded-full blur-[1px] transform -rotate-15" />
+              <div className="absolute bottom-2 right-4 w-5 h-2 bg-blue-950/80 rounded-full blur-[1px] transform rotate-50" />
             </div>
 
             {/* Sun Caustics Glint */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.4)_0%,transparent_70%)] animate-pulse" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.45)_0%,transparent_70%)] animate-pulse" />
           </div>
 
-          {/* Jumping 3D Fish leaping out of water with water splash */}
-          <div className="absolute -top-4 pointer-events-none animate-bounce" style={{ animationDuration: '1.6s' }}>
-            <div className="relative transform rotate-[-20deg] drop-shadow-[0_8px_12px_rgba(0,0,0,0.45)]">
-              <svg width="40" height="40" viewBox="0 0 48 48" fill="none">
-                <defs>
-                  <linearGradient id="spot-fish-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#4DD0E1" />
-                    <stop offset="40%" stopColor="#00BCD4" />
-                    <stop offset="100%" stopColor="#006064" />
-                  </linearGradient>
-                  <linearGradient id="spot-belly-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#FFF9C4" />
-                    <stop offset="100%" stopColor="#FFD54F" />
-                  </linearGradient>
-                </defs>
-                {/* Tail Fin */}
-                <path d="M 6 24 C 2 16 2 32 6 24 Z" fill="#26C6DA" stroke="#00838F" strokeWidth="1.5" />
-                <path d="M 6 24 L 14 20 L 14 28 Z" fill="#00ACC1" />
-                {/* Main Body */}
-                <ellipse cx="26" cy="24" rx="14" ry="9" fill="url(#spot-fish-grad)" stroke="#00838F" strokeWidth="1.5" />
-                {/* Golden Belly */}
-                <path d="M 16 26 Q 26 33 36 26 Q 26 29 16 26 Z" fill="url(#spot-belly-grad)" />
-                {/* Dorsal Fin */}
-                <path d="M 22 15 Q 26 10 30 15 Z" fill="#80DEEA" stroke="#00838F" strokeWidth="1" />
-                {/* Eye with glint */}
-                <circle cx="34" cy="22" r="2.5" fill="#FFFFFF" />
-                <circle cx="35" cy="22" r="1.2" fill="#000000" />
-                <circle cx="35.5" cy="21.5" r="0.5" fill="#FFFFFF" />
-              </svg>
+          {/* 3D Cartoon Leaping Fish jumping in arc */}
+          <div className="absolute -top-6 pointer-events-none animate-bounce" style={{ animationDuration: '1.5s' }}>
+            <div className="relative transform rotate-[-15deg] drop-shadow-[0_10px_16px_rgba(0,0,0,0.45)]">
+              <img
+                src={fishCutout || HD_BUILDING_SPRITES.fish_3d}
+                alt="Peixe 3D Saltando"
+                className="w-16 h-16 object-contain"
+                style={{
+                  mixBlendMode: !fishCutout ? 'multiply' : 'normal',
+                }}
+              />
             </div>
           </div>
 
-          {/* Water Splash Droplets around fish */}
-          <div className="absolute -top-1 pointer-events-none flex gap-4 opacity-80">
-            <span className="text-xs text-cyan-200 animate-ping">🫧</span>
-            <span className="text-xs text-white animate-pulse">💧</span>
+          {/* Water Splash Droplets around 3D fish */}
+          <div className="absolute -top-1 pointer-events-none flex gap-5 opacity-90">
+            <span className="text-sm text-cyan-200 animate-ping">🫧</span>
+            <span className="text-sm text-white animate-pulse">💧</span>
           </div>
 
           {/* Interactive Badge (PESCAR) */}
           <div
-            className={`absolute -top-7 px-3 py-1 rounded-full font-black text-xs shadow-xl border-2 flex items-center gap-1 transition-all ${
+            className={`absolute -top-8 px-3.5 py-1 rounded-full font-black text-xs shadow-xl border-2 flex items-center gap-1 transition-all ${
               selectedLure
                 ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white border-white scale-110 animate-bounce'
                 : 'bg-amber-500 text-amber-950 border-amber-200'
