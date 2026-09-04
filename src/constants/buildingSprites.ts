@@ -29,6 +29,14 @@ import imgBrokenBoat from '../assets/images/broken_boat_3d_1788552798442.jpg';
 import imgRepairedBoat from '../assets/images/repaired_boat_3d_1788552810115.jpg';
 import imgDeliveryBoat from '../assets/images/delivery_boat_3d_1788552822110.jpg';
 
+// 3D Fishing Lake Assets (Hay Day style)
+import imgFishingCabin from '../assets/images/hayday_fishing_cabin_1788553354102.jpg';
+import imgWaterfall from '../assets/images/hayday_waterfall_1788553369927.jpg';
+import imgLureMaker from '../assets/images/hayday_lure_maker_1788553388126.jpg';
+import imgNetMaker from '../assets/images/hayday_net_maker_1788553409744.jpg';
+import imgDuckSwim from '../assets/images/hayday_duck_swim_1788553428277.jpg';
+import imgLobsterPot from '../assets/images/hayday_lobster_pot_1788553445114.jpg';
+
 // SVG Data URIs for Fishing & River System assets (fallbacks)
 const svgBrokenBoat = `data:image/svg+xml;utf8,${encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" width="200" height="160">
@@ -186,7 +194,12 @@ export const HD_BUILDING_SPRITES = {
   broken_boat: imgBrokenBoat,
   repaired_boat: imgRepairedBoat,
   delivery_boat: imgDeliveryBoat,
-  lure_maker: imgWoodBase,
+  fishing_cabin: imgFishingCabin,
+  fishing_waterfall: imgWaterfall,
+  lure_maker: imgLureMaker,
+  net_maker: imgNetMaker,
+  duck_swim: imgDuckSwim,
+  lobster_pot: imgLobsterPot,
 
   // Ground Bases
   ground_tile: imgGroundTile,
