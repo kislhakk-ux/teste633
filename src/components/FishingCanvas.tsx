@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { gridToScreen } from '../utils/isometricCoords';
+import { gridToScreen, screenToGrid } from '../utils/isometricCoords';
 import { FishingSpot } from '../types/game';
 import { sound } from '../utils/sound';
+import { LakeEntity, LakeEntityType } from '../types/adm';
+import { TerrainGridMap } from '../utils/admStorage';
 import {
   IsoFishingHut,
   IsoLureMaker,
@@ -12,12 +14,15 @@ import {
   IsoShrimpTrap,
   IsoPineTree,
   IsoLakeTree,
-  IsoFisherman,
   IsoWaterLog,
   IsoDuckSalon,
+  IsoFisherman,
   IsoExpansionSpot,
+  IsoEntityWrapper,
 } from './isometric/IsoFishingEntities';
 import { IsoFishingScenery } from './isometric/IsoFishingScenery';
+import { IsoLakeTerrainOverlay } from './isometric/IsoLakeTerrainOverlay';
+import { RiverStone, Cattails, WaterLily } from './isometric/IsoScenery';
 
 export const FISHING_MAP_SIZE = 16;
 
@@ -31,6 +36,20 @@ interface FishingCanvasProps {
   onLureMakerClick?: () => void;
   onNetMakerClick?: () => void;
   onExpansionUnlock?: (name: string, cost: number) => void;
+
+  // ADM Mode Props
+  isAdmMode?: boolean;
+  activeAdmTab?: 'objects' | 'terrain' | 'transform';
+  entities?: LakeEntity[];
+  onEntitiesChange?: (entities: LakeEntity[]) => void;
+  selectedEntityId?: string | null;
+  onSelectEntity?: (id: string | null) => void;
+  entityToPlace?: LakeEntityType | null;
+  onPlaceEntityAt?: (gx: number, gy: number) => void;
+  terrainMap?: TerrainGridMap;
+  selectedTiles?: { x: number; y: number }[];
+  onTileClick?: (gx: number, gy: number) => void;
+  onTileAreaSelected?: (tiles: { x: number; y: number }[]) => void;
 }
 
 interface WaterClickRipple {
@@ -48,6 +67,19 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
   onLureMakerClick,
   onNetMakerClick,
   onExpansionUnlock,
+
+  isAdmMode = false,
+  activeAdmTab = 'objects',
+  entities = [],
+  onEntitiesChange,
+  selectedEntityId = null,
+  onSelectEntity,
+  entityToPlace = null,
+  onPlaceEntityAt,
+  terrainMap = {},
+  selectedTiles = [],
+  onTileClick,
+  onTileAreaSelected,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -56,6 +88,11 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [ripples, setRipples] = useState<WaterClickRipple[]>([]);
+
+  // ADM Dragging state for entities and area selection
+  const [draggingEntityId, setDraggingEntityId] = useState<string | null>(null);
+  const [dragStartTile, setDragStartTile] = useState<{ x: number; y: number } | null>(null);
+  const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
 
   const wasMapDraggedRef = useRef<boolean>(false);
   const touchStartDistRef = useRef<number | null>(null);
@@ -75,22 +112,34 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
     }
   }, [isInitialized]);
 
-  // Spawn water ripple on tap/click
+  // Spawn water ripple on tap/click (or place object in ADM)
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (wasMapDraggedRef.current) return;
-    if ((e.target as HTMLElement).closest('.cursor-pointer')) return;
 
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
 
-    // Calculate position in world coordinates
-    const clickX = (e.clientX - rect.left - pan.x) / zoom;
-    const clickY = (e.clientY - rect.top - pan.y) / zoom;
+    const clickScreenX = e.clientX - rect.left;
+    const clickScreenY = e.clientY - rect.top;
+
+    if (isAdmMode && entityToPlace) {
+      const grid = screenToGrid(clickScreenX, clickScreenY, pan, zoom);
+      const gx = Math.round(grid.x * 2) / 2;
+      const gy = Math.round(grid.y * 2) / 2;
+      onPlaceEntityAt?.(gx, gy);
+      return;
+    }
+
+    if ((e.target as HTMLElement).closest('.cursor-pointer')) return;
+
+    // Normal water click ripple
+    const worldX = (clickScreenX - pan.x) / zoom;
+    const worldY = (clickScreenY - pan.y) / zoom;
 
     const newRipple: WaterClickRipple = {
       id: Date.now() + Math.random(),
-      x: clickX,
-      y: clickY,
+      x: worldX,
+      y: worldY,
     };
 
     setRipples((prev) => [...prev.slice(-6), newRipple]);
@@ -111,6 +160,24 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
+    // If dragging an entity in ADM mode
+    if (draggingEntityId && onEntitiesChange && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+      const grid = screenToGrid(clickX, clickY, pan, zoom);
+      const newGx = Math.round(grid.x * 2) / 2;
+      const newGy = Math.round(grid.y * 2) / 2;
+
+      onEntitiesChange(
+        entities.map((ent) =>
+          ent.id === draggingEntityId ? { ...ent, x: newGx, y: newGy } : ent
+        )
+      );
+      wasMapDraggedRef.current = true;
+      return;
+    }
+
     if (!isDragging) return;
 
     const dx = e.clientX - dragStart.x;
@@ -126,7 +193,14 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
 
   const handlePointerUp = (e: React.PointerEvent) => {
     setIsDragging(false);
-    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    if (draggingEntityId) {
+      setDraggingEntityId(null);
+      sound.playWoodHit();
+    }
+    setDragStartTile(null);
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
   };
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -135,7 +209,7 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
 
     const zoomSensitivity = 0.001;
     let newZoom = zoom - e.deltaY * zoomSensitivity;
-    newZoom = Math.max(0.6, Math.min(newZoom, 2.2));
+    newZoom = Math.max(0.6, Math.min(newZoom, 2.4));
 
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
@@ -170,7 +244,7 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
       const scale = dist / touchStartDistRef.current;
 
       let newZoom = touchStartZoomRef.current * scale;
-      newZoom = Math.max(0.6, Math.min(newZoom, 2.2));
+      newZoom = Math.max(0.6, Math.min(newZoom, 2.4));
       setZoom(newZoom);
     }
   };
@@ -181,155 +255,326 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
     }
   };
 
-  const spotPositions = [
-    { gridX: 7, gridY: 6.5 },
-    { gridX: 10.5, gridY: 6.5 },
-    { gridX: 6.5, gridY: 10.5 },
-    { gridX: 12, gridY: 11.5 },
-    { gridX: 8.5, gridY: 13 },
-  ];
+  // Terrain selection handlers
+  const handleTilePointerDown = (gx: number, gy: number) => {
+    if (activeAdmTab === 'terrain') {
+      setDragStartTile({ x: gx, y: gy });
+      onTileClick?.(gx, gy);
+    }
+  };
+
+  const handleTilePointerEnter = (gx: number, gy: number) => {
+    setHoveredTile({ x: gx, y: gy });
+    if (dragStartTile && activeAdmTab === 'terrain') {
+      const minX = Math.min(dragStartTile.x, gx);
+      const maxX = Math.max(dragStartTile.x, gx);
+      const minY = Math.min(dragStartTile.y, gy);
+      const maxY = Math.max(dragStartTile.y, gy);
+
+      const newArea: { x: number; y: number }[] = [];
+      for (let x = minX; x <= maxX; x++) {
+        for (let y = minY; y <= maxY; y++) {
+          newArea.push({ x, y });
+        }
+      }
+      onTileAreaSelected?.(newArea);
+    }
+  };
+
+  // Helper to render an individual entity
+  const renderEntity = (entity: LakeEntity) => {
+    const isSelected = selectedEntityId === entity.id;
+    const scale = entity.scale || 1;
+    const flipH = entity.flipH || false;
+
+    const handleEntitySelect = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (wasMapDraggedRef.current) return;
+
+      if (isAdmMode) {
+        sound.playPop();
+        onSelectEntity?.(isSelected ? null : entity.id);
+      }
+    };
+
+    const handleEntityPointerDown = (e: React.PointerEvent) => {
+      if (isAdmMode && activeAdmTab === 'transform') {
+        e.stopPropagation();
+        onSelectEntity?.(entity.id);
+        setDraggingEntityId(entity.id);
+        wasMapDraggedRef.current = false;
+      }
+    };
+
+    const wrapperProps = {
+      className: `transition-transform duration-150 ${
+        isAdmMode ? 'hover:brightness-110 cursor-move' : ''
+      }`,
+      style: {
+        transform: `${flipH ? 'scaleX(-1)' : ''}`,
+      },
+    };
+
+    let component: React.ReactNode = null;
+
+    switch (entity.type) {
+      case 'cabin':
+        // RESTORED ORIGINAL CABIN (Sem senhor com varinha cobrindo!)
+        component = (
+          <IsoFishingHut
+            x={entity.x}
+            y={entity.y}
+            onClick={() => {
+              if (isAdmMode) {
+                onSelectEntity?.(entity.id);
+              } else if (!wasMapDraggedRef.current) {
+                onHutClick();
+              }
+            }}
+          />
+        );
+        break;
+
+      case 'waterfall':
+        component = <IsoWaterfall x={entity.x} y={entity.y} />;
+        break;
+
+      case 'pine':
+        component = <IsoPineTree x={entity.x} y={entity.y} scale={scale} offsetY={-65} />;
+        break;
+
+      case 'lake_tree':
+        component = <IsoLakeTree x={entity.x} y={entity.y} scale={scale} offsetY={-60} />;
+        break;
+
+      case 'lure_maker':
+        component = (
+          <IsoLureMaker
+            x={entity.x}
+            y={entity.y}
+            onClick={() => {
+              if (isAdmMode) {
+                onSelectEntity?.(entity.id);
+              } else if (!wasMapDraggedRef.current) {
+                onLureMakerClick?.();
+              }
+            }}
+          />
+        );
+        break;
+
+      case 'net_maker':
+        component = (
+          <IsoNetMaker
+            x={entity.x}
+            y={entity.y}
+            onClick={() => {
+              if (isAdmMode) {
+                onSelectEntity?.(entity.id);
+              } else if (!wasMapDraggedRef.current) {
+                onNetMakerClick?.();
+              }
+            }}
+          />
+        );
+        break;
+
+      case 'duck_salon':
+        component = (
+          <IsoDuckSalon
+            x={entity.x}
+            y={entity.y}
+            onClick={() => {
+              if (isAdmMode) {
+                onSelectEntity?.(entity.id);
+              } else {
+                sound.playDuckQuack?.();
+              }
+            }}
+          />
+        );
+        break;
+
+      case 'duck':
+        component = <IsoDuckTrap x={entity.x} y={entity.y} />;
+        break;
+
+      case 'shrimp_trap':
+        component = <IsoShrimpTrap x={entity.x} y={entity.y} />;
+        break;
+
+      case 'water_log':
+        component = <IsoWaterLog x={entity.x} y={entity.y} scale={scale} offsetY={-40} />;
+        break;
+
+      case 'fisherman':
+        component = <IsoFisherman x={entity.x} y={entity.y} offsetY={-60} />;
+        break;
+
+      case 'fishing_spot': {
+        const spotObj: FishingSpot = {
+          id: entity.id,
+          x: entity.x,
+          y: entity.y,
+          status: 'ready',
+        };
+        component = (
+          <IsoFishSpot
+            spot={spotObj}
+            x={entity.x}
+            y={entity.y}
+            selectedLure={selectedLure}
+            isActive={activeSpot === entity.id}
+            onClick={() => {
+              if (isAdmMode) {
+                onSelectEntity?.(entity.id);
+              } else if (!wasMapDraggedRef.current) {
+                onSpotClick(spotObj);
+              }
+            }}
+          />
+        );
+        break;
+      }
+
+      case 'river_stones': {
+        const scr = gridToScreen(entity.x, entity.y);
+        component = (
+          <IsoEntityWrapper x={entity.x} y={entity.y} width={1} height={1}>
+            <svg className="overflow-visible pointer-events-none">
+              <RiverStone x={0} y={0} scale={scale} />
+            </svg>
+          </IsoEntityWrapper>
+        );
+        break;
+      }
+
+      case 'cattails': {
+        component = (
+          <IsoEntityWrapper x={entity.x} y={entity.y} width={1} height={1}>
+            <svg className="overflow-visible pointer-events-none">
+              <Cattails x={0} y={0} scale={scale} />
+            </svg>
+          </IsoEntityWrapper>
+        );
+        break;
+      }
+
+      case 'water_lily': {
+        component = (
+          <IsoEntityWrapper x={entity.x} y={entity.y} width={1} height={1}>
+            <svg className="overflow-visible pointer-events-none">
+              <WaterLily x={0} y={0} scale={scale} />
+            </svg>
+          </IsoEntityWrapper>
+        );
+        break;
+      }
+
+      case 'rowboat': {
+        component = (
+          <IsoEntityWrapper x={entity.x} y={entity.y} width={2} height={1.2} offsetY={-20}>
+            <div className="relative select-none flex flex-col items-center">
+              <span className="text-5xl drop-shadow-lg">🛶</span>
+            </div>
+          </IsoEntityWrapper>
+        );
+        break;
+      }
+
+      case 'lantern_post': {
+        component = (
+          <IsoEntityWrapper x={entity.x} y={entity.y} width={1} height={1} offsetY={-30}>
+            <div className="relative select-none flex flex-col items-center">
+              <div className="w-4 h-4 bg-amber-400 rounded-full blur-xs animate-pulse absolute -top-2" />
+              <span className="text-4xl drop-shadow-md">🏮</span>
+            </div>
+          </IsoEntityWrapper>
+        );
+        break;
+      }
+
+      default:
+        component = <IsoPineTree x={entity.x} y={entity.y} scale={scale} />;
+    }
+
+    return (
+      <div
+        key={entity.id}
+        onClick={handleEntitySelect}
+        onPointerDown={handleEntityPointerDown}
+        {...wrapperProps}
+      >
+        {component}
+
+        {/* Highlight Ring when Selected in ADM mode */}
+        {isAdmMode && isSelected && (
+          <div
+            className="absolute pointer-events-none flex flex-col items-center justify-center z-50 animate-bounce"
+            style={{
+              left: `${gridToScreen(entity.x, entity.y).x - 36}px`,
+              top: `${gridToScreen(entity.x, entity.y).y - 20}px`,
+            }}
+          >
+            <div className="w-20 h-10 border-3 border-dashed border-yellow-300 rounded-[50%] bg-yellow-400/30 shadow-[0_0_20px_rgba(253,224,71,0.8)] flex items-center justify-center">
+              <span className="text-[9px] font-black text-amber-950 bg-yellow-300 px-1.5 py-0.5 rounded-full shadow border border-white">
+                OBJETO
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div
-      className="relative w-full h-full bg-[#0d47a1] overflow-hidden select-none cursor-grab active:cursor-grabbing"
       ref={containerRef}
+      className={`relative w-full h-full overflow-hidden select-none touch-none ${
+        isAdmMode
+          ? entityToPlace
+            ? 'cursor-crosshair'
+            : activeAdmTab === 'terrain'
+            ? 'cursor-cell'
+            : 'cursor-default'
+          : 'cursor-grab active:cursor-grabbing'
+      }`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
       onWheel={handleWheel}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onClick={handleCanvasClick}
-      style={{ touchAction: 'none' }}
     >
+      {/* World transform root */}
       <div
-        className="absolute origin-top-left will-change-transform"
+        className="absolute origin-top-left"
         style={{
-          transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom})`,
-          transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transition: isDragging || draggingEntityId ? 'none' : 'transform 0.1s ease-out',
         }}
       >
-        {/* Scenery: Rocky Mountains Ridge, Shorelines, Island & Crystal Detailed Lake */}
+        {/* Scenery: Mountains Ridge, Shorelines & Detailed Lake */}
         <IsoFishingScenery />
 
-        {/* 1. 3D MOUNTAIN WATERFALL (Integrated in Cliff, Facing Forward into Lake) */}
-        <IsoWaterfall x={1.2} y={0.8} />
-
-        {/* Dense Mountain Ridge Evergreen Forest (No empty green plane visible!) */}
-        {/* Upper Mountain Crest */}
-        <IsoPineTree x={-1.5} y={-1.2} scale={1.5} offsetY={-70} />
-        <IsoPineTree x={-0.2} y={-1.5} scale={1.6} offsetY={-75} />
-        <IsoLakeTree x={1.8} y={-1.6} scale={1.4} offsetY={-70} />
-        <IsoPineTree x={3.6} y={-1.8} scale={1.5} offsetY={-75} />
-        <IsoPineTree x={5.5} y={-1.8} scale={1.6} offsetY={-80} />
-        <IsoLakeTree x={7.5} y={-1.8} scale={1.5} offsetY={-75} />
-        <IsoPineTree x={9.5} y={-1.6} scale={1.6} offsetY={-75} />
-        <IsoPineTree x={11.8} y={-1.5} scale={1.5} offsetY={-70} />
-        <IsoLakeTree x={13.8} y={-1.2} scale={1.4} offsetY={-65} />
-        <IsoPineTree x={15.5} y={-0.8} scale={1.5} offsetY={-70} />
-
-        {/* Left Rocky Mountain Flank */}
-        <IsoPineTree x={-1.2} y={1.5} scale={1.4} offsetY={-65} />
-        <IsoPineTree x={-1.4} y={4} scale={1.5} offsetY={-70} />
-        <IsoLakeTree x={-1.2} y={7} scale={1.3} offsetY={-60} />
-        <IsoPineTree x={-1.4} y={10} scale={1.4} offsetY={-65} />
-        <IsoLakeTree x={-1.2} y={13.5} scale={1.4} offsetY={-60} />
-        <IsoPineTree x={-0.8} y={15.5} scale={1.3} offsetY={-50} />
-
-        {/* Right Mountain & Cove Flank */}
-        <IsoPineTree x={16.2} y={1.5} scale={1.4} offsetY={-65} />
-        <IsoLakeTree x={16.5} y={4.5} scale={1.3} offsetY={-60} />
-        <IsoPineTree x={16.2} y={8} scale={1.4} offsetY={-65} />
-        <IsoPineTree x={16} y={11} scale={1.3} offsetY={-60} />
-        <IsoLakeTree x={15.8} y={14} scale={1.3} offsetY={-50} />
-
-        {/* Lower Foreshore Framing */}
-        <IsoLakeTree x={5.5} y={16.2} scale={1.2} offsetY={-40} />
-        <IsoPineTree x={9} y={16.2} scale={1.3} offsetY={-40} />
-        <IsoLakeTree x={12.5} y={16} scale={1.2} offsetY={-40} />
-
-        {/* 2. THE LONE PINE ISLAND (Ilhota no Lago com Pinheiro Hay Day) */}
-        <IsoPineTree x={3.8} y={11.8} scale={1.15} offsetY={-65} />
-
-        {/* 3. 3D FISHING CABIN (Cabana de Pesca no Píer de Madeira) */}
-        <IsoFishingHut
-          x={3}
-          y={2.6}
-          onClick={() => {
-            if (!wasMapDraggedRef.current) {
-              onHutClick();
-            }
-          }}
+        {/* Dynamic Terrain Overlays (Water Expansion / Grass / Pier / Sand) & ADM Selection Grid */}
+        <IsoLakeTerrainOverlay
+          terrainMap={terrainMap}
+          isAdmMode={isAdmMode}
+          activeTab={activeAdmTab}
+          selectedTiles={selectedTiles}
+          hoveredTile={hoveredTile}
+          onTileClick={(gx, gy) => onTileClick?.(gx, gy)}
+          onTilePointerDown={handleTilePointerDown}
+          onTilePointerEnter={handleTilePointerEnter}
         />
 
-        {/* 4. 3D FISHERMAN (Angus com Vara de Pescar e Caixa de Iscas no Píer) */}
-        <IsoFisherman x={4.3} y={3.4} offsetY={-60} />
+        {/* Dynamic Entities Rendered from State (or defaults) */}
+        {entities.map((entity) => renderEntity(entity))}
 
-        {/* 5. 3D LURE MAKER WORKBENCH (Bancada de Iscas) */}
-        <IsoLureMaker
-          x={5.8}
-          y={1.8}
-          onClick={() => {
-            if (!wasMapDraggedRef.current) {
-              onLureMakerClick?.();
-            }
-          }}
-        />
-
-        {/* 6. 3D NET MAKER MACHINE (Fabricador de Redes) */}
-        <IsoNetMaker
-          x={1.8}
-          y={4.5}
-          onClick={() => {
-            if (!wasMapDraggedRef.current) {
-              onNetMakerClick?.();
-            }
-          }}
-        />
-
-        {/* 7. 3D DUCK SALON (Salão de Tratamento de Patos no Hay Day) */}
-        <IsoDuckSalon
-          x={14.8}
-          y={3.6}
-          onClick={() => {
-            sound.playDuckQuack?.();
-          }}
-        />
-
-        {/* 8. 3D HOLLOW WATER LOGS & BARRELS (Troncos Submersos no Lago) */}
-        <IsoWaterLog x={11.5} y={5.2} offsetY={-40} scale={1.05} />
-        <IsoWaterLog x={4.2} y={8.2} offsetY={-40} scale={0.9} />
-
-        {/* 9. 3D Swimming Mallard Ducks with water wakes */}
-        <IsoDuckTrap x={8.5} y={4.2} />
-        <IsoDuckTrap x={13} y={7.8} />
-
-        {/* 10. 3D Lobster Pot Cage with floating buoy */}
-        <IsoShrimpTrap x={3.2} y={9.5} />
-
-        {/* 11. Vivid 3D Fishing Spots with jumping 3D fish */}
-        {spots.map((spot, index) => {
-          const gridPos = spotPositions[index % spotPositions.length];
-          return (
-            <IsoFishSpot
-              key={spot.id}
-              spot={spot}
-              x={gridPos.gridX}
-              y={gridPos.gridY}
-              selectedLure={selectedLure}
-              isActive={activeSpot === spot.id}
-              onClick={() => {
-                if (!wasMapDraggedRef.current) {
-                  onSpotClick(spot);
-                }
-              }}
-            />
-          );
-        })}
-
-        {/* 12. EXPANSION FISHING BAYS (Lagos de Expansão com Estacas de Madeira Hay Day) */}
+        {/* EXPANSION FISHING BAYS (Lagos de Expansão Hay Day) */}
         <IsoExpansionSpot
           x={14.2}
           y={13.5}
@@ -356,20 +601,40 @@ export const FishingCanvas: React.FC<FishingCanvasProps> = ({
         {ripples.map((ripple) => (
           <div
             key={ripple.id}
-            className="absolute pointer-events-none -translate-x-1/2 -translate-y-1/2 z-30"
-            style={{ left: ripple.x, top: ripple.y }}
+            className="absolute pointer-events-none"
+            style={{
+              left: `${ripple.x}px`,
+              top: `${ripple.y}px`,
+              transform: 'translate(-50%, -50%)',
+              zIndex: 15,
+            }}
           >
-            <div
-              className="w-16 h-10 border-2 border-cyan-200/80 rounded-full animate-ping"
-              style={{ transform: 'rotateX(55deg)', animationDuration: '1s' }}
-            />
-            <div
-              className="w-8 h-5 border border-white rounded-full animate-pulse"
-              style={{ transform: 'rotateX(55deg)' }}
-            />
+            <div className="relative flex items-center justify-center">
+              <div className="w-16 h-8 border-2 border-cyan-200/90 rounded-[50%] animate-ping" />
+              <div
+                className="absolute w-24 h-12 border border-white/80 rounded-[50%] animate-ping"
+                style={{ animationDuration: '1.2s' }}
+              />
+              <div className="absolute text-sm animate-bounce opacity-80">💧</div>
+            </div>
           </div>
         ))}
       </div>
+
+      {/* ADM Mode Top Indicator Banner */}
+      {isAdmMode && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-amber-950 px-5 py-1.5 rounded-full border-2 border-white shadow-2xl font-black text-xs flex items-center gap-2 animate-in slide-in-from-top duration-300 drop-shadow-md">
+          <span className="text-base animate-spin" style={{ animationDuration: '4s' }}>⚙️</span>
+          <span>MODO ADMINISTRADOR ATIVO • SENHA 2412</span>
+          <span className="bg-amber-950 text-yellow-300 text-[10px] px-2 py-0.5 rounded-full uppercase">
+            {activeAdmTab === 'terrain'
+              ? 'Área / Estender Lago'
+              : activeAdmTab === 'objects'
+              ? 'Criar Objetos'
+              : 'Mover / Editar'}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

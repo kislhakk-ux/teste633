@@ -22,6 +22,7 @@ interface TopBarProps {
   onOpenAchievements: () => void;
   onOpenSettings: () => void;
   onOpenFreeGems?: () => void;
+  onOpenAdm?: () => void;
   isVisiting?: boolean;
   visitingFarmName?: string;
   visitingLevel?: number;
@@ -45,6 +46,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenAchievements,
   onOpenSettings,
   onOpenFreeGems,
+  onOpenAdm,
   isVisiting = false,
   visitingFarmName = '',
   visitingLevel = 1,
@@ -216,6 +218,21 @@ export const TopBar: React.FC<TopBarProps> = ({
               </div>
             </button>
           </div>
+
+          {/* ADM Mode Button */}
+          {onOpenAdm && (
+            <button
+              id="btn-open-adm"
+              onClick={() => {
+                sound.playClick();
+                onOpenAdm();
+              }}
+              className="w-8 h-8 rounded-xl bg-purple-950/90 text-yellow-300 border border-yellow-400/80 hover:bg-purple-900 flex items-center justify-center text-sm transition-all active:scale-95 cursor-pointer shadow-md"
+              title="Painel ADM (Senha 2412)"
+            >
+              👑
+            </button>
+          )}
 
           {/* Settings Menu Gear Button */}
           <button

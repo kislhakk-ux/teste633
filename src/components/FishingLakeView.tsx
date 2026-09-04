@@ -6,6 +6,20 @@ import { FishingCanvas } from './FishingCanvas';
 import { FishCollectionModal } from './FishCollectionModal';
 import { HD_BUILDING_SPRITES } from '../constants/buildingSprites';
 import { getCutoutSprite } from '../utils/spriteCutout';
+import { AdmAuthModal } from './adm/AdmAuthModal';
+import { AdmToolbar } from './adm/AdmToolbar';
+import {
+  loadAdmEntities,
+  saveAdmEntities,
+  resetAdmEntities,
+  loadAdmTerrain,
+  saveAdmTerrain,
+  resetAdmTerrain,
+  checkIsAdmUnlocked,
+  setAdmUnlocked,
+  TerrainGridMap,
+} from '../utils/admStorage';
+import { LakeEntity, LakeEntityType, LakeTerrainType } from '../types/adm';
 import confetti from 'canvas-confetti';
 
 interface FishingLakeViewProps {
@@ -46,6 +60,205 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
   const [isLureMakerOpen, setIsLureMakerOpen] = useState(false);
   const [isNetMakerOpen, setIsNetMakerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // ADM States & Tools
+  const [isAdmAuthOpen, setIsAdmAuthOpen] = useState(false);
+  const [isAdmUnlocked, setIsAdmUnlocked] = useState(() => checkIsAdmUnlocked());
+  const [isAdmActive, setIsAdmActive] = useState(false);
+  const [activeAdmTab, setActiveAdmTab] = useState<'objects' | 'terrain' | 'transform'>('objects');
+  const [entities, setEntities] = useState<LakeEntity[]>(() => loadAdmEntities());
+  const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
+  const [entityToPlace, setEntityToPlace] = useState<LakeEntityType | null>(null);
+  const [terrainMap, setTerrainMap] = useState<TerrainGridMap>(() => loadAdmTerrain());
+  const [selectedTiles, setSelectedTiles] = useState<{ x: number; y: number }[]>([]);
+  const [isSelectingArea, setIsSelectingArea] = useState(false);
+
+  // ADM Handlers
+  const handlePlaceEntityAt = (gx: number, gy: number) => {
+    if (!entityToPlace) return;
+    const newId = `ent_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const newEnt: LakeEntity = {
+      id: newId,
+      type: entityToPlace,
+      x: gx,
+      y: gy,
+      scale: 1,
+    };
+    const next = [...entities, newEnt];
+    setEntities(next);
+    saveAdmEntities(next);
+    sound.playPop();
+    setToastMessage(`Objeto criado em (${gx}, ${gy})!`);
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  const handleDeleteSelectedEntity = () => {
+    if (!selectedEntityId) return;
+    const next = entities.filter((e) => e.id !== selectedEntityId);
+    setEntities(next);
+    saveAdmEntities(next);
+    setSelectedEntityId(null);
+    sound.playTrash?.();
+    setToastMessage('Objeto excluído com sucesso!');
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  const handleDuplicateSelectedEntity = () => {
+    const current = entities.find((e) => e.id === selectedEntityId);
+    if (!current) return;
+    const newEnt: LakeEntity = {
+      ...current,
+      id: `ent_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      x: current.x + 0.5,
+      y: current.y + 0.5,
+    };
+    const next = [...entities, newEnt];
+    setEntities(next);
+    saveAdmEntities(next);
+    setSelectedEntityId(newEnt.id);
+    sound.playPop();
+    setToastMessage('Objeto duplicado!');
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  const handleScaleEntity = (delta: number) => {
+    if (!selectedEntityId) return;
+    const next = entities.map((e) => {
+      if (e.id === selectedEntityId) {
+        const currentScale = e.scale || 1;
+        const newScale = Math.max(0.4, Math.min(3, currentScale + delta));
+        return { ...e, scale: parseFloat(newScale.toFixed(2)) };
+      }
+      return e;
+    });
+    setEntities(next);
+    saveAdmEntities(next);
+  };
+
+  const handleFlipEntity = () => {
+    if (!selectedEntityId) return;
+    const next = entities.map((e) => {
+      if (e.id === selectedEntityId) {
+        return { ...e, flipH: !e.flipH };
+      }
+      return e;
+    });
+    setEntities(next);
+    saveAdmEntities(next);
+    sound.playPop();
+  };
+
+  const handleNudgeEntity = (dx: number, dy: number) => {
+    if (!selectedEntityId) return;
+    const next = entities.map((e) => {
+      if (e.id === selectedEntityId) {
+        return {
+          ...e,
+          x: parseFloat((e.x + dx).toFixed(1)),
+          y: parseFloat((e.y + dy).toFixed(1)),
+        };
+      }
+      return e;
+    });
+    setEntities(next);
+    saveAdmEntities(next);
+  };
+
+  const handleApplyTerrainToSelected = (type: LakeTerrainType) => {
+    if (selectedTiles.length === 0) {
+      setToastMessage('Selecione uma área no mapa primeiro!');
+      setTimeout(() => setToastMessage(null), 2500);
+      return;
+    }
+    const nextMap = { ...terrainMap };
+    selectedTiles.forEach((t) => {
+      nextMap[`${t.x}_${t.y}`] = type;
+    });
+    setTerrainMap(nextMap);
+    saveAdmTerrain(nextMap);
+    sound.playWaterSplash();
+    confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
+    setToastMessage(`🌊 ${selectedTiles.length} quadrantes transformados com sucesso!`);
+    setTimeout(() => setToastMessage(null), 3000);
+    setSelectedTiles([]);
+  };
+
+  const handleTileClick = (gx: number, gy: number) => {
+    setSelectedTiles((prev) => {
+      const exists = prev.some((t) => t.x === gx && t.y === gy);
+      if (exists) {
+        return prev.filter((t) => !(t.x === gx && t.y === gy));
+      } else {
+        return [...prev, { x: gx, y: gy }];
+      }
+    });
+  };
+
+  const handleTileAreaSelected = (tiles: { x: number; y: number }[]) => {
+    setSelectedTiles(tiles);
+  };
+
+  const handleClearTileSelection = () => {
+    setSelectedTiles([]);
+  };
+
+  const handleSelectAllTiles = () => {
+    const all: { x: number; y: number }[] = [];
+    for (let x = 0; x < 16; x++) {
+      for (let y = 0; y < 16; y++) {
+        all.push({ x, y });
+      }
+    }
+    setSelectedTiles(all);
+    setToastMessage('Todos os 256 quadrantes do lago foram selecionados!');
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  const handleExpandLakeOutward = () => {
+    const nextMap = { ...terrainMap };
+    for (let x = 1; x <= 14; x++) {
+      for (let y = 1; y <= 14; y++) {
+        nextMap[`${x}_${y}`] = 'water';
+      }
+    }
+    setTerrainMap(nextMap);
+    saveAdmTerrain(nextMap);
+    sound.playWaterSplash();
+    confetti({ particleCount: 60, spread: 80, origin: { y: 0.5 } });
+    setToastMessage('🌊 O Lago foi estendido por toda a bacia central!');
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleResetTerrain = () => {
+    const fresh = resetAdmTerrain();
+    setTerrainMap(fresh);
+    setSelectedTiles([]);
+    sound.playSuccess();
+    setToastMessage('🔄 Terreno restaurado para o formato padrão!');
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleSaveAll = () => {
+    saveAdmEntities(entities);
+    saveAdmTerrain(terrainMap);
+    sound.playSuccess();
+    confetti({ particleCount: 60, spread: 80, origin: { y: 0.6 } });
+    setToastMessage('💾 Cenário e terreno salvos com sucesso no jogo!');
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleResetAll = () => {
+    const freshEnt = resetAdmEntities();
+    const freshTerr = resetAdmTerrain();
+    setEntities(freshEnt);
+    setTerrainMap(freshTerr);
+    setSelectedTiles([]);
+    setSelectedEntityId(null);
+    setEntityToPlace(null);
+    sound.playSuccess();
+    setToastMessage('🔄 Cenário e estruturas restaurados para o padrão Hay Day!');
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   // Available lures
   const lureTypes: { id: ItemId; name: string; icon: string; desc: string; rare: string }[] = [
@@ -246,17 +459,43 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
           <span className="text-sm sm:text-base tracking-wide uppercase">Lago de Pesca</span>
         </div>
 
-        {/* Fish Collection Book Button */}
-        <button
-          onClick={() => {
-            sound.playClick();
-            setIsCollectionModalOpen(true);
-          }}
-          className="pointer-events-auto bg-gradient-to-b from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 text-white font-black py-2 px-4 rounded-2xl shadow-2xl border-2 border-emerald-300 active:scale-95 transition-transform flex items-center gap-2 drop-shadow-lg cursor-pointer"
-        >
-          <span className="text-lg">📖</span>
-          <span className="text-xs sm:text-sm uppercase tracking-wider hidden sm:inline">Coleção</span>
-        </button>
+        {/* Right side controls: ADM Button and Collection */}
+        <div className="flex items-center gap-2 pointer-events-auto">
+          {/* ADM Mode Button */}
+          <button
+            onClick={() => {
+              sound.playClick();
+              if (!isAdmUnlocked) {
+                setIsAdmAuthOpen(true);
+              } else {
+                setIsAdmActive((prev) => !prev);
+              }
+            }}
+            className={`font-black py-2 px-3 sm:px-4 rounded-2xl shadow-2xl border-2 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer ${
+              isAdmActive
+                ? 'bg-gradient-to-b from-yellow-400 to-amber-600 text-amber-950 border-white ring-4 ring-yellow-300 animate-pulse'
+                : 'bg-gradient-to-b from-purple-700 to-indigo-950 hover:from-purple-600 hover:to-indigo-900 text-yellow-200 border-yellow-400'
+            }`}
+            title="Painel Administrador (Senha: 2412)"
+          >
+            <span className="text-lg">👑</span>
+            <span className="text-xs sm:text-sm uppercase tracking-wider font-extrabold">
+              {isAdmActive ? 'ADM ATIVO' : 'ADM (2412)'}
+            </span>
+          </button>
+
+          {/* Fish Collection Book Button */}
+          <button
+            onClick={() => {
+              sound.playClick();
+              setIsCollectionModalOpen(true);
+            }}
+            className="bg-gradient-to-b from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 text-white font-black py-2 px-4 rounded-2xl shadow-2xl border-2 border-emerald-300 active:scale-95 transition-transform flex items-center gap-2 drop-shadow-lg cursor-pointer"
+          >
+            <span className="text-lg">📖</span>
+            <span className="text-xs sm:text-sm uppercase tracking-wider hidden sm:inline">Coleção</span>
+          </button>
+        </div>
       </div>
 
       {/* Floating Lake Toast Notification */}
@@ -287,8 +526,74 @@ export const FishingLakeView: React.FC<FishingLakeViewProps> = ({
             setIsNetMakerOpen(true);
           }}
           onExpansionUnlock={handleExpansionUnlock}
+
+          isAdmMode={isAdmActive}
+          activeAdmTab={activeAdmTab}
+          entities={entities}
+          onEntitiesChange={(newEnts) => {
+            setEntities(newEnts);
+            saveAdmEntities(newEnts);
+          }}
+          selectedEntityId={selectedEntityId}
+          onSelectEntity={(id) => setSelectedEntityId(id)}
+          entityToPlace={entityToPlace}
+          onPlaceEntityAt={handlePlaceEntityAt}
+          terrainMap={terrainMap}
+          selectedTiles={selectedTiles}
+          onTileClick={handleTileClick}
+          onTileAreaSelected={handleTileAreaSelected}
         />
       </div>
+
+      {/* ADM Toolbar & World Builder Controls */}
+      {isAdmActive && (
+        <AdmToolbar
+          activeTab={activeAdmTab}
+          setActiveTab={setActiveAdmTab}
+          selectedEntity={entities.find((e) => e.id === selectedEntityId) || null}
+          entityToPlace={entityToPlace}
+          setEntityToPlace={setEntityToPlace}
+          onDeleteSelectedEntity={handleDeleteSelectedEntity}
+          onDuplicateSelectedEntity={handleDuplicateSelectedEntity}
+          onScaleEntity={handleScaleEntity}
+          onFlipEntity={handleFlipEntity}
+          onNudgeEntity={handleNudgeEntity}
+          isSelectingArea={isSelectingArea}
+          setIsSelectingArea={setIsSelectingArea}
+          selectedTilesCount={selectedTiles.length}
+          onApplyTerrainToSelected={handleApplyTerrainToSelected}
+          onClearTileSelection={handleClearTileSelection}
+          onSelectAllTiles={handleSelectAllTiles}
+          onExpandLakeOutward={handleExpandLakeOutward}
+          onResetTerrain={handleResetTerrain}
+          onSaveAll={handleSaveAll}
+          onResetAll={handleResetAll}
+          onCloseAdm={() => setIsAdmActive(false)}
+        />
+      )}
+
+      {/* ADM Authentication Modal (Password: 2412) */}
+      <AdmAuthModal
+        isOpen={isAdmAuthOpen}
+        onClose={() => setIsAdmAuthOpen(false)}
+        onSuccess={() => {
+          setAdmUnlocked(true);
+          setIsAdmUnlocked(true);
+          setIsAdmActive(true);
+          setIsAdmAuthOpen(false);
+          setToastMessage('👑 Modo ADM desbloqueado com sucesso!');
+          setTimeout(() => setToastMessage(null), 3500);
+        }}
+        isAlreadyUnlocked={isAdmUnlocked}
+        onLock={() => {
+          setAdmUnlocked(false);
+          setIsAdmUnlocked(false);
+          setIsAdmActive(false);
+          setIsAdmAuthOpen(false);
+          setToastMessage('🔒 Modo ADM bloqueado.');
+          setTimeout(() => setToastMessage(null), 3000);
+        }}
+      />
 
       {/* ============================================================ */}
       {/* HAY DAY AUTHENTIC FISHING MINIGAME OVERLAY                    */}

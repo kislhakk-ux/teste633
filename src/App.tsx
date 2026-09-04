@@ -2402,6 +2402,10 @@ export default function App() {
         onOpenAchievements={() => setIsAchievementsOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenFreeGems={() => setIsFreeGemsModalOpen(true)}
+        onOpenAdm={() => {
+          showToast('👑 Abrindo Modo ADM no Lago de Pesca (Senha: 2412)...');
+          setIsFishingLakeMode(true);
+        }}
       />
 
       {/* Floating Action Toast */}
