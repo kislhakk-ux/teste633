@@ -49,49 +49,49 @@ export const Iso3DBoat: React.FC<Iso3DBoatProps> = ({
     >
       {/* 1. Deep translucent water shadow under the boat */}
       <ellipse
-        cx="72"
-        cy="92"
-        rx="62"
-        ry="22"
-        fill="rgba(1, 87, 155, 0.55)"
+        cx="74"
+        cy="96"
+        rx="66"
+        ry="24"
+        fill="rgba(1, 87, 155, 0.6)"
         className="blur-[2px]"
       />
       <ellipse
-        cx="70"
-        cy="90"
-        rx="48"
-        ry="16"
-        fill="rgba(0, 38, 77, 0.45)"
+        cx="72"
+        cy="94"
+        rx="52"
+        ry="18"
+        fill="rgba(0, 38, 77, 0.5)"
       />
 
       {/* 2. Concentric water ripples around the boat hull */}
       <ellipse
-        cx="72"
-        cy="92"
-        rx="72"
-        ry="26"
+        cx="74"
+        cy="96"
+        rx="78"
+        ry="28"
         fill="none"
         stroke="#81D4FA"
-        strokeWidth="1.8"
-        opacity="0.6"
+        strokeWidth="2"
+        opacity="0.7"
         className="animate-pulse"
       />
       <ellipse
-        cx="70"
-        cy="90"
-        rx="82"
-        ry="30"
+        cx="72"
+        cy="94"
+        rx="88"
+        ry="32"
         fill="none"
         stroke="#E1F5FE"
-        strokeWidth="1.2"
-        opacity="0.35"
+        strokeWidth="1.4"
+        opacity="0.4"
       />
       <path
-        d="M 18 94 Q 40 100 70 98 Q 110 100 135 90"
+        d="M 16 98 Q 42 106 74 104 Q 116 106 142 94"
         fill="none"
         stroke="#B3E5FC"
-        strokeWidth="2"
-        opacity="0.75"
+        strokeWidth="2.2"
+        opacity="0.8"
       />
 
       {/* 3. Mooring post and rope tying boat to the dock */}
@@ -127,34 +127,41 @@ export const Iso3DBoat: React.FC<Iso3DBoatProps> = ({
         {/* 3D Boat Sprite Cutout */}
         <image
           href={currentSrc}
-          x="0"
-          y="0"
-          width="144"
-          height="144"
+          xlinkHref={currentSrc}
+          x="-10"
+          y="-15"
+          width="168"
+          height="168"
           preserveAspectRatio="xMidYMid meet"
-          className="filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.35)]"
+          style={{
+            mixBlendMode:
+              (status === 'broken' && !brokenCutout) || (status === 'repaired' && !repairedCutout)
+                ? 'multiply'
+                : 'normal',
+          }}
+          className="filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.38)]"
         />
 
         {/* Dynamic Water Reflection / Glint Highlight */}
         <ellipse
-          cx="68"
-          cy="96"
-          rx="38"
-          ry="6"
-          fill="rgba(255, 255, 255, 0.25)"
+          cx="72"
+          cy="100"
+          rx="44"
+          ry="7"
+          fill="rgba(255, 255, 255, 0.3)"
           className="blur-[1px] mix-blend-overlay"
         />
 
         {/* 5. Status Interactive Badges */}
         {status === 'broken' && (
-          <g transform="translate(72, 16)" className="animate-bounce pointer-events-none">
+          <g transform="translate(74, 4)" className="animate-bounce pointer-events-none">
             {/* Halo shadow */}
             <ellipse cx="0" cy="18" rx="20" ry="6" fill="rgba(0,0,0,0.35)" />
             {/* Wooden / Golden Notification Badge */}
             <rect
-              x="-48"
+              x="-50"
               y="-14"
-              width="96"
+              width="100"
               height="28"
               rx="14"
               fill="#FFF8E1"
@@ -163,9 +170,9 @@ export const Iso3DBoat: React.FC<Iso3DBoatProps> = ({
               className="drop-shadow-lg"
             />
             <rect
-              x="-46"
+              x="-48"
               y="-12"
-              width="92"
+              width="96"
               height="24"
               rx="12"
               fill="url(#boat-badge-grad)"

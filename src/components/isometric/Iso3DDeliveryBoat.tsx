@@ -77,11 +77,15 @@ export const Iso3DDeliveryBoat: React.FC<Iso3DDeliveryBoatProps> = ({
       <g className="animate-boat-bobbing transition-transform duration-200 group-hover:scale-[1.03]">
         <image
           href={deliveryCutout || HD_BUILDING_SPRITES.delivery_boat}
+          xlinkHref={deliveryCutout || HD_BUILDING_SPRITES.delivery_boat}
           x="0"
           y="0"
           width="164"
           height="164"
           preserveAspectRatio="xMidYMid meet"
+          style={{
+            mixBlendMode: !deliveryCutout ? 'multiply' : 'normal',
+          }}
           className="filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)]"
         />
 
