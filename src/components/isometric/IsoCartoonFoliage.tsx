@@ -116,6 +116,44 @@ export const CartoonFoliageDefs: React.FC = React.memo(() => (
       <stop offset="60%" stopColor="#616161" />
       <stop offset="100%" stopColor="#424242" />
     </linearGradient>
+
+    {/* 3D River Pebble Gradients */}
+    <linearGradient id="pebble-cool-top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#EEEEEE" />
+      <stop offset="60%" stopColor="#CFD8DC" />
+      <stop offset="100%" stopColor="#90A4AE" />
+    </linearGradient>
+    <linearGradient id="pebble-cool-side" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stopColor="#90A4AE" />
+      <stop offset="100%" stopColor="#546E7A" />
+    </linearGradient>
+    <linearGradient id="pebble-warm-top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#EFEBE9" />
+      <stop offset="60%" stopColor="#D7CCC8" />
+      <stop offset="100%" stopColor="#A1887F" />
+    </linearGradient>
+    <linearGradient id="pebble-warm-side" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stopColor="#A1887F" />
+      <stop offset="100%" stopColor="#5D4037" />
+    </linearGradient>
+
+    {/* 3D Forest Wilderness Lake Gradients */}
+    <radialGradient id="lake-water-surface" cx="45%" cy="40%" r="60%">
+      <stop offset="0%" stopColor="#80D8FF" />
+      <stop offset="25%" stopColor="#40C4FF" />
+      <stop offset="65%" stopColor="#0288D1" />
+      <stop offset="100%" stopColor="#01579B" />
+    </radialGradient>
+    <radialGradient id="lake-depth-inner" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stopColor="#00E5FF" stopOpacity="0.4" />
+      <stop offset="70%" stopColor="#0288D1" stopOpacity="0.2" />
+      <stop offset="100%" stopColor="#004D40" stopOpacity="0.6" />
+    </radialGradient>
+    <linearGradient id="lake-shore-shimmer" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#E0F7FA" stopOpacity="0.8" />
+      <stop offset="40%" stopColor="#80DEEA" stopOpacity="0.2" />
+      <stop offset="100%" stopColor="#00838F" stopOpacity="0.7" />
+    </linearGradient>
   </defs>
 ));
 
@@ -596,7 +634,266 @@ export const Detailed3DSurveyStake: React.FC<{
   );
 };
 
-// 11. UNIFIED PROCEDURAL NATURE PROP
+// 11. 3D MEDIUM SHARP GRANITE ROCK
+export const Detailed3DMediumRock: React.FC<{
+  x?: number;
+  y?: number;
+  scale?: number;
+  seed?: number;
+}> = ({ x = 0, y = 0, scale = 1, seed = 12 }) => {
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+      <ellipse cx="1" cy="4" rx="12" ry="6" fill="url(#foliage-ground-shadow)" />
+      {/* Shaded Base */}
+      <path
+        d="M -10 2 L -5 -8 L 4 -10 L 10 -2 L 7 5 L -7 4 Z"
+        fill="url(#rock-facet-side)"
+        stroke="#37474F"
+        strokeWidth="1"
+      />
+      {/* Top Facet */}
+      <path
+        d="M -5 -8 L 4 -10 L 8 -3 L 0 -1 L -7 -2 Z"
+        fill="url(#rock-facet-top)"
+        stroke="#455A64"
+        strokeWidth="0.7"
+      />
+      {/* Moss accent */}
+      <path d="M -4 -6 Q 0 -8 4 -7 Q 2 -3 -2 -4 Z" fill="#689F38" opacity="0.9" />
+    </g>
+  );
+};
+
+// 12. 3D RIVER STONE / PEBBLE CLUSTER
+export const Detailed3DStoneCluster: React.FC<{
+  x?: number;
+  y?: number;
+  scale?: number;
+  seed?: number;
+}> = ({ x = 0, y = 0, scale = 1, seed = 7 }) => {
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+      <ellipse cx="0" cy="3" rx="14" ry="6" fill="url(#foliage-ground-shadow)" />
+      {/* Stone 1 - Big Granite */}
+      <ellipse cx="-4" cy="0" rx="7" ry="4.5" fill="url(#pebble-cool-side)" stroke="#455A64" strokeWidth="0.6" />
+      <ellipse cx="-4.5" cy="-1.5" rx="5.5" ry="3" fill="url(#pebble-cool-top)" />
+      {/* Stone 2 - Warm Sandstone */}
+      <ellipse cx="5" cy="2" rx="5" ry="3.5" fill="url(#pebble-warm-side)" stroke="#4E342E" strokeWidth="0.5" />
+      <ellipse cx="4.5" cy="1" rx="4" ry="2.2" fill="url(#pebble-warm-top)" />
+      {/* Stone 3 - Small River Pebble */}
+      <ellipse cx="1" cy="-4" rx="3.5" ry="2.4" fill="url(#pebble-cool-side)" stroke="#37474F" strokeWidth="0.4" />
+      <ellipse cx="1" cy="-4.8" rx="2.5" ry="1.6" fill="url(#pebble-cool-top)" />
+      {/* Tiny Buttercup Flower */}
+      <circle cx="-9" cy="2" r="1.8" fill="#FFEB3B" />
+      <circle cx="-9" cy="2" r="0.8" fill="#F57F17" />
+    </g>
+  );
+};
+
+// 13. 3D COBBLESTONE BORDER SEGMENT ("umas pedrinha em volta da area bloqueada")
+// Placed along parcel frontiers to enclose locked territory with smooth river stones
+export const DetailedCobblestoneBorderSegment: React.FC<{
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  seed?: number;
+}> = React.memo(({ x1, y1, x2, y2, seed = 0 }) => {
+  // Generate 5 smooth river pebbles along the segment line
+  const pebbles = [0.12, 0.32, 0.52, 0.72, 0.90].map((t, idx) => {
+    const px = x1 + (x2 - x1) * t;
+    const py = y1 + (y2 - y1) * t;
+    const pseudo = (seed * 17 + idx * 31) % 100;
+    const rx = 3.5 + (pseudo % 3);
+    const ry = 2.2 + (pseudo % 2);
+    const isWarm = pseudo % 2 === 0;
+    return { px, py, rx, ry, isWarm, idx };
+  });
+
+  return (
+    <g className="pointer-events-none">
+      {pebbles.map((p) => (
+        <g key={`pebble_${p.idx}`} transform={`translate(${p.px}, ${p.py})`}>
+          {/* Contact Shadow */}
+          <ellipse cx="0" cy="1.5" rx={p.rx + 1} ry={p.ry} fill="rgba(0,0,0,0.25)" />
+          {/* Pebble Body */}
+          <ellipse
+            cx="0"
+            cy="0"
+            rx={p.rx}
+            ry={p.ry}
+            fill={p.isWarm ? 'url(#pebble-warm-side)' : 'url(#pebble-cool-side)'}
+            stroke={p.isWarm ? '#4E342E' : '#37474F'}
+            strokeWidth="0.5"
+          />
+          {/* Top Sunlit Plane */}
+          <ellipse
+            cx="-0.6"
+            cy="-0.7"
+            rx={p.rx * 0.7}
+            ry={p.ry * 0.65}
+            fill={p.isWarm ? 'url(#pebble-warm-top)' : 'url(#pebble-cool-top)'}
+          />
+          {/* White Specular Glint */}
+          <circle cx={-p.rx * 0.3} cy={-p.ry * 0.4} r="0.8" fill="#FFFFFF" opacity="0.8" />
+        </g>
+      ))}
+    </g>
+  );
+});
+
+// 14. 3D CARTOON FOREST WILDERNESS LAKE ("e lagos tbm")
+// A picturesque natural lake nestled inside locked expansion parcels with lily pads and river stones
+export const Detailed3DForestLake: React.FC<{
+  x: number;
+  y: number;
+  radiusX?: number;
+  radiusY?: number;
+  name?: string;
+}> = React.memo(({ x, y, radiusX = 48, radiusY = 26, name = 'Lago Natural' }) => {
+  const numStones = 20;
+  const stones = Array.from({ length: numStones }).map((_, i) => {
+    const angle = (i / numStones) * Math.PI * 2;
+    // Slight natural jitter
+    const rJitterX = radiusX + ((i * 7) % 5) - 2;
+    const rJitterY = radiusY + ((i * 11) % 4) - 2;
+    const sx = Math.cos(angle) * rJitterX;
+    const sy = Math.sin(angle) * rJitterY;
+    const size = 3.5 + (i % 3);
+    const isWarm = i % 2 === 0;
+    return { sx, sy, size, isWarm, i };
+  });
+
+  return (
+    <g transform={`translate(${x}, ${y})`} className="pointer-events-none select-none">
+      {/* 1. Deep Earthy Ground Depression Shadow */}
+      <ellipse cx="0" cy="4" rx={radiusX + 8} ry={radiusY + 6} fill="rgba(20, 45, 10, 0.45)" />
+
+      {/* 2. Sandy Pebble Shoreline Rim */}
+      <ellipse
+        cx="0"
+        cy="2"
+        rx={radiusX + 4}
+        ry={radiusY + 3}
+        fill="#A1887F"
+        stroke="#5D4037"
+        strokeWidth="1.2"
+      />
+
+      {/* 3. Deep Shimmering Translucent Water Body */}
+      <ellipse
+        cx="0"
+        cy="0"
+        rx={radiusX}
+        ry={radiusY}
+        fill="url(#lake-water-surface)"
+        stroke="#80DEEA"
+        strokeWidth="1.4"
+      />
+
+      {/* 4. Soft Inner Depth Radial Shadow */}
+      <ellipse cx="0" cy="2" rx={radiusX * 0.82} ry={radiusY * 0.78} fill="url(#lake-depth-inner)" />
+
+      {/* 5. Animated Gentle Water Ripples */}
+      <ellipse
+        cx="-6"
+        cy="-2"
+        rx={radiusX * 0.55}
+        ry={radiusY * 0.45}
+        fill="none"
+        stroke="#E0F7FA"
+        strokeWidth="1.2"
+        strokeDasharray="14 8"
+        className="opacity-60 animate-pulse"
+      />
+      <ellipse
+        cx="8"
+        cy="3"
+        rx={radiusX * 0.35}
+        ry={radiusY * 0.3}
+        fill="none"
+        stroke="#FFFFFF"
+        strokeWidth="0.8"
+        strokeDasharray="8 6"
+        className="opacity-75"
+      />
+
+      {/* 6. Sun Sparkle Stars on Water Surface */}
+      <g className="text-white fill-white opacity-85">
+        <path d="M -16 -4 Q -16 -8 -13 -8 Q -16 -8 -16 -12 Q -16 -8 -19 -8 Q -16 -8 -16 -4 Z" fill="#FFFFFF" />
+        <path d="M 18 -6 Q 18 -9 20 -9 Q 18 -9 18 -12 Q 18 -9 16 -9 Q 18 -9 18 -6 Z" fill="#E0F7FA" />
+        <circle cx="2" cy="6" r="1.2" fill="#FFFFFF" />
+      </g>
+
+      {/* 7. Floating Water Lilies & Pink Blossom Petals */}
+      {/* Lily Pad 1 */}
+      <g transform="translate(-14, 4)">
+        <path
+          d="M 0 0 L 8 -3 A 9 5 0 1 1 5 4 Z"
+          fill="#43A047"
+          stroke="#2E7D32"
+          strokeWidth="0.6"
+        />
+        {/* Pink Lotus Flower */}
+        <circle cx="2" cy="0" r="3.2" fill="#F48FB1" stroke="#C2185B" strokeWidth="0.4" />
+        <circle cx="2" cy="0" r="1.2" fill="#FFF59D" />
+      </g>
+
+      {/* Lily Pad 2 */}
+      <g transform="translate(16, -3)">
+        <path
+          d="M 0 0 L 6 -2 A 8 4.5 0 1 1 4 3 Z"
+          fill="#388E3C"
+          stroke="#1B5E20"
+          strokeWidth="0.6"
+        />
+        <circle cx="1.5" cy="-0.5" r="2.6" fill="#F06292" stroke="#AD1457" strokeWidth="0.4" />
+        <circle cx="1.5" cy="-0.5" r="1" fill="#FFEE58" />
+      </g>
+
+      {/* 8. Swaying Cattails / Reeds on Bank */}
+      <g transform={`translate(${-radiusX * 0.7}, ${-radiusY * 0.6})`}>
+        <path d="M 0 4 Q -3 -8 -2 -18" stroke="#558B2F" strokeWidth="1.2" fill="none" />
+        <path d="M 4 4 Q 6 -6 8 -22" stroke="#689F38" strokeWidth="1.2" fill="none" />
+        {/* Velvet brown cattail sausage heads */}
+        <rect x="-3" y="-18" width="2.4" height="7" rx="1.2" fill="#4E342E" stroke="#3E2723" strokeWidth="0.4" />
+        <rect x="7" y="-21" width="2.2" height="6.5" rx="1.1" fill="#5D4037" stroke="#3E2723" strokeWidth="0.4" />
+      </g>
+
+      {/* 9. Ring of Smooth River Pebbles and Cobblestones hugging the Shoreline */}
+      {stones.map((s) => (
+        <g key={`lake_stone_${s.i}`} transform={`translate(${s.sx}, ${s.sy})`}>
+          <ellipse cx="0" cy="1" rx={s.size + 1} ry={s.size * 0.65} fill="rgba(0,0,0,0.3)" />
+          <ellipse
+            cx="0"
+            cy="0"
+            rx={s.size}
+            ry={s.size * 0.65}
+            fill={s.isWarm ? 'url(#pebble-warm-side)' : 'url(#pebble-cool-side)'}
+            stroke={s.isWarm ? '#4E342E' : '#37474F'}
+            strokeWidth="0.5"
+          />
+          <ellipse
+            cx="-0.6"
+            cy="-0.7"
+            rx={s.size * 0.65}
+            ry={s.size * 0.45}
+            fill={s.isWarm ? 'url(#pebble-warm-top)' : 'url(#pebble-cool-top)'}
+          />
+        </g>
+      ))}
+
+      {/* 10. Mossy Tree Trunk resting half in water */}
+      <g transform={`translate(${radiusX * 0.55}, ${radiusY * 0.5}) rotate(25)`}>
+        <ellipse cx="0" cy="1" rx="12" ry="4" fill="rgba(0,0,0,0.3)" />
+        <path d="M -10 -2 L 10 -2 L 10 3 L -10 3 Z" fill="url(#bark-trunk-3d)" stroke="#271610" strokeWidth="0.7" />
+        <path d="M -4 -2 Q 0 -4 4 -2" fill="#689F38" stroke="#33691E" strokeWidth="0.6" />
+      </g>
+    </g>
+  );
+});
+
+// 15. UNIFIED PROCEDURAL NATURE PROP
 // Automatically selects appropriate tree or prop with procedural variation so NO two look identical!
 export type FoliagePropType =
   | 'oak'
@@ -606,6 +903,8 @@ export type FoliagePropType =
   | 'blossom'
   | 'bush'
   | 'rock'
+  | 'medium_rock'
+  | 'rock_cluster'
   | 'log'
   | 'wildflowers';
 
@@ -642,6 +941,10 @@ export const ProceduralFoliageProp: React.FC<{
       return <Detailed3DBush x={x} y={y} scale={finalScale} hasBerries={rnd(4) > 0.3} />;
     case 'rock':
       return <Detailed3DBoulder x={x} y={y} scale={finalScale} />;
+    case 'medium_rock':
+      return <Detailed3DMediumRock x={x} y={y} scale={finalScale} seed={seed} />;
+    case 'rock_cluster':
+      return <Detailed3DStoneCluster x={x} y={y} scale={finalScale} seed={seed} />;
     case 'log':
       return <Detailed3DFallenLog x={x} y={y} scale={finalScale} />;
     case 'wildflowers':

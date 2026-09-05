@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
-import { EXPANSION_PARCELS, ExpansionParcel, isTileInParcel } from '../../constants/expansionData';
+import { EXPANSION_PARCELS, ExpansionParcel } from '../../constants/expansionData';
 import { generateForestForParcel } from '../../utils/forestGen';
 import {
   CartoonFoliageDefs,
   ProceduralFoliageProp,
   Detailed3DSurveyStake,
+  DetailedCobblestoneBorderSegment,
+  Detailed3DForestLake,
 } from './IsoCartoonFoliage';
 
 interface IsoExpansionTerritoryProps {
@@ -13,6 +15,54 @@ interface IsoExpansionTerritoryProps {
   onOpenExpansionModal?: (parcelId: string) => void;
   viewportBoundingBox?: { minX: number; maxX: number; minY: number; maxY: number } | null;
   playerLevel?: number;
+}
+
+/**
+ * Computes all outer boundary edge segments of a parcel for placing
+ * the Hay Day style continuous cobblestone and pebble perimeter border.
+ */
+function getParcelBoundarySegments(
+  parcel: ExpansionParcel,
+  gridToIso: (gx: number, gy: number) => { x: number; y: number }
+): { x1: number; y1: number; x2: number; y2: number; key: string }[] {
+  const tileSet = new Set<string>();
+  parcel.tiles.forEach((t) => tileSet.add(`${t.x},${t.y}`));
+
+  const segments: { x1: number; y1: number; x2: number; y2: number; key: string }[] = [];
+
+  parcel.tiles.forEach((t) => {
+    const { x, y } = t;
+
+    // Top-Right edge: neighbor is (x, y-1)
+    if (!tileSet.has(`${x},${y - 1}`)) {
+      const p1 = gridToIso(x, y);
+      const p2 = gridToIso(x + 1, y);
+      segments.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, key: `edge_tr_${x}_${y}` });
+    }
+
+    // Bottom-Right edge: neighbor is (x+1, y)
+    if (!tileSet.has(`${x + 1},${y}`)) {
+      const p1 = gridToIso(x + 1, y);
+      const p2 = gridToIso(x + 1, y + 1);
+      segments.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, key: `edge_br_${x}_${y}` });
+    }
+
+    // Bottom-Left edge: neighbor is (x, y+1)
+    if (!tileSet.has(`${x},${y + 1}`)) {
+      const p1 = gridToIso(x + 1, y + 1);
+      const p2 = gridToIso(x, y + 1);
+      segments.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, key: `edge_bl_${x}_${y}` });
+    }
+
+    // Top-Left edge: neighbor is (x-1, y)
+    if (!tileSet.has(`${x - 1},${y}`)) {
+      const p1 = gridToIso(x, y + 1);
+      const p2 = gridToIso(x, y);
+      segments.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, key: `edge_tl_${x}_${y}` });
+    }
+  });
+
+  return segments;
 }
 
 export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React.memo(({
@@ -27,27 +77,12 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
       <CartoonFoliageDefs />
 
       <defs>
-        {/* Untamed Deep Forest Terrain Gradient for Locked Wilderness */}
-        <linearGradient id="hd-locked-wilderness-grad" x1="15%" y1="0%" x2="85%" y2="100%">
-          <stop offset="0%" stopColor="#4A8518" />
-          <stop offset="35%" stopColor="#3B6F12" />
-          <stop offset="70%" stopColor="#2E590E" />
-          <stop offset="100%" stopColor="#214209" />
-        </linearGradient>
-
-        {/* Unlocked Sunny Farm Expansion Lawn Gradient */}
-        <linearGradient id="hd-unlocked-lawn-grad" x1="15%" y1="0%" x2="85%" y2="100%">
+        {/* Sunny Unified Farm Lawn Gradient - seamless natural grass under locked & unlocked terrain */}
+        <linearGradient id="hd-natural-lawn-grad" x1="15%" y1="0%" x2="85%" y2="100%">
           <stop offset="0%" stopColor="#9DE83B" />
           <stop offset="35%" stopColor="#86D628" />
           <stop offset="70%" stopColor="#6DBF1B" />
           <stop offset="100%" stopColor="#55A412" />
-        </linearGradient>
-
-        {/* Earthen Embankment Border Lip */}
-        <linearGradient id="hd-embankment-rim" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#5D4037" />
-          <stop offset="50%" stopColor="#4E342E" />
-          <stop offset="100%" stopColor="#3E2723" />
         </linearGradient>
 
         {/* Golden Expansion Banner Radial Glow */}
@@ -90,18 +125,32 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
                   <polygon
                     key={`tile_${tile.x}_${tile.y}`}
                     points={`${pTop.x},${pTop.y} ${pRight.x},${pRight.y} ${pBottom.x},${pBottom.y} ${pLeft.x},${pLeft.y}`}
-                    fill="url(#hd-unlocked-lawn-grad)"
-                    stroke="rgba(109, 191, 27, 0.4)"
-                    strokeWidth="0.5"
+                    fill="url(#hd-natural-lawn-grad)"
+                    stroke="rgba(109, 191, 27, 0.25)"
+                    strokeWidth="0.4"
                   />
                 );
               })}
+
+              {/* Keep ornamental lake on unlocked land */}
+              {parcel.lake && (
+                <Detailed3DForestLake
+                  x={gridToIso(parcel.lake.x, parcel.lake.y).x}
+                  y={gridToIso(parcel.lake.x, parcel.lake.y).y}
+                  radiusX={parcel.lake.radiusX || 48}
+                  radiusY={parcel.lake.radiusY || 26}
+                  name={parcel.lake.name}
+                />
+              )}
             </g>
           );
         }
 
-        // 2. LOCKED WILDERNESS TERRITORY: Rich 3D Cartoon Forest with Natural Demarcation
+        // 2. LOCKED WILDERNESS TERRITORY:
+        // Natural sunny grass (NO dark green stepped blocks), enclosed by cute cobblestones ("umas pedrinha em volta da area bloqueada"),
+        // filled with dense rocks, trees, and natural lakes ("mais cheia de pedras e arvores e lagos tbm")!
         const forestItems = generateForestForParcel(parcel);
+        const boundarySegments = getParcelBoundarySegments(parcel, gridToIso);
 
         return (
           <g
@@ -110,38 +159,53 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
             className="cursor-pointer pointer-events-auto group transition-all duration-300"
             onClick={() => onOpenExpansionModal?.(parcel.id)}
           >
-            {/* A. Natural Ground Tiles with Depth & Ambient Border Embankment */}
-            {parcel.tiles.map((tile) => {
-              const pTop = gridToIso(tile.x, tile.y);
-              const pRight = gridToIso(tile.x + 1, tile.y);
-              const pBottom = gridToIso(tile.x + 1, tile.y + 1);
-              const pLeft = gridToIso(tile.x, tile.y + 1);
+            {/* A. Seamless Natural Sunny Grass Ground (Matches farm lawn - no dark grid!) */}
+            <g className="opacity-95">
+              {parcel.tiles.map((tile) => {
+                const pTop = gridToIso(tile.x, tile.y);
+                const pRight = gridToIso(tile.x + 1, tile.y);
+                const pBottom = gridToIso(tile.x + 1, tile.y + 1);
+                const pLeft = gridToIso(tile.x, tile.y + 1);
 
-              return (
-                <g key={`locked_tile_${tile.x}_${tile.y}`}>
-                  {/* Base Wild Grass Polygon */}
+                return (
                   <polygon
+                    key={`locked_tile_${tile.x}_${tile.y}`}
                     points={`${pTop.x},${pTop.y} ${pRight.x},${pRight.y} ${pBottom.x},${pBottom.y} ${pLeft.x},${pLeft.y}`}
-                    fill="url(#hd-locked-wilderness-grad)"
-                    stroke="#1E3D08"
-                    strokeWidth="0.8"
-                    className="transition-colors group-hover:brightness-110"
+                    fill="url(#hd-natural-lawn-grad)"
+                    stroke="rgba(109, 191, 27, 0.25)"
+                    strokeWidth="0.4"
+                    className="transition-colors group-hover:brightness-105"
                   />
-                  {/* Subtle terrain shadow along southern tile edges */}
-                  <line
-                    x1={pLeft.x}
-                    y1={pLeft.y}
-                    x2={pBottom.x}
-                    y2={pBottom.y}
-                    stroke="#142B05"
-                    strokeWidth="1.2"
-                    opacity="0.6"
-                  />
-                </g>
-              );
-            })}
+                );
+              })}
+            </g>
 
-            {/* B. Natural Boundary Survey Stakes along Perimeter Corners */}
+            {/* B. Natural Forest Lake ("e lagos tbm") */}
+            {parcel.lake && (
+              <Detailed3DForestLake
+                x={gridToIso(parcel.lake.x, parcel.lake.y).x}
+                y={gridToIso(parcel.lake.x, parcel.lake.y).y}
+                radiusX={parcel.lake.radiusX || 48}
+                radiusY={parcel.lake.radiusY || 26}
+                name={parcel.lake.name}
+              />
+            )}
+
+            {/* C. Enclosed Cobblestone & River Pebble Border ("umas pedrinha em volta da area bloqueada") */}
+            <g id={`border-pebbles-${parcel.id}`}>
+              {boundarySegments.map((seg, idx) => (
+                <DetailedCobblestoneBorderSegment
+                  key={`${seg.key}_${idx}`}
+                  x1={seg.x1}
+                  y1={seg.y1}
+                  x2={seg.x2}
+                  y2={seg.y2}
+                  seed={idx}
+                />
+              ))}
+            </g>
+
+            {/* D. Boundary Survey Stakes along Perimeter Corners with Pennant Ribbons */}
             {parcel.stakePoints.map((pt, idx) => {
               const stakeIso = gridToIso(pt.x, pt.y);
               return (
@@ -155,7 +219,7 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
               );
             })}
 
-            {/* C. Dense, Lush 3D Cartoon Flora, Rocks, and Fallen Logs */}
+            {/* E. Dense, Lush 3D Cartoon Flora, Rocks, and Boulders ("mais cheia de pedras e arvores") */}
             {forestItems.map((item, idx) => {
               const itemIso = gridToIso(item.x, item.y);
               return (
@@ -174,7 +238,7 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
               );
             })}
 
-            {/* D. Interactive 3D Wooden Expansion Signpost at Center */}
+            {/* F. Interactive 3D Wooden Expansion Signpost at Center */}
             <g
               transform={`translate(${centerIso.x}, ${centerIso.y})`}
               className="pointer-events-none transition-all duration-300"

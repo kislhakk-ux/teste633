@@ -20,12 +20,14 @@ export interface ForestItem {
  * clustered vegetation without repetitive grid alignment.
  */
 export const generateForestForParcel = (
-  parcel: ExpansionParcel | { x: number; y: number; width: number; height: number; id: string; tiles?: { x: number; y: number }[]; biome?: string }
+  parcel: ExpansionParcel | { x: number; y: number; width: number; height: number; id: string; tiles?: { x: number; y: number }[]; biome?: string; lake?: { x: number; y: number } }
 ): ForestItem[] => {
   const items: ForestItem[] = [];
   const parcelId = parcel.id;
   const hash = parcelId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const seedBase = parcel.x * 137 + parcel.y * 311 + hash;
+
+  const lakePos = 'lake' in parcel && parcel.lake ? parcel.lake : null;
 
   // Retrieve tile list or fallback to grid
   const tiles: { x: number; y: number }[] =
@@ -36,49 +38,66 @@ export const generateForestForParcel = (
   if (tiles.length > 0) {
     // Generate organic clusters over the actual tiles
     tiles.forEach((tile, index) => {
+      // If this tile is directly on the lake center, leave it clear for the lake
+      if (lakePos) {
+        const distToLake = Math.hypot(tile.x - lakePos.x, tile.y - lakePos.y);
+        if (distToLake < 1.3) return; // Keep lake water surface open
+      }
+
       const tileSeed = seedBase + tile.x * 17 + tile.y * 53 + index * 7;
       const rand = pseudoRandom(tileSeed);
 
-      // ~55% chance of a feature on any tile to allow open grassy clearings
-      if (rand > 0.42) {
+      // ~80% chance of nature features (trees, rocks, props) for a dense Hay Day wilderness
+      if (rand > 0.20) {
         let type: FoliagePropType = 'oak';
         const typeRoll = pseudoRandom(tileSeed + 1);
 
-        // Biome-tailored flora distribution
+        // Biome-tailored flora & rock distribution with high rock density
         const biome = ('biome' in parcel && parcel.biome) || 'woodland';
 
         if (biome === 'pine_hill' || biome === 'highland') {
-          if (typeRoll < 0.50) type = 'pine';
-          else if (typeRoll < 0.70) type = 'cypress';
-          else if (typeRoll < 0.85) type = 'rock';
-          else if (typeRoll < 0.93) type = 'log';
+          // Pine hill: High rocks, alpine pines, granite crags
+          if (typeRoll < 0.32) type = 'pine';
+          else if (typeRoll < 0.50) type = 'medium_rock';
+          else if (typeRoll < 0.65) type = 'rock';
+          else if (typeRoll < 0.78) type = 'rock_cluster';
+          else if (typeRoll < 0.88) type = 'cypress';
+          else if (typeRoll < 0.94) type = 'log';
           else type = 'bush';
         } else if (biome === 'fruit_meadow') {
-          if (typeRoll < 0.35) type = 'fruit_tree';
-          else if (typeRoll < 0.60) type = 'oak';
-          else if (typeRoll < 0.75) type = 'bush';
-          else if (typeRoll < 0.90) type = 'wildflowers';
-          else type = 'blossom';
-        } else if (biome === 'riverbank' || biome === 'ancient_grove') {
-          if (typeRoll < 0.40) type = 'oak';
-          else if (typeRoll < 0.60) type = 'bush';
-          else if (typeRoll < 0.75) type = 'log';
-          else if (typeRoll < 0.90) type = 'rock';
-          else type = 'blossom';
+          // Fruit meadow: Apples/oranges, blossoms, smooth boulders, wildflowers
+          if (typeRoll < 0.28) type = 'fruit_tree';
+          else if (typeRoll < 0.44) type = 'oak';
+          else if (typeRoll < 0.60) type = 'rock_cluster';
+          else if (typeRoll < 0.72) type = 'medium_rock';
+          else if (typeRoll < 0.84) type = 'blossom';
+          else if (typeRoll < 0.92) type = 'bush';
+          else type = 'wildflowers';
+        } else if (biome === 'ancient_grove' || biome === 'waterfall_terrace') {
+          // Dense ancient rocks & oaks
+          if (typeRoll < 0.28) type = 'oak';
+          else if (typeRoll < 0.45) type = 'rock';
+          else if (typeRoll < 0.60) type = 'medium_rock';
+          else if (typeRoll < 0.72) type = 'rock_cluster';
+          else if (typeRoll < 0.84) type = 'blossom';
+          else if (typeRoll < 0.92) type = 'log';
+          else type = 'bush';
         } else {
-          // Standard vibrant woodland / pasture
-          if (typeRoll < 0.35) type = 'oak';
-          else if (typeRoll < 0.55) type = 'pine';
-          else if (typeRoll < 0.72) type = 'bush';
-          else if (typeRoll < 0.85) type = 'wildflowers';
-          else if (typeRoll < 0.93) type = 'rock';
+          // Standard vibrant woodland with high rock and tree richness
+          if (typeRoll < 0.28) type = 'oak';
+          else if (typeRoll < 0.45) type = 'rock';
+          else if (typeRoll < 0.60) type = 'medium_rock';
+          else if (typeRoll < 0.72) type = 'pine';
+          else if (typeRoll < 0.82) type = 'rock_cluster';
+          else if (typeRoll < 0.90) type = 'bush';
+          else if (typeRoll < 0.95) type = 'wildflowers';
           else type = 'log';
         }
 
         // Natural jitter inside the tile (never centered on rigid grid lines)
-        const jitterX = (pseudoRandom(tileSeed + 2) - 0.5) * 0.7;
-        const jitterY = (pseudoRandom(tileSeed + 3) - 0.5) * 0.7;
-        const scale = 0.82 + pseudoRandom(tileSeed + 4) * 0.38;
+        const jitterX = (pseudoRandom(tileSeed + 2) - 0.5) * 0.72;
+        const jitterY = (pseudoRandom(tileSeed + 3) - 0.5) * 0.72;
+        const scale = 0.84 + pseudoRandom(tileSeed + 4) * 0.36;
 
         items.push({
           x: tile.x + 0.5 + jitterX,
@@ -95,11 +114,13 @@ export const generateForestForParcel = (
       for (let dx = 0; dx < parcel.width; dx++) {
         const tileSeed = seedBase + dx * 19 + dy * 43;
         const rand = pseudoRandom(tileSeed);
-        if (rand > 0.45) {
+        if (rand > 0.25) {
           let type: FoliagePropType = 'oak';
           if (rand > 0.75) type = 'pine';
-          else if (rand > 0.65) type = 'bush';
           else if (rand > 0.55) type = 'rock';
+          else if (rand > 0.40) type = 'medium_rock';
+          else if (rand > 0.30) type = 'rock_cluster';
+          else type = 'bush';
 
           items.push({
             x: parcel.x + dx + pseudoRandom(tileSeed + 1) * 0.7 + 0.15,
