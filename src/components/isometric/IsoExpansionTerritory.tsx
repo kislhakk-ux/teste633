@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
-import { EXPANSION_PARCELS, ExpansionParcel } from '../../constants/expansionData';
-import { generateForestForParcel } from '../../utils/forestGen';
+import { EXPANSION_PARCELS } from '../../constants/expansionData';
+import { getCachedForestForParcel } from '../../utils/forestGen';
 import {
   CartoonFoliageDefs,
   ProceduralFoliageProp,
   Detailed3DSurveyStake,
-  DetailedCobblestoneBorderSegment,
   Detailed3DForestLake,
+  DetailedCobblestoneBorderSegment,
 } from './IsoCartoonFoliage';
 
 interface IsoExpansionTerritoryProps {
@@ -15,54 +15,6 @@ interface IsoExpansionTerritoryProps {
   onOpenExpansionModal?: (parcelId: string) => void;
   viewportBoundingBox?: { minX: number; maxX: number; minY: number; maxY: number } | null;
   playerLevel?: number;
-}
-
-/**
- * Computes all outer boundary edge segments of a parcel for placing
- * the Hay Day style continuous cobblestone and pebble perimeter border.
- */
-function getParcelBoundarySegments(
-  parcel: ExpansionParcel,
-  gridToIso: (gx: number, gy: number) => { x: number; y: number }
-): { x1: number; y1: number; x2: number; y2: number; key: string }[] {
-  const tileSet = new Set<string>();
-  parcel.tiles.forEach((t) => tileSet.add(`${t.x},${t.y}`));
-
-  const segments: { x1: number; y1: number; x2: number; y2: number; key: string }[] = [];
-
-  parcel.tiles.forEach((t) => {
-    const { x, y } = t;
-
-    // Top-Right edge: neighbor is (x, y-1)
-    if (!tileSet.has(`${x},${y - 1}`)) {
-      const p1 = gridToIso(x, y);
-      const p2 = gridToIso(x + 1, y);
-      segments.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, key: `edge_tr_${x}_${y}` });
-    }
-
-    // Bottom-Right edge: neighbor is (x+1, y)
-    if (!tileSet.has(`${x + 1},${y}`)) {
-      const p1 = gridToIso(x + 1, y);
-      const p2 = gridToIso(x + 1, y + 1);
-      segments.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, key: `edge_br_${x}_${y}` });
-    }
-
-    // Bottom-Left edge: neighbor is (x, y+1)
-    if (!tileSet.has(`${x},${y + 1}`)) {
-      const p1 = gridToIso(x + 1, y + 1);
-      const p2 = gridToIso(x, y + 1);
-      segments.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, key: `edge_bl_${x}_${y}` });
-    }
-
-    // Top-Left edge: neighbor is (x-1, y)
-    if (!tileSet.has(`${x - 1},${y}`)) {
-      const p1 = gridToIso(x, y + 1);
-      const p2 = gridToIso(x, y);
-      segments.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, key: `edge_tl_${x}_${y}` });
-    }
-  });
-
-  return segments;
 }
 
 export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React.memo(({
@@ -111,67 +63,40 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
         const centerIso = gridToIso(parcel.center.x, parcel.center.y);
         const canAffordLevel = playerLevel >= parcel.requiredLevel;
 
-        // 1. UNLOCKED TERRITORY: Sunny playable farm grass
+        // 1. UNLOCKED TERRITORY: Seamless ground, render persistent scenery features like lakes if present
         if (isUnlocked) {
-          return (
-            <g key={`unlocked_${parcel.id}`} className="pointer-events-none opacity-95">
-              {parcel.tiles.map((tile) => {
-                const pTop = gridToIso(tile.x, tile.y);
-                const pRight = gridToIso(tile.x + 1, tile.y);
-                const pBottom = gridToIso(tile.x + 1, tile.y + 1);
-                const pLeft = gridToIso(tile.x, tile.y + 1);
-
-                return (
-                  <polygon
-                    key={`tile_${tile.x}_${tile.y}`}
-                    points={`${pTop.x},${pTop.y} ${pRight.x},${pRight.y} ${pBottom.x},${pBottom.y} ${pLeft.x},${pLeft.y}`}
-                    fill="url(#hd-natural-lawn-grad)"
-                    stroke="rgba(109, 191, 27, 0.25)"
-                    strokeWidth="0.4"
-                  />
-                );
-              })}
-            </g>
-          );
+          if (parcel.lake) {
+            return (
+              <g key={`unlocked_${parcel.id}`} className="pointer-events-none opacity-95">
+                <Detailed3DForestLake
+                  x={gridToIso(parcel.lake.x, parcel.lake.y).x}
+                  y={gridToIso(parcel.lake.x, parcel.lake.y).y}
+                  radiusX={parcel.lake.radiusX || 48}
+                  radiusY={parcel.lake.radiusY || 26}
+                  name={parcel.lake.name}
+                />
+              </g>
+            );
+          }
+          return null;
         }
 
         // 2. LOCKED WILDERNESS TERRITORY:
-        // Natural sunny grass (NO dark green stepped blocks), enclosed by cute cobblestones ("umas pedrinha em volta da area bloqueada"),
-        // filled with dense rocks, trees, and natural lakes ("mais cheia de pedras e arvores e lagos tbm")!
-        const forestItems = generateForestForParcel(parcel);
-        const boundarySegments = getParcelBoundarySegments(parcel, gridToIso);
+        // Use cached forest props for high-performance mobile rendering
+        const forestItems = getCachedForestForParcel(parcel);
+        const hash = parcel.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
         return (
           <g
             key={`locked_${parcel.id}`}
             id={`parcel-${parcel.id}`}
-            className="cursor-pointer pointer-events-auto"
+            className="cursor-pointer pointer-events-auto transition-transform duration-200 hover:brightness-105"
             onClick={(e) => {
               e.stopPropagation();
               onOpenExpansionModal?.(parcel.id);
             }}
           >
-            {/* A. Seamless Natural Sunny Grass Ground */}
-            <g className="opacity-95">
-              {parcel.tiles.map((tile) => {
-                const pTop = gridToIso(tile.x, tile.y);
-                const pRight = gridToIso(tile.x + 1, tile.y);
-                const pBottom = gridToIso(tile.x + 1, tile.y + 1);
-                const pLeft = gridToIso(tile.x, tile.y + 1);
-
-                return (
-                  <polygon
-                    key={`locked_tile_${tile.x}_${tile.y}`}
-                    points={`${pTop.x},${pTop.y} ${pRight.x},${pRight.y} ${pBottom.x},${pBottom.y} ${pLeft.x},${pLeft.y}`}
-                    fill="url(#hd-natural-lawn-grad)"
-                    stroke="rgba(109, 191, 27, 0.25)"
-                    strokeWidth="0.4"
-                  />
-                );
-              })}
-            </g>
-
-            {/* B. Natural Forest Lake ("e lagos tbm") */}
+            {/* A. Natural Forest Lake (if parcel has one) */}
             {parcel.lake && (
               <Detailed3DForestLake
                 x={gridToIso(parcel.lake.x, parcel.lake.y).x}
@@ -182,21 +107,24 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
               />
             )}
 
-            {/* C. Enclosed Cobblestone & River Pebble Border ("umas pedrinha em volta da area bloqueada") */}
-            <g id={`border-pebbles-${parcel.id}`}>
-              {boundarySegments.map((seg, idx) => (
+            {/* B. Cobblestone / River Stone Border Segments circulating the perimeter */}
+            {parcel.stakePoints.map((pt, idx) => {
+              const nextPt = parcel.stakePoints[(idx + 1) % parcel.stakePoints.length];
+              const iso1 = gridToIso(pt.x, pt.y);
+              const iso2 = gridToIso(nextPt.x, nextPt.y);
+              return (
                 <DetailedCobblestoneBorderSegment
-                  key={`${seg.key}_${idx}`}
-                  x1={seg.x1}
-                  y1={seg.y1}
-                  x2={seg.x2}
-                  y2={seg.y2}
-                  seed={idx}
+                  key={`border_${parcel.id}_${idx}`}
+                  x1={iso1.x}
+                  y1={iso1.y}
+                  x2={iso2.x}
+                  y2={iso2.y}
+                  seed={hash + idx * 37}
                 />
-              ))}
-            </g>
+              );
+            })}
 
-            {/* D. Boundary Survey Stakes along Perimeter Corners with Pennant Ribbons */}
+            {/* C. Boundary Survey Stakes along Natural Perimeter Corners */}
             {parcel.stakePoints.map((pt, idx) => {
               const stakeIso = gridToIso(pt.x, pt.y);
               return (
@@ -210,7 +138,7 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
               );
             })}
 
-            {/* E. Dense, Lush 3D Cartoon Flora, Rocks, and Boulders */}
+            {/* D. Dense, Lush 3D Cartoon Flora, Wildflowers, Rocks, and Boulders */}
             {forestItems.map((item, idx) => {
               const itemIso = gridToIso(item.x, item.y);
               return (
@@ -226,19 +154,19 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
               );
             })}
 
-            {/* F. Interactive 3D Wooden Expansion Signpost at Center */}
+            {/* D. Interactive 3D Wooden Expansion Signpost at Center */}
             <g
               transform={`translate(${centerIso.x}, ${centerIso.y})`}
-              className="pointer-events-none"
+              className="pointer-events-none filter drop-shadow-md"
             >
               {/* Soft Sunlit Ground Shadow */}
               <ellipse
                 cx="0"
                 cy="8"
-                rx="42"
-                ry="20"
+                rx="46"
+                ry="22"
                 fill="url(#hd-expand-glow)"
-                className="opacity-20"
+                className="opacity-30"
               />
 
               {/* Wooden Signpost Assembly */}

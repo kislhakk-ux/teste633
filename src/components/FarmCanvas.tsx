@@ -629,13 +629,14 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
     }
 
     const tile = isoToGrid(e.clientX, e.clientY);
-    if (tile.x >= 0 && tile.x < MAP_SIZE && tile.y >= 0 && tile.y < MAP_SIZE) {
+    // Support all base farm and expanded territory coordinates
+    if (tile.x >= -14 && tile.x <= 32 && tile.y >= -14 && tile.y <= 28) {
       setHoveredTile((prev) => {
         if (prev && prev.x === tile.x && prev.y === tile.y) return prev;
         return tile;
       });
     } else {
-      setHoveredTile((prev) => (prev === null ? null : null));
+      setHoveredTile(null);
     }
 
     // If hold gesture is active, check if user moves too far
@@ -690,6 +691,9 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       setIsLongPressDragging(false);
       longPressTriggeredRef.current = false;
       pressedEntityRef.current = null;
+    } else if (isMovingMode && movingEntityId && hoveredTile && !wasMapDraggedRef.current) {
+      tryConfirmMove(movingEntityId, hoveredTile.x, hoveredTile.y);
+      setMovingEntityId(null);
     }
   };
 
@@ -796,15 +800,16 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       });
     }
 
-    if (e.touches.length === 1) {
+    if (e.touches.length === 1 && (isMovingMode || isLongPressDragging || activeDragTool)) {
       const tile = isoToGrid(e.touches[0].clientX, e.touches[0].clientY);
-      if (tile.x >= 0 && tile.x < MAP_SIZE && tile.y >= 0 && tile.y < MAP_SIZE) {
+      // Support all base farm and expanded territory coordinates
+      if (tile.x >= -14 && tile.x <= 32 && tile.y >= -14 && tile.y <= 28) {
         setHoveredTile((prev) => {
           if (prev && prev.x === tile.x && prev.y === tile.y) return prev;
           return tile;
         });
       } else {
-        setHoveredTile((prev) => (prev === null ? null : null));
+        setHoveredTile(null);
       }
     }
   };
@@ -827,6 +832,9 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       setIsLongPressDragging(false);
       longPressTriggeredRef.current = false;
       pressedEntityRef.current = null;
+    } else if (isMovingMode && movingEntityId && hoveredTile && !wasMapDraggedRef.current) {
+      tryConfirmMove(movingEntityId, hoveredTile.x, hoveredTile.y);
+      setMovingEntityId(null);
     }
   };
 
@@ -910,6 +918,32 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
     return { minX, maxX, minY, maxY };
   }, [pan, zoom]);
 
+  // Memoize all playable tiles (base 14x14 farm + all unlocked expansion parcels)
+  const allPlayableTiles = useMemo(() => {
+    const tileMap = new Map<string, { gx: number; gy: number }>();
+
+    // 1. Base Farm (0..13, 0..13)
+    for (let gy = 0; gy < MAP_SIZE; gy++) {
+      for (let gx = 0; gx < MAP_SIZE; gx++) {
+        tileMap.set(`${gx},${gy}`, { gx, gy });
+      }
+    }
+
+    // 2. Unlocked Expansion Parcels
+    if (unlockedParcelIds && unlockedParcelIds.length > 0) {
+      unlockedParcelIds.forEach((pid) => {
+        const parcel = EXPANSION_PARCELS.find((p) => p.id === pid);
+        if (parcel) {
+          parcel.tiles.forEach((t) => {
+            tileMap.set(`${t.x},${t.y}`, { gx: t.x, gy: t.y });
+          });
+        }
+      });
+    }
+
+    return Array.from(tileMap.values());
+  }, [unlockedParcelIds]);
+
   const isDeliveringTruck = truckDeliveringUntil !== null && currentTime < truckDeliveringUntil;
 
   return (
@@ -917,6 +951,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       ref={containerRef}
       id="farm-canvas-container"
       className="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#87CEEB] via-[#9ad87d] to-[#71c356] select-none cursor-grab active:cursor-grabbing"
+      style={{ touchAction: 'none' }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -978,9 +1013,11 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
 
       {/* Isometric Map Surface */}
       <div
-        className="absolute origin-top-left"
+        className="absolute origin-top-left will-change-transform"
         style={{
-          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom})`,
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
         }}
       >
         {/* Scenery Environment (Lush Grass Base, Distant Hills, Country Trees, Fences, Dirt Road, Butterflies) */}
@@ -1028,45 +1065,47 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
         </svg>
 
         {/* Isometric Interactive Farm Grid (Seamless in normal mode, clean guides in move mode) */}
-        {Array.from({ length: MAP_SIZE }).map((_, gy) =>
-          Array.from({ length: MAP_SIZE }).map((_, gx) => {
-            // Viewport Culling Optimization
-            if (
-              viewportBoundingBox &&
-              (gx < viewportBoundingBox.minX ||
-               gx > viewportBoundingBox.maxX ||
-               gy < viewportBoundingBox.minY ||
-               gy > viewportBoundingBox.maxY)
-            ) {
-              return null;
-            }
+        {allPlayableTiles.map(({ gx, gy }) => {
+          // Viewport Culling Optimization
+          if (
+            viewportBoundingBox &&
+            (gx < viewportBoundingBox.minX ||
+             gx > viewportBoundingBox.maxX ||
+             gy < viewportBoundingBox.minY ||
+             gy > viewportBoundingBox.maxY)
+          ) {
+            return null;
+          }
 
-            const { x: isoX, y: isoY } = gridToIso(gx, gy);
-            const isHovered = hoveredTile?.x === gx && hoveredTile?.y === gy;
+          const { x: isoX, y: isoY } = gridToIso(gx, gy);
+          const isHovered = hoveredTile?.x === gx && hoveredTile?.y === gy;
 
-            // Check if this tile is inside the actively moved entity footprint
-            const isInMovingFootprint =
-              activeMovedEntity &&
-              hoveredTile &&
-              gx >= hoveredTile.x &&
-              gx < hoveredTile.x + (activeMovedEntity.width || 1) &&
-              gy >= hoveredTile.y &&
-              gy < hoveredTile.y + (activeMovedEntity.height || 1);
+          // Check if this tile is inside the actively moved entity footprint
+          const isInMovingFootprint =
+            activeMovedEntity &&
+            hoveredTile &&
+            gx >= hoveredTile.x &&
+            gx < hoveredTile.x + (activeMovedEntity.width || 1) &&
+            gy >= hoveredTile.y &&
+            gy < hoveredTile.y + (activeMovedEntity.height || 1);
 
-            return (
-              <div
-                key={`tile_${gx}_${gy}`}
-                onClick={(e) => handleTileClick(gx, gy, e)}
-                style={{
-                  left: isoX,
-                  top: isoY,
-                  width: TILE_WIDTH,
-                  height: TILE_HEIGHT,
-                  position: 'absolute',
-                  transform: 'translate(-50%, 0)',
-                }}
-                className="group cursor-pointer pointer-events-auto select-none"
-              >
+          const needsVisualOverlay = isInMovingFootprint || (isMovingMode && isHovered);
+
+          return (
+            <div
+              key={`tile_${gx}_${gy}`}
+              onClick={(e) => handleTileClick(gx, gy, e)}
+              style={{
+                left: isoX,
+                top: isoY,
+                width: TILE_WIDTH,
+                height: TILE_HEIGHT,
+                position: 'absolute',
+                transform: 'translate(-50%, 0)',
+              }}
+              className="group cursor-pointer pointer-events-auto select-none"
+            >
+              {needsVisualOverlay && (
                 <svg
                   viewBox="0 0 84 42"
                   className="w-full h-full overflow-visible transition-colors"
@@ -1084,36 +1123,20 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                       strokeWidth="2.5"
                       strokeDasharray={placementValidation?.isValid ? 'none' : '4 2'}
                     />
-                  ) : isMovingMode ? (
-                    /* In Move Mode, show subtle placement grid lines and active target highlight */
-                    <polygon
-                      points="42,1 83,21 42,41 1,21"
-                      fill={isHovered ? 'rgba(163, 230, 53, 0.4)' : 'rgba(255, 255, 255, 0.04)'}
-                      stroke={isHovered ? '#FACC15' : 'rgba(255, 255, 255, 0.3)'}
-                      strokeWidth={isHovered ? '2' : '1'}
-                      strokeDasharray={isHovered ? 'none' : '3 3'}
-                    />
-                  ) : isHovered ? (
-                    /* In Normal Mode, show ONLY a soft subtle translucent highlight on hover - NO harsh borders or squares! */
-                    <polygon
-                      points="42,1 83,21 42,41 1,21"
-                      fill="rgba(255, 255, 255, 0.12)"
-                      stroke="rgba(255, 255, 255, 0.28)"
-                      strokeWidth="1"
-                    />
                   ) : (
-                    /* Invisible hit-box: keeps clicks perfectly responsive without showing any ugly squares */
+                    /* In Move Mode, subtle highlight only on active hovered tile */
                     <polygon
                       points="42,1 83,21 42,41 1,21"
-                      fill="transparent"
-                      stroke="none"
+                      fill="rgba(163, 230, 53, 0.35)"
+                      stroke="#FACC15"
+                      strokeWidth="1.8"
                     />
                   )}
                 </svg>
-              </div>
-            );
-          })
-        )}
+              )}
+            </div>
+          );
+        })}
 
         {/* Floating Space Occupation Status Indicator Badge above dragged building */}
         {activeMovedEntity && hoveredTile && (() => {

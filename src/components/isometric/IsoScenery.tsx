@@ -33,11 +33,16 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
   playerLevel = 1,
   onMineClick,
 }) => {
-  // Key boundary points
+  // Key boundary points of base farm
   const pTop = gridToIso(0, 0);
   const pRight = gridToIso(mapSize, 0);
   const pBottom = gridToIso(mapSize, mapSize);
   const pLeft = gridToIso(0, mapSize);
+
+  // Outer world boundary points for continuous 3D floating terrain cross-section
+  const pWorldBottom = gridToIso(28, 22);
+  const pWorldLeft = gridToIso(-12, 22);
+  const pWorldRight = gridToIso(28, -12);
 
   return (
     <g className="pointer-events-none select-none">
@@ -109,16 +114,38 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
           <stop offset="50%" stopColor="#FFF176" />
           <stop offset="100%" stopColor="#FFD54F" />
         </linearGradient>
+
+        {/* 3D Mountain Bedrock Terrace Gradient */}
+        <linearGradient id="mine-terrace-bedrock" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#78716C" />
+          <stop offset="40%" stopColor="#57534E" />
+          <stop offset="85%" stopColor="#44403C" />
+          <stop offset="100%" stopColor="#292524" />
+        </linearGradient>
+
+        {/* Mountain Terrace Alpine Meadow Grass */}
+        <linearGradient id="mine-terrace-grass" x1="20%" y1="0%" x2="80%" y2="100%">
+          <stop offset="0%" stopColor="#86D628" />
+          <stop offset="50%" stopColor="#6DBF1B" />
+          <stop offset="100%" stopColor="#438B0E" />
+        </linearGradient>
+
+        {/* Crushed Mountain Gravel Ballast */}
+        <linearGradient id="mine-ballast-gravel" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#A8A29E" />
+          <stop offset="50%" stopColor="#78716C" />
+          <stop offset="100%" stopColor="#57534E" />
+        </linearGradient>
       </defs>
 
-      {/* 1. 3D UNDERGROUND EARTH CROSS-SECTION */}
+      {/* 1. 3D UNDERGROUND EARTH CROSS-SECTION (Outer perimeter of the farm world) */}
       {/* South-West Cliff Edge */}
       <polygon
         points={`
-          ${pLeft.x - tileWidth / 2},${pLeft.y + tileHeight / 2}
-          ${pBottom.x},${pBottom.y + tileHeight}
-          ${pBottom.x},${pBottom.y + tileHeight + 30}
-          ${pLeft.x - tileWidth / 2},${pLeft.y + tileHeight / 2 + 30}
+          ${pWorldLeft.x},${pWorldLeft.y}
+          ${pWorldBottom.x},${pWorldBottom.y}
+          ${pWorldBottom.x},${pWorldBottom.y + 35}
+          ${pWorldLeft.x},${pWorldLeft.y + 35}
         `}
         fill="url(#scenery-cliff-l-3d)"
         stroke="#271610"
@@ -127,10 +154,10 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
       {/* South-East Cliff Edge */}
       <polygon
         points={`
-          ${pBottom.x},${pBottom.y + tileHeight}
-          ${pRight.x + tileWidth / 2},${pRight.y + tileHeight / 2}
-          ${pRight.x + tileWidth / 2},${pRight.y + tileHeight / 2 + 30}
-          ${pBottom.x},${pBottom.y + tileHeight + 30}
+          ${pWorldBottom.x},${pWorldBottom.y}
+          ${pWorldRight.x},${pWorldRight.y}
+          ${pWorldRight.x},${pWorldRight.y + 35}
+          ${pWorldBottom.x},${pWorldBottom.y + 35}
         `}
         fill="url(#scenery-cliff-r-3d)"
         stroke="#1C0E07"
@@ -138,19 +165,19 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
       />
       {/* Strata Sediments */}
       <line
-        x1={pLeft.x - tileWidth / 2}
-        y1={pLeft.y + tileHeight / 2 + 14}
-        x2={pBottom.x}
-        y2={pBottom.y + tileHeight + 14}
+        x1={pWorldLeft.x}
+        y1={pWorldLeft.y + 16}
+        x2={pWorldBottom.x}
+        y2={pWorldBottom.y + 16}
         stroke="#4E342E"
         strokeWidth="3"
         opacity="0.8"
       />
       <line
-        x1={pBottom.x}
-        y1={pBottom.y + tileHeight + 14}
-        x2={pRight.x + tileWidth / 2}
-        y2={pRight.y + tileHeight / 2 + 14}
+        x1={pWorldBottom.x}
+        y1={pWorldBottom.y + 16}
+        x2={pWorldRight.x}
+        y2={pWorldRight.y + 16}
         stroke="#3E2723"
         strokeWidth="3"
         opacity="0.8"
@@ -448,30 +475,101 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
         <ButterflyCartoon x={pBottom.x + 30} y={pBottom.y + 18} wingColor="#76FF03" />
       </g>
 
-      {/* 10. AUTHENTIC 3D CARTOON MINE ENTRANCE (Permanent Corner Mountain Feature) */}
+      {/* 10. AUTHENTIC 3D CARTOON MINE ENTRANCE (Firmly Situated ON the Mountain Terrain) */}
       {(() => {
         const mx = pTop.x - 135;
         const my = pTop.y - 70;
         return (
           <g id="farm-mine-area">
-            {/* Gravel Footpath & Rail Bed connecting Road to Mine */}
+            {/* 1. SOLID 3D VOLUMETRIC MOUNTAIN BEDROCK CLIFF BASE (Underneath the Mine) */}
+            {/* Lower Bedrock Wall Facing South-East */}
             <polygon
               points={`
-                ${mx - 25},${my + 28}
-                ${mx + 25},${my + 28}
-                ${pTop.x - 75},${pTop.y - 20}
-                ${pTop.x - 105},${pTop.y - 10}
+                ${mx - 105},${my + 42}
+                ${mx + 95},${my + 28}
+                ${mx + 95},${my + 58}
+                ${mx - 105},${my + 72}
               `}
-              fill="#78716C"
-              stroke="#57534E"
-              strokeWidth="1"
-              opacity="0.85"
+              fill="url(#mine-terrace-bedrock)"
+              stroke="#292524"
+              strokeWidth="2"
             />
-            {/* Railway track extensions to the road */}
-            <line x1={mx - 15} y1={my + 32} x2={pTop.x - 95} y2={pTop.y - 12} stroke="#475569" strokeWidth="2" strokeDasharray="6 4" />
-            <line x1={mx + 15} y1={my + 32} x2={pTop.x - 78} y2={pTop.y - 18} stroke="#475569" strokeWidth="2" strokeDasharray="6 4" />
+            {/* Bedrock Strata Horizontal Texture Lines */}
+            <line x1={mx - 95} y1={my + 54} x2={mx + 85} y2={my + 40} stroke="#1C1917" strokeWidth="2.5" opacity="0.75" />
+            <line x1={mx - 80} y1={my + 64} x2={mx + 70} y2={my + 50} stroke="#44403C" strokeWidth="1.8" opacity="0.8" />
 
-            {/* The Majestic 3D IsoMineEntrance */}
+            {/* 2. ELEVATED MOUNTAIN PLATEAU SURFACE (Solid ground the mine rests upon) */}
+            <polygon
+              points={`
+                ${mx - 120},${my - 30}
+                ${mx},${my - 75}
+                ${mx + 115},${my - 20}
+                ${mx + 95},${my + 28}
+                ${mx - 105},${my + 42}
+              `}
+              fill="url(#mine-terrace-grass)"
+              stroke="#365314"
+              strokeWidth="2.5"
+            />
+
+            {/* Mountain Moss & Alpine Grass Tufts on the Plateau */}
+            <ellipse cx={mx - 75} cy={my + 15} rx="18" ry="9" fill="#84CC16" opacity="0.8" />
+            <ellipse cx={mx + 65} cy={my + 5} rx="20" ry="10" fill="#84CC16" opacity="0.8" />
+            <ellipse cx={mx - 40} cy={my - 45} rx="22" ry="11" fill="#4D7C0F" opacity="0.9" />
+            <ellipse cx={mx + 50} cy={my - 40} rx="24" ry="12" fill="#4D7C0F" opacity="0.9" />
+
+            {/* Natural Alpine Boulders Anchoring the Mountain Shelf */}
+            {/* Left Boulder */}
+            <polygon points={`${mx - 110},${my + 22} ${mx - 90},${my + 8} ${mx - 75},${my + 25} ${mx - 95},${my + 38}`} fill="#78716C" stroke="#44403C" strokeWidth="1.8" />
+            <polygon points={`${mx - 110},${my + 22} ${mx - 90},${my + 8} ${mx - 84},${my + 14} ${mx - 102},${my + 28}`} fill="#A8A29E" />
+            {/* Right Boulder */}
+            <polygon points={`${mx + 75},${my + 12} ${mx + 95},${my - 2} ${mx + 105},${my + 15} ${mx + 85},${my + 26}`} fill="#78716C" stroke="#44403C" strokeWidth="1.8" />
+            <polygon points={`${mx + 75},${my + 12} ${mx + 95},${my - 2} ${mx + 92},${my + 5} ${mx + 80},${my + 18}`} fill="#A8A29E" />
+
+            {/* 3. WIDE CRUSHED-STONE GRAVEL RAIL YARD & BALLAST BED (Connecting Mine to Road) */}
+            <polygon
+              points={`
+                ${mx - 38},${my + 18}
+                ${mx + 38},${my + 18}
+                ${pTop.x - 65},${pTop.y - 14}
+                ${pTop.x - 118},${pTop.y - 2}
+              `}
+              fill="url(#mine-ballast-gravel)"
+              stroke="#44403C"
+              strokeWidth="2"
+            />
+            {/* Gravel Border Pebbles & Textured Rim */}
+            <line x1={mx - 38} y1={my + 18} x2={pTop.x - 118} y2={pTop.y - 2} stroke="#78716C" strokeWidth="3.5" strokeDasharray="5 3" opacity="0.85" />
+            <line x1={mx + 38} y1={my + 18} x2={pTop.x - 65} y2={pTop.y - 14} stroke="#78716C" strokeWidth="3.5" strokeDasharray="5 3" opacity="0.85" />
+
+            {/* 4. RAILWAY TIES & STEEL TRACKS EXTENDING OUTWARD ACROSS THE TERRAIN */}
+            {[
+              { x1: mx - 22, y1: my + 28, x2: mx + 22, y2: my + 28, w: 4 },
+              { x1: mx - 15, y1: my + 42, x2: mx + 29, y2: my + 42, w: 4 },
+              { x1: pTop.x - 108, y1: pTop.y + 4, x2: pTop.x - 72, y2: pTop.y - 4, w: 4 },
+              { x1: pTop.x - 100, y1: pTop.y + 16, x2: pTop.x - 64, y2: pTop.y + 8, w: 4.5 },
+            ].map((tie, idx) => (
+              <line
+                key={`scenery_mine_tie_${idx}`}
+                x1={tie.x1}
+                y1={tie.y1}
+                x2={tie.x2}
+                y2={tie.y2}
+                stroke="#5D4037"
+                strokeWidth={tie.w}
+                strokeLinecap="round"
+              />
+            ))}
+
+            {/* Steel Tracks Running Down across the Mountain Rail Bed */}
+            {/* Left Rail */}
+            <line x1={mx - 14} y1={my + 22} x2={pTop.x - 96} y2={pTop.y + 18} stroke="#94A3B8" strokeWidth="3" strokeLinecap="round" />
+            <line x1={mx - 14} y1={my + 22} x2={pTop.x - 96} y2={pTop.y + 18} stroke="#FFFFFF" strokeWidth="1" opacity="0.8" />
+            {/* Right Rail */}
+            <line x1={mx + 14} y1={my + 22} x2={pTop.x - 76} y2={pTop.y + 10} stroke="#94A3B8" strokeWidth="3" strokeLinecap="round" />
+            <line x1={mx + 14} y1={my + 22} x2={pTop.x - 76} y2={pTop.y + 10} stroke="#FFFFFF" strokeWidth="1" opacity="0.8" />
+
+            {/* 5. THE MAJESTIC 3D IsoMineEntrance (Resting Securely on the Mountain Plateau) */}
             <g transform={`translate(${mx}, ${my})`}>
               <IsoMineEntrance
                 status={mineStatus}

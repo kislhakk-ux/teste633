@@ -105,112 +105,194 @@ export const IsoMineEntrance: React.FC<IsoMineEntranceProps> = React.memo(({
 
         {/* Lantern Glow Pulse */}
         <radialGradient id="lantern-light" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#FEF08A" stopOpacity="0.9" />
-          <stop offset="40%" stopColor="#F59E0B" stopOpacity="0.5" />
+          <stop offset="0%" stopColor="#FEF08A" stopOpacity="0.95" />
+          <stop offset="35%" stopColor="#F59E0B" stopOpacity="0.55" />
+          <stop offset="70%" stopColor="#D97706" stopOpacity="0.2" />
           <stop offset="100%" stopColor="#D97706" stopOpacity="0" />
         </radialGradient>
+
+        {/* 3D Timber Top Surface Highlight */}
+        <linearGradient id="mine-timber-top-surface" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#D97706" />
+          <stop offset="40%" stopColor="#B45309" />
+          <stop offset="80%" stopColor="#92400E" />
+          <stop offset="100%" stopColor="#78350F" />
+        </linearGradient>
+
+        {/* TNT Crate Wood */}
+        <linearGradient id="tnt-wood" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#F59E0B" />
+          <stop offset="50%" stopColor="#D97706" />
+          <stop offset="100%" stopColor="#B45309" />
+        </linearGradient>
+
+        {/* Sparkling Gem Gradients */}
+        <linearGradient id="gem-emerald" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#6EE7B7" />
+          <stop offset="40%" stopColor="#10B981" />
+          <stop offset="100%" stopColor="#047857" />
+        </linearGradient>
+        <linearGradient id="gem-ruby" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FCA5A5" />
+          <stop offset="40%" stopColor="#EF4444" />
+          <stop offset="100%" stopColor="#B91C1C" />
+        </linearGradient>
+        <linearGradient id="gem-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FEF08A" />
+          <stop offset="40%" stopColor="#FBBF24" />
+          <stop offset="100%" stopColor="#D97706" />
+        </linearGradient>
       </defs>
 
       {/* 1. MOUNTAIN ROCK FOOTPRINT & GROUND SHADOW */}
-      <ellipse cx="0" cy="18" rx="72" ry="32" fill="rgba(0,0,0,0.38)" />
+      <ellipse cx="0" cy="20" rx="84" ry="36" fill="rgba(0,0,0,0.42)" />
 
-      {/* 2. MAJESTIC ROCKY MOUNTAIN CLIFF FORMATION */}
-      {/* Back Mountain Ridge */}
+      {/* 2. MAJESTIC 3D ROCKY MOUNTAIN CLIFF FORMATION (Top-Down Isometric Depth) */}
+      {/* Back Mountain Ridge & Upper Overhang */}
       <polygon
-        points="-64,-10 -50,-52 -20,-75 25,-82 62,-60 76,-15 52,18 -42,16"
+        points="-78,-8 -62,-58 -28,-88 32,-94 76,-70 88,-18 64,22 -52,22"
         fill="url(#mine-rock-face)"
-        stroke="#292524"
+        stroke="#1C1917"
         strokeWidth="2.5"
       />
 
-      {/* Rock Stratum Facets & Crags */}
-      <polygon points="-50,-52 -20,-75 -10,-45 -40,-30" fill="url(#mine-rock-highlight)" opacity="0.85" />
-      <polygon points="25,-82 62,-60 45,-38 10,-52" fill="url(#mine-rock-highlight)" opacity="0.75" />
-      <polygon points="-64,-10 -40,-30 -35,-5 -60,5" fill="#44403C" />
-      <polygon points="62,-60 76,-15 58,5 45,-38" fill="#292524" />
-
-      {/* Surface Crag Detail Lines */}
-      <path d="M -30 -62 L -20 -40 L -25 -18" stroke="#1C1917" strokeWidth="2" fill="none" opacity="0.8" />
-      <path d="M 35 -68 L 22 -42 L 30 -15" stroke="#1C1917" strokeWidth="2" fill="none" opacity="0.8" />
-      <path d="M -8 -72 L 0 -50 L -4 -25" stroke="#1C1917" strokeWidth="1.8" fill="none" opacity="0.7" />
-
-      {/* Mountain Vegetation / Moss Patches */}
-      <ellipse cx="-42" cy="-45" rx="9" ry="5" fill="#4D7C0F" opacity="0.85" />
-      <ellipse cx="-40" cy="-46" rx="6" ry="3.5" fill="#65A30D" />
-      <ellipse cx="48" cy="-50" rx="10" ry="5" fill="#4D7C0F" opacity="0.8" />
-      <ellipse cx="50" cy="-51" rx="7" ry="3.5" fill="#65A30D" />
-      <ellipse cx="6" cy="-78" rx="8" ry="4" fill="#365314" opacity="0.9" />
-
-      {/* 3. CAVERN TUNNEL MOUTH */}
-      <path
-        d="M -32 10 C -34 -15 -30 -42 -22 -46 C -12 -50 12 -50 22 -46 C 30 -42 34 -15 32 10 Z"
-        fill="url(#mine-cave-darkness)"
-        stroke="#1C1917"
-        strokeWidth="3"
+      {/* Top Rock Shelf (Visible from above for true 3D cartoon volume) */}
+      <polygon
+        points="-62,-58 -28,-88 32,-94 76,-70 60,-52 24,-68 -16,-62 -48,-46"
+        fill="url(#mine-rock-highlight)"
+        stroke="#44403C"
+        strokeWidth="1.2"
+        opacity="0.9"
       />
 
-      {/* Interior Atmospheric Shaft Glow (Active when Repaired) */}
+      {/* Rocky Facets, Crags & Crevices */}
+      <polygon points="-78,-8 -48,-46 -38,-16 -68,10" fill="#44403C" />
+      <polygon points="76,-70 88,-18 68,14 54,-36" fill="#292524" />
+      <polygon points="-48,-46 -16,-62 -12,-34 -38,-16" fill="url(#mine-rock-highlight)" opacity="0.8" />
+      <polygon points="24,-68 60,-52 54,-36 18,-48" fill="url(#mine-rock-highlight)" opacity="0.8" />
+
+      {/* Surface Crag Depth Lines */}
+      <path d="M -36 -72 L -24 -46 L -30 -22" stroke="#1C1917" strokeWidth="2.5" fill="none" opacity="0.85" />
+      <path d="M 42 -78 L 28 -50 L 38 -20" stroke="#1C1917" strokeWidth="2.5" fill="none" opacity="0.85" />
+      <path d="M -10 -84 L 2 -58 L -2 -30" stroke="#1C1917" strokeWidth="2.2" fill="none" opacity="0.8" />
+
+      {/* Embedded Sparkly Ore Veins in the Mountain Face */}
+      {/* Gold Vein Left */}
+      <polygon points="-56,-24 -48,-32 -44,-26 -52,-18" fill="url(#gem-gold)" stroke="#B45309" strokeWidth="0.8" />
+      <circle cx="-50" cy="-27" r="1.2" fill="#FFF" />
+      <polygon points="-58,-38 -52,-44 -48,-38 -54,-32" fill="url(#gem-gold)" stroke="#B45309" strokeWidth="0.8" />
+      {/* Ruby / Emerald Geode Vein Right */}
+      <polygon points="56,-32 66,-40 68,-30 58,-24" fill="url(#gem-ruby)" stroke="#991B1B" strokeWidth="0.8" />
+      <circle cx="62" cy="-35" r="1.2" fill="#FFF" />
+      <polygon points="62,-18 70,-24 72,-16 64,-12" fill="url(#gem-emerald)" stroke="#065F46" strokeWidth="0.8" />
+
+      {/* Mountain Vegetation / Hanging Ivy & Alpine Moss */}
+      <ellipse cx="-52" cy="-52" rx="11" ry="6" fill="#4D7C0F" opacity="0.9" />
+      <ellipse cx="-50" cy="-53" rx="8" ry="4" fill="#65A30D" />
+      <ellipse cx="58" cy="-58" rx="12" ry="6.5" fill="#4D7C0F" opacity="0.9" />
+      <ellipse cx="60" cy="-59" rx="8.5" ry="4.5" fill="#65A30D" />
+      <ellipse cx="8" cy="-90" rx="10" ry="5" fill="#365314" opacity="0.95" />
+      {/* Hanging Ivy tendrils over the portal */}
+      <path d="M -22 -53 Q -20 -42 -24 -36" stroke="#4D7C0F" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      <circle cx="-24" cy="-36" r="2" fill="#65A30D" />
+      <path d="M 24 -53 Q 26 -44 22 -38" stroke="#4D7C0F" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      <circle cx="22" cy="-38" r="2" fill="#65A30D" />
+
+      {/* 3. CAVERN TUNNEL MOUTH (Deep 3D Recessed Cave) */}
+      <path
+        d="M -38 12 C -40 -18 -34 -48 -24 -52 C -14 -56 14 -56 24 -52 C 34 -48 40 -18 38 12 Z"
+        fill="url(#mine-cave-darkness)"
+        stroke="#1C1917"
+        strokeWidth="3.5"
+      />
+
+      {/* Atmospheric Cavern Depth Glow & Warm Light Beam */}
       {status === 'repaired' && (
         <g>
-          <ellipse cx="0" cy="-18" rx="26" ry="24" fill="url(#mine-interior-glow)" className="animate-pulse" />
-          {/* Shaft Light Beam on Ground */}
-          <polygon points="-18,6 18,6 30,22 -30,22" fill="#FDE68A" opacity="0.15" />
+          {/* Pulsing cavern mouth glow */}
+          <ellipse cx="0" cy="-18" rx="30" ry="26" fill="url(#mine-interior-glow)" className="animate-pulse" />
+          {/* Shaft light fan on ground */}
+          <polygon points="-22,8 22,8 34,26 -34,26" fill="#FDE68A" opacity="0.18" />
+          {/* Floating sparkling dust particles */}
+          <g className="animate-pulse" style={{ animationDuration: '3.5s' }}>
+            <circle cx="-12" cy="-26" r="1.5" fill="#FEF08A" opacity="0.8" />
+            <circle cx="10" cy="-34" r="1.8" fill="#FDE047" opacity="0.75" />
+            <circle cx="2" cy="-15" r="1.2" fill="#FFFFFF" opacity="0.9" />
+          </g>
         </g>
       )}
 
-      {/* 4. HEAVY TIMBER PORTAL (WOOD BEAMS) */}
-      {/* Left Timber Post */}
+      {/* 4. HEAVY VOLUMETRIC TIMBER PORTAL (Bevelled 3D Cartoon Beams) */}
+      {/* Left Timber Post Front */}
       <polygon
-        points="-35,12 -27,14 -24,-45 -33,-47"
+        points="-40,14 -30,16 -26,-48 -37,-50"
         fill="url(#mine-timber-post)"
-        stroke="#3B1C08"
-        strokeWidth="1.8"
-      />
-      {/* Left Timber Front Highlight */}
-      <line x1="-31" y1="13" x2="-29" y2="-46" stroke="#B45309" strokeWidth="1.5" opacity="0.8" />
-      {/* Iron Reinforcement Bracket */}
-      <rect x="-34" y="-20" width="8" height="3.5" rx="1" fill="#475569" stroke="#1E293B" strokeWidth="0.8" />
-      <circle cx="-32" cy="-18" r="0.8" fill="#CBD5E1" />
-      <circle cx="-28" cy="-18" r="0.8" fill="#CBD5E1" />
-
-      {/* Right Timber Post */}
-      <polygon
-        points="27,14 35,12 33,-47 24,-45"
-        fill="url(#mine-timber-post)"
-        stroke="#3B1C08"
-        strokeWidth="1.8"
-      />
-      {/* Right Timber Front Highlight */}
-      <line x1="29" y1="13" x2="31" y2="-46" stroke="#B45309" strokeWidth="1.5" opacity="0.8" />
-      {/* Iron Reinforcement Bracket */}
-      <rect x="26" y="-20" width="8" height="3.5" rx="1" fill="#475569" stroke="#1E293B" strokeWidth="0.8" />
-      <circle cx="28" cy="-18" r="0.8" fill="#CBD5E1" />
-      <circle cx="32" cy="-18" r="0.8" fill="#CBD5E1" />
-
-      {/* Top Heavy Crossbeam Lintel */}
-      <polygon
-        points="-38,-44 38,-44 36,-53 -36,-53"
-        fill="url(#mine-timber-top)"
         stroke="#3B1C08"
         strokeWidth="2"
       />
-      <line x1="-34" y1="-49" x2="34" y2="-49" stroke="#D97706" strokeWidth="1.2" opacity="0.9" />
+      {/* Left Timber Top-Face Highlight */}
+      <polygon points="-37,-50 -26,-48 -28,-54 -39,-56" fill="url(#mine-timber-top-surface)" stroke="#3B1C08" strokeWidth="1" />
+      <line x1="-34" y1="15" x2="-31" y2="-48" stroke="#B45309" strokeWidth="1.8" opacity="0.8" />
+      {/* Iron Reinforcement Bracket with Rivets */}
+      <rect x="-38" y="-22" width="10" height="4.5" rx="1.5" fill="#475569" stroke="#1E293B" strokeWidth="1" />
+      <circle cx="-35" cy="-20" r="1" fill="#CBD5E1" />
+      <circle cx="-31" cy="-20" r="1" fill="#CBD5E1" />
 
-      {/* Corner Bracing Blocks */}
-      <polygon points="-27,-44 -20,-44 -27,-37" fill="#78350F" stroke="#3B1C08" strokeWidth="1" />
-      <polygon points="27,-44 20,-44 27,-37" fill="#78350F" stroke="#3B1C08" strokeWidth="1" />
+      {/* Right Timber Post Front */}
+      <polygon
+        points="30,16 40,14 37,-50 26,-48"
+        fill="url(#mine-timber-post)"
+        stroke="#3B1C08"
+        strokeWidth="2"
+      />
+      {/* Right Timber Top-Face Highlight */}
+      <polygon points="26,-48 37,-50 39,-56 28,-54" fill="url(#mine-timber-top-surface)" stroke="#3B1C08" strokeWidth="1" />
+      <line x1="33" y1="15" x2="35" y2="-48" stroke="#B45309" strokeWidth="1.8" opacity="0.8" />
+      {/* Iron Reinforcement Bracket with Rivets */}
+      <rect x="28" y="-22" width="10" height="4.5" rx="1.5" fill="#475569" stroke="#1E293B" strokeWidth="1" />
+      <circle cx="31" cy="-20" r="1" fill="#CBD5E1" />
+      <circle cx="35" cy="-20" r="1" fill="#CBD5E1" />
 
-      {/* 5. RAILWAY TRACKS INTO THE MINE */}
+      {/* Top Heavy Crossbeam Lintel (Front Face) */}
+      <polygon
+        points="-44,-46 44,-46 42,-56 -42,-56"
+        fill="url(#mine-timber-top)"
+        stroke="#3B1C08"
+        strokeWidth="2.2"
+      />
+      {/* Top Heavy Crossbeam Lintel (Isometric Top Face - Visible from above!) */}
+      <polygon
+        points="-42,-56 42,-56 46,-64 -38,-64"
+        fill="url(#mine-timber-top-surface)"
+        stroke="#3B1C08"
+        strokeWidth="1.5"
+      />
+      <line x1="-38" y1="-51" x2="38" y2="-51" stroke="#D97706" strokeWidth="1.5" opacity="0.9" />
+
+      {/* Corner Bracing Gusset Blocks */}
+      <polygon points="-30,-46 -22,-46 -30,-38" fill="#78350F" stroke="#3B1C08" strokeWidth="1.2" />
+      <polygon points="30,-46 22,-46 30,-38" fill="#78350F" stroke="#3B1C08" strokeWidth="1.2" />
+
+      {/* Carved Wooden "MINA" Archway Plaque */}
+      <g transform="translate(0, -58)">
+        <polygon points="-24,-5 24,-5 26,4 22,9 -22,9 -26,4" fill="#D97706" stroke="#451A03" strokeWidth="1.2" />
+        <polygon points="-23,-4 23,-4 25,3 21,8 -21,8 -25,3" fill="#F59E0B" opacity="0.6" />
+        <text x="0" y="4" fontSize="7.5" fontWeight="900" fill="#451A03" textAnchor="middle" style={{ letterSpacing: '1px' }}>
+          ⛏️ MINA ⛏️
+        </text>
+      </g>
+
+      {/* 5. HEAVY STEEL RAILWAY TRACKS (On Wooden Ties) */}
       {/* Wooden Crossties (Sleepers) */}
       {[
-        { x1: -12, y1: -2, x2: 12, y2: -2, w: 3 },
-        { x1: -15, y1: 5, x2: 15, y2: 5, w: 3.5 },
-        { x1: -18, y1: 13, x2: 18, y2: 13, w: 4 },
-        { x1: -21, y1: 21, x2: 21, y2: 21, w: 4 },
-        { x1: -24, y1: 29, x2: 24, y2: 29, w: 4.5 },
+        { x1: -14, y1: -4, x2: 14, y2: -4, w: 3.5 },
+        { x1: -17, y1: 4, x2: 17, y2: 4, w: 3.8 },
+        { x1: -20, y1: 12, x2: 20, y2: 12, w: 4.2 },
+        { x1: -24, y1: 21, x2: 24, y2: 21, w: 4.5 },
+        { x1: -28, y1: 30, x2: 28, y2: 30, w: 5 },
       ].map((tie, idx) => (
         <line
-          key={`tie_${idx}`}
+          key={`mine_tie_${idx}`}
           x1={tie.x1}
           y1={tie.y1}
           x2={tie.x2}
@@ -221,158 +303,147 @@ export const IsoMineEntrance: React.FC<IsoMineEntranceProps> = React.memo(({
         />
       ))}
 
-      {/* Steel Rail Bars */}
+      {/* Steel Rail Bars (Polished top shine) */}
       {/* Left Rail */}
-      <path
-        d="M -8 -8 L -16 32"
-        stroke="url(#mine-rail-steel)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-      <path d="M -8 -8 L -16 32" stroke="#FFFFFF" strokeWidth="0.8" opacity="0.75" />
-
+      <path d="M -10 -10 L -18 34" stroke="url(#mine-rail-steel)" strokeWidth="3" strokeLinecap="round" />
+      <path d="M -10 -10 L -18 34" stroke="#FFFFFF" strokeWidth="1" opacity="0.85" />
       {/* Right Rail */}
-      <path
-        d="M 8 -8 L 16 32"
-        stroke="url(#mine-rail-steel)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-      <path d="M 8 -8 L 16 32" stroke="#FFFFFF" strokeWidth="0.8" opacity="0.75" />
+      <path d="M 10 -10 L 18 34" stroke="url(#mine-rail-steel)" strokeWidth="3" strokeLinecap="round" />
+      <path d="M 10 -10 L 18 34" stroke="#FFFFFF" strokeWidth="1" opacity="0.85" />
 
-      {/* 6. MINECART (CARRINHO DE MINERAÇÃO) */}
+      {/* 6. 3D CARTOON MINECART (Heaped with Sparkling Gold & Gemstones) */}
       {status === 'repaired' && (
         <g id="minecart-group" transform="translate(-1, 14)">
           {/* Cart Ground Shadow */}
-          <ellipse cx="0" cy="8" rx="14" ry="6" fill="rgba(0,0,0,0.4)" />
+          <ellipse cx="0" cy="10" rx="18" ry="8" fill="rgba(0,0,0,0.45)" />
 
           {/* Cart Steel Flanged Wheels */}
-          <circle cx="-9" cy="6" r="3.2" fill="#334155" stroke="#0F172A" strokeWidth="1" />
-          <circle cx="-9" cy="6" r="1.5" fill="#94A3B8" />
-          <circle cx="9" cy="6" r="3.2" fill="#334155" stroke="#0F172A" strokeWidth="1" />
-          <circle cx="9" cy="6" r="1.5" fill="#94A3B8" />
+          <circle cx="-12" cy="7" r="4" fill="#334155" stroke="#0F172A" strokeWidth="1.2" />
+          <circle cx="-12" cy="7" r="2" fill="#94A3B8" />
+          <circle cx="12" cy="7" r="4" fill="#334155" stroke="#0F172A" strokeWidth="1.2" />
+          <circle cx="12" cy="7" r="2" fill="#94A3B8" />
 
           {/* Cart Iron Basin Body */}
           <polygon
-            points="-12,4 12,4 15,-6 -15,-6"
+            points="-16,5 16,5 20,-8 -20,-8"
             fill="url(#minecart-iron)"
-            stroke="#1E293B"
-            strokeWidth="1.2"
+            stroke="#0F172A"
+            strokeWidth="1.5"
           />
-          {/* Front Iron Lip */}
-          <line x1="-15" y1="-6" x2="15" y2="-6" stroke="#94A3B8" strokeWidth="1.5" />
+          {/* Front Iron Lip Highlight */}
+          <line x1="-20" y1="-8" x2="20" y2="-8" stroke="#94A3B8" strokeWidth="1.8" />
           {/* Rivets */}
-          <circle cx="-10" cy="-1" r="0.8" fill="#CBD5E1" />
-          <circle cx="0" cy="-1" r="0.8" fill="#CBD5E1" />
-          <circle cx="10" cy="-1" r="0.8" fill="#CBD5E1" />
+          <circle cx="-13" cy="-1" r="1" fill="#CBD5E1" />
+          <circle cx="0" cy="-1" r="1" fill="#CBD5E1" />
+          <circle cx="13" cy="-1" r="1" fill="#CBD5E1" />
 
           {/* Sparkly Raw Ores Piled Inside the Cart */}
-          {/* Coal Rock */}
-          <ellipse cx="-6" cy="-8" rx="4" ry="3" fill="#1F2937" stroke="#111827" strokeWidth="0.8" />
-          {/* Gold Ore Nugget */}
-          <polygon points="1,-6 7,-10 9,-6 5,-3" fill="#FBBF24" stroke="#D97706" strokeWidth="0.8" />
-          <circle cx="5" cy="-7" r="1" fill="#FEF08A" />
+          {/* Coal Chunk */}
+          <ellipse cx="-8" cy="-11" rx="5" ry="3.5" fill="#1F2937" stroke="#111827" strokeWidth="1" />
+          {/* Large Gold Ore Nugget */}
+          <polygon points="-2,-9 6,-14 9,-9 4,-5" fill="url(#gem-gold)" stroke="#B45309" strokeWidth="1" />
+          <circle cx="4" cy="-10" r="1.2" fill="#FEF08A" />
+          {/* Emerald Crystal Gem */}
+          <polygon points="-11,-12 -6,-16 -4,-12 -9,-8" fill="url(#gem-emerald)" stroke="#065F46" strokeWidth="1" />
+          <circle cx="-7" cy="-13" r="1" fill="#A7F3D0" />
+          {/* Ruby Crystal Gem */}
+          <polygon points="7,-11 13,-15 15,-10 9,-7" fill="url(#gem-ruby)" stroke="#991B1B" strokeWidth="1" />
+          <circle cx="11" cy="-12" r="1" fill="#FECACA" />
           {/* Silver Ore Chunk */}
-          <polygon points="-2,-7 2,-11 4,-7 0,-4" fill="#E2E8F0" stroke="#94A3B8" strokeWidth="0.8" />
-          {/* Sparkle Glint */}
-          <path d="M 6 -9 L 7 -11 L 8 -9 L 10 -8 L 8 -7 L 7 -5 L 6 -7 L 4 -8 Z" fill="#FFF" className="animate-ping" style={{ animationDuration: '2.5s' }} />
+          <polygon points="-2,-13 3,-18 5,-13 0,-10" fill="#E2E8F0" stroke="#94A3B8" strokeWidth="1" />
+          <circle cx="2" cy="-14" r="1" fill="#FFF" />
+
+          {/* Dynamic Twinkle Glint */}
+          <path d="M 5 -12 L 6 -15 L 7 -12 L 10 -11 L 7 -10 L 6 -7 L 5 -10 L 2 -11 Z" fill="#FFF" className="animate-ping" style={{ animationDuration: '2.4s' }} />
         </g>
       )}
 
-      {/* 7. HANGING BRASS LANTERNS WITH WARM LIGHT */}
+      {/* 7. HANGING BRASS LANTERNS WITH WARM PULSING LIGHT */}
       {/* Left Lantern */}
-      <g id="left-lantern" transform="translate(-25, -28)">
-        {/* Glow halo */}
-        <circle cx="0" cy="5" r="14" fill="url(#lantern-light)" className="animate-pulse" />
-        {/* Chain / Cord */}
-        <line x1="0" y1="-5" x2="0" y2="0" stroke="#475569" strokeWidth="1" />
-        {/* Cap */}
-        <polygon points="-3,0 3,0 0,-2" fill="#78350F" />
-        {/* Glass Globe with Flame */}
-        <rect x="-2.5" y="0" width="5" height="7" rx="1.5" fill="#FEF08A" stroke="#B45309" strokeWidth="0.8" />
-        <ellipse cx="0" cy="3.5" rx="1.2" ry="2" fill="#EA580C" />
-        <ellipse cx="0" cy="3.5" rx="0.6" ry="1" fill="#FFF" />
+      <g id="left-lantern" transform="translate(-28, -30)">
+        <circle cx="0" cy="6" r="16" fill="url(#lantern-light)" className="animate-pulse" />
+        <line x1="0" y1="-6" x2="0" y2="0" stroke="#475569" strokeWidth="1.2" />
+        <polygon points="-3.5,0 3.5,0 0,-3" fill="#92400E" stroke="#451A03" strokeWidth="0.8" />
+        <rect x="-3" y="0" width="6" height="8" rx="2" fill="#FEF08A" stroke="#B45309" strokeWidth="1" />
+        <ellipse cx="0" cy="4" rx="1.5" ry="2.2" fill="#EA580C" />
+        <ellipse cx="0" cy="4" rx="0.8" ry="1.2" fill="#FFF" />
       </g>
 
       {/* Right Lantern */}
-      <g id="right-lantern" transform="translate(25, -28)">
-        <circle cx="0" cy="5" r="14" fill="url(#lantern-light)" className="animate-pulse" style={{ animationDelay: '0.7s' }} />
-        <line x1="0" y1="-5" x2="0" y2="0" stroke="#475569" strokeWidth="1" />
-        <polygon points="-3,0 3,0 0,-2" fill="#78350F" />
-        <rect x="-2.5" y="0" width="5" height="7" rx="1.5" fill="#FEF08A" stroke="#B45309" strokeWidth="0.8" />
-        <ellipse cx="0" cy="3.5" rx="1.2" ry="2" fill="#EA580C" />
-        <ellipse cx="0" cy="3.5" rx="0.6" ry="1" fill="#FFF" />
+      <g id="right-lantern" transform="translate(28, -30)">
+        <circle cx="0" cy="6" r="16" fill="url(#lantern-light)" className="animate-pulse" style={{ animationDelay: '0.8s' }} />
+        <line x1="0" y1="-6" x2="0" y2="0" stroke="#475569" strokeWidth="1.2" />
+        <polygon points="-3.5,0 3.5,0 0,-3" fill="#92400E" stroke="#451A03" strokeWidth="0.8" />
+        <rect x="-3" y="0" width="6" height="8" rx="2" fill="#FEF08A" stroke="#B45309" strokeWidth="1" />
+        <ellipse cx="0" cy="4" rx="1.5" ry="2.2" fill="#EA580C" />
+        <ellipse cx="0" cy="4" rx="0.8" ry="1.2" fill="#FFF" />
       </g>
 
-      {/* 8. SCATTERED ROCKS & MINERAL NUGGETS AROUND ENTRANCE */}
-      {/* Big Boulder Left */}
-      <polygon points="-48,6 -38,0 -34,8 -44,14" fill="#78716C" stroke="#44403C" strokeWidth="1.2" />
-      <polygon points="-48,6 -38,0 -39,5 -46,9" fill="#A8A29E" />
-
-      {/* Gold Ore Chunk Left */}
-      <polygon points="-36,12 -31,9 -29,14 -34,16" fill="#FBBF24" stroke="#B45309" strokeWidth="0.8" />
-      <circle cx="-33" cy="12" r="0.8" fill="#FFFBEB" />
-
-      {/* Rocks Right */}
-      <polygon points="34,10 44,4 48,12 38,18" fill="#78716C" stroke="#44403C" strokeWidth="1.2" />
-      <polygon points="34,10 44,4 42,8 36,13" fill="#A8A29E" />
-      {/* Silver Chunk Right */}
-      <polygon points="30,16 35,13 37,18 32,20" fill="#E2E8F0" stroke="#64748B" strokeWidth="0.8" />
-
-      {/* Propped Iron Pickaxe against Left Beam */}
-      <g transform="translate(-23, 2) rotate(22)">
-        <line x1="0" y1="-18" x2="0" y2="6" stroke="#78350F" strokeWidth="1.8" strokeLinecap="round" />
-        <path d="M -6 -17 Q 0 -21 6 -17" stroke="#94A3B8" strokeWidth="3" fill="none" strokeLinecap="round" />
-        <circle cx="0" cy="-18" r="1.5" fill="#475569" />
-      </g>
-
-      {/* Propped Shovel against Right Beam */}
-      <g transform="translate(23, 4) rotate(-18)">
-        <line x1="0" y1="-18" x2="0" y2="4" stroke="#78350F" strokeWidth="1.8" strokeLinecap="round" />
-        <polygon points="-3.5,4 3.5,4 2.5,9 -2.5,9" fill="#64748B" stroke="#334155" strokeWidth="0.8" />
-      </g>
-
-      {/* 9. RUSTIC WOODEN SIGNPOST ("MINA") */}
-      <g id="mine-signpost" transform="translate(42, 2)">
-        {/* Post in Ground */}
-        <ellipse cx="0" cy="16" rx="4" ry="2" fill="rgba(0,0,0,0.3)" />
-        <rect x="-2" y="0" width="4" height="16" fill="#78350F" stroke="#451A03" strokeWidth="0.8" />
-        {/* Wooden Board */}
-        <polygon
-          points="-16,-6 16,-6 18,2 14,8 -16,8"
-          fill="#D97706"
-          stroke="#78350F"
-          strokeWidth="1.2"
-        />
-        {/* Wood grain */}
-        <line x1="-13" y1="1" x2="13" y2="1" stroke="#B45309" strokeWidth="0.8" />
-        <text
-          x="0"
-          y="3"
-          fontSize="6.5"
-          fontWeight="900"
-          fill="#451A03"
-          textAnchor="middle"
-          style={{ letterSpacing: '0.5px' }}
-        >
-          MINA
+      {/* 8. 3D MINING PROPS: PICKAXE, SHOVEL & TNT DYNAMITE CRATE */}
+      {/* 3D Isometric Dynamite Crate labeled "TNT" */}
+      <g id="tnt-crate" transform="translate(-52, 6)">
+        {/* Ground shadow */}
+        <ellipse cx="0" cy="8" rx="11" ry="5" fill="rgba(0,0,0,0.35)" />
+        {/* Crate front face */}
+        <polygon points="-9,-2 9,-2 9,6 -9,6" fill="url(#tnt-wood)" stroke="#78350F" strokeWidth="1" />
+        {/* Crate top face (3D isometric perspective) */}
+        <polygon points="-9,-2 9,-2 13,-7 -5,-7" fill="#FBBF24" stroke="#78350F" strokeWidth="1" />
+        {/* Crate right side face */}
+        <polygon points="9,-2 13,-7 13,1 9,6" fill="#92400E" stroke="#78350F" strokeWidth="1" />
+        {/* "TNT" Stencil */}
+        <text x="0" y="4" fontSize="5.5" fontWeight="900" fill="#7F1D1D" textAnchor="middle">
+          TNT
         </text>
+        {/* Dynamite sticks poking out */}
+        <rect x="-4" y="-11" width="2.5" height="5" rx="0.8" fill="#DC2626" stroke="#991B1B" strokeWidth="0.6" />
+        <rect x="0" y="-12" width="2.5" height="6" rx="0.8" fill="#DC2626" stroke="#991B1B" strokeWidth="0.6" />
+        {/* Fuse wire */}
+        <path d="M 1 -12 Q 3 -15 2 -17" stroke="#78716C" strokeWidth="0.8" fill="none" />
       </g>
+
+      {/* Propped 3D Steel Pickaxe against Left Timber */}
+      <g transform="translate(-25, 4) rotate(24)">
+        <line x1="0" y1="-22" x2="0" y2="8" stroke="#78350F" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M -8 -20 Q 0 -25 8 -20" stroke="#94A3B8" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+        <circle cx="0" cy="-21" r="1.8" fill="#475569" />
+        {/* Metallic pickaxe tip shine */}
+        <circle cx="-7" cy="-20" r="0.8" fill="#FFF" />
+        <circle cx="7" cy="-20" r="0.8" fill="#FFF" />
+      </g>
+
+      {/* Propped 3D Shovel stuck in Gravel Right */}
+      <g transform="translate(26, 6) rotate(-18)">
+        <line x1="0" y1="-20" x2="0" y2="5" stroke="#78350F" strokeWidth="2" strokeLinecap="round" />
+        <polygon points="-4,5 4,5 3,11 -3,11" fill="#64748B" stroke="#1E293B" strokeWidth="1" />
+        <line x1="0" y1="5" x2="0" y2="10" stroke="#94A3B8" strokeWidth="1" />
+      </g>
+
+      {/* 9. SCATTERED ORE NUGGETS & GRANITE ROCKS ON GROUND */}
+      {/* Big Boulder Left */}
+      <polygon points="-46,14 -36,8 -32,16 -42,22" fill="#78716C" stroke="#44403C" strokeWidth="1.5" />
+      <polygon points="-46,14 -36,8 -37,13 -44,17" fill="#A8A29E" />
+      {/* Gold Ore Chunk Left */}
+      <polygon points="-34,20 -28,16 -26,22 -32,24" fill="url(#gem-gold)" stroke="#B45309" strokeWidth="1" />
+      <circle cx="-30" cy="19" r="1" fill="#FFFBEB" />
+
+      {/* Rocks & Emerald Chunk Right */}
+      <polygon points="38,16 48,10 52,18 42,24" fill="#78716C" stroke="#44403C" strokeWidth="1.5" />
+      <polygon points="38,16 48,10 46,14 40,19" fill="#A8A29E" />
+      <polygon points="32,22 38,18 40,24 34,26" fill="url(#gem-emerald)" stroke="#065F46" strokeWidth="1" />
+      <circle cx="36" cy="21" r="1" fill="#A7F3D0" />
 
       {/* 10. SPECIFIC STATE OVERLAYS */}
       {/* A. LOCKED (Level < 24) */}
       {status === 'locked' && (
         <g id="mine-state-locked">
-          {/* Cracked Wooden Planks Boarding up the Entrance */}
-          <polygon points="-28,-8 28,-14 26,-22 -30,-16" fill="#78350F" stroke="#3B1C08" strokeWidth="1.5" />
-          <polygon points="-28,-26 28,-32 26,-40 -30,-34" fill="#92400E" stroke="#3B1C08" strokeWidth="1.5" />
-          <polygon points="-24,-38 24,0 20,4 -28,-34" fill="#B45309" stroke="#3B1C08" strokeWidth="1.5" />
-          {/* Fallen Rocks blocking */}
-          <polygon points="-12,4 12,2 16,12 -8,14" fill="#57534E" stroke="#292524" strokeWidth="1.2" />
-          {/* Warning Lock Badge */}
+          {/* Heavy Boarded Planks */}
+          <polygon points="-32,-8 32,-14 30,-22 -34,-16" fill="#78350F" stroke="#3B1C08" strokeWidth="1.8" />
+          <polygon points="-32,-26 32,-32 30,-40 -34,-34" fill="#92400E" stroke="#3B1C08" strokeWidth="1.8" />
+          <polygon points="-28,-38 28,0 24,4 -32,-34" fill="#B45309" stroke="#3B1C08" strokeWidth="1.8" />
+          {/* Iron Padlock Badge */}
           <g transform="translate(0, -18)">
-            <ellipse cx="0" cy="0" rx="14" ry="14" fill="#DC2626" stroke="#FFFFFF" strokeWidth="2" />
-            <text x="0" y="4.5" fontSize="12" textAnchor="middle" fill="#FFFFFF">
+            <ellipse cx="0" cy="0" rx="16" ry="16" fill="#DC2626" stroke="#FFFFFF" strokeWidth="2.5" filter="drop-shadow(0 3px 6px rgba(0,0,0,0.5))" />
+            <text x="0" y="5.5" fontSize="13" textAnchor="middle" fill="#FFFFFF">
               🔒
             </text>
           </g>
@@ -382,15 +453,14 @@ export const IsoMineEntrance: React.FC<IsoMineEntranceProps> = React.memo(({
       {/* B. BROKEN (Level 24+, Ready for Repair) */}
       {status === 'broken' && (
         <g id="mine-state-broken">
-          {/* Planks & Rubble blocking */}
-          <polygon points="-26,-6 26,-12 24,-19 -28,-13" fill="#92400E" stroke="#3B1C08" strokeWidth="1.5" />
-          <polygon points="-25,-26 25,-20 23,-27 -27,-33" fill="#78350F" stroke="#3B1C08" strokeWidth="1.5" />
-          {/* Rubble pile */}
-          <polygon points="-16,6 16,4 20,13 -12,15" fill="#57534E" stroke="#292524" strokeWidth="1.2" />
-          {/* Caution Hammer Badge floating */}
-          <g transform="translate(0, -22)" className="animate-bounce" style={{ animationDuration: '2s' }}>
-            <circle cx="0" cy="0" r="15" fill="#F59E0B" stroke="#FFFFFF" strokeWidth="2.5" />
-            <text x="0" y="4.5" fontSize="13" textAnchor="middle" fill="#FFFFFF">
+          {/* Collapsed timbers & rock rubble */}
+          <polygon points="-30,-6 30,-12 28,-19 -32,-13" fill="#92400E" stroke="#3B1C08" strokeWidth="1.8" />
+          <polygon points="-28,-26 28,-20 26,-27 -30,-33" fill="#78350F" stroke="#3B1C08" strokeWidth="1.8" />
+          <polygon points="-18,6 18,4 22,14 -14,16" fill="#57534E" stroke="#292524" strokeWidth="1.5" />
+          {/* Animated 3D Bouncing Repair Hammer Badge */}
+          <g transform="translate(0, -24)" className="animate-bounce" style={{ animationDuration: '1.8s' }}>
+            <circle cx="0" cy="0" r="18" fill="#F59E0B" stroke="#FFFFFF" strokeWidth="3" filter="drop-shadow(0 4px 8px rgba(0,0,0,0.4))" />
+            <text x="0" y="5.5" fontSize="15" textAnchor="middle" fill="#FFFFFF">
               🔨
             </text>
           </g>
@@ -400,62 +470,60 @@ export const IsoMineEntrance: React.FC<IsoMineEntranceProps> = React.memo(({
       {/* C. REPAIRING (In Progress) */}
       {status === 'repairing' && (
         <g id="mine-state-repairing">
-          {/* Scaffolding Crossbeams */}
-          <line x1="-24" y1="2" x2="24" y2="-38" stroke="#D97706" strokeWidth="2.5" strokeDasharray="5 3" />
-          <line x1="24" y1="2" x2="-24" y2="-38" stroke="#D97706" strokeWidth="2.5" strokeDasharray="5 3" />
+          {/* Wooden Scaffolding Poles */}
+          <line x1="-26" y1="4" x2="26" y2="-40" stroke="#D97706" strokeWidth="3" strokeDasharray="6 4" />
+          <line x1="26" y1="4" x2="-26" y2="-40" stroke="#D97706" strokeWidth="3" strokeDasharray="6 4" />
 
           {/* Animated Dust Puffs */}
           <g className="animate-ping" style={{ animationDuration: '2.5s' }}>
-            <circle cx="-14" cy="-4" r="5" fill="#E2E8F0" opacity="0.6" />
-            <circle cx="16" cy="-8" r="4" fill="#E2E8F0" opacity="0.6" />
+            <circle cx="-16" cy="-6" r="6" fill="#E2E8F0" opacity="0.7" />
+            <circle cx="18" cy="-10" r="5" fill="#E2E8F0" opacity="0.7" />
           </g>
 
           {/* Repair Progress Pill Badge */}
-          <g transform="translate(0, -62)">
-            {/* Pill Background */}
-            <rect x="-42" y="-12" width="84" height="24" rx="12" fill="#1E293B" stroke="#F59E0B" strokeWidth="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.5))" />
-            {/* Mini Circular Progress */}
-            <g transform="translate(-28, 0)">
-              <circle cx="0" cy="0" r="7" fill="none" stroke="#475569" strokeWidth="2.5" />
+          <g transform="translate(0, -68)">
+            <rect x="-46" y="-13" width="92" height="26" rx="13" fill="#1E293B" stroke="#F59E0B" strokeWidth="2.5" filter="drop-shadow(0 4px 8px rgba(0,0,0,0.6))" />
+            <g transform="translate(-30, 0)">
+              <circle cx="0" cy="0" r="8" fill="none" stroke="#475569" strokeWidth="3" />
               <circle
                 cx="0"
                 cy="0"
-                r="7"
+                r="8"
                 fill="none"
                 stroke="#10B981"
-                strokeWidth="2.5"
-                strokeDasharray="44"
-                strokeDashoffset={44 - (44 * progressPct) / 100}
+                strokeWidth="3"
+                strokeDasharray="50"
+                strokeDashoffset={50 - (50 * progressPct) / 100}
                 transform="rotate(-90)"
               />
             </g>
-            <text x="2" y="3.5" fontSize="9.5" fontWeight="900" fill="#FEF08A" textAnchor="middle">
+            <text x="4" y="4" fontSize="10.5" fontWeight="900" fill="#FEF08A" textAnchor="middle">
               {timeStr}
             </text>
           </g>
         </g>
       )}
 
-      {/* D. REPAIRED (Ready to Explore!) */}
+      {/* D. REPAIRED (Active, Ready to Mine!) */}
       {status === 'repaired' && (
         <g id="mine-state-repaired">
-          {/* Subtle Golden Hover Halo */}
+          {/* Golden Hover Halo */}
           <ellipse
             cx="0"
             cy="-15"
-            rx="46"
-            ry="40"
+            rx="52"
+            ry="44"
             fill="none"
             stroke="#FDE047"
-            strokeWidth="2"
+            strokeWidth="2.5"
             strokeDasharray="6 4"
-            className="opacity-0 group-hover:opacity-80 transition-opacity"
+            className="opacity-0 group-hover:opacity-100 transition-opacity"
           />
 
           {/* Floating Atmospheric Sparkle Stars */}
-          <g className="animate-pulse" style={{ animationDuration: '3s' }}>
-            <polygon points="-8,-34 -6,-38 -4,-34 -2,-32 -4,-30 -6,-26 -8,-30 -10,-32" fill="#FEF08A" />
-            <polygon points="12,-38 14,-41 16,-38 18,-36 16,-34 14,-31 12,-34 10,-36" fill="#FBBF24" />
+          <g className="animate-pulse" style={{ animationDuration: '2.8s' }}>
+            <polygon points="-10,-36 -8,-40 -6,-36 -4,-34 -6,-32 -8,-28 -10,-32 -12,-34" fill="#FEF08A" />
+            <polygon points="14,-40 16,-43 18,-40 20,-38 18,-36 16,-33 14,-36 12,-38" fill="#FBBF24" />
           </g>
         </g>
       )}

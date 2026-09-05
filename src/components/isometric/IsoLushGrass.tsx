@@ -13,19 +13,22 @@ export const IsoLushGrass: React.FC<IsoLushGrassProps> = React.memo(({
   tileHeight,
   gridToIso,
 }) => {
-  // Key isometric boundary points of the farm pasture
-  const pTop = gridToIso(0, 0);
-  const pRight = gridToIso(mapSize, 0);
-  const pBottom = gridToIso(mapSize, mapSize);
-  const pLeft = gridToIso(0, mapSize);
+  // World bounds covering all expanded parcels, mountain plateau, and riverbank
+  const minWorldX = -12;
+  const maxWorldX = 28;
+  const minWorldY = -12;
+  const maxWorldY = 22;
 
-  // Exact outer perimeter matching the scenery cliff edge
-  const pRightEdge = { x: pRight.x + tileWidth / 2, y: pRight.y + tileHeight / 2 };
-  const pBottomEdge = { x: pBottom.x, y: pBottom.y + tileHeight };
-  const pLeftEdge = { x: pLeft.x - tileWidth / 2, y: pLeft.y + tileHeight / 2 };
+  // Key isometric boundary points of the entire continuous farm landscape
+  const pWorldTop = gridToIso(minWorldX, minWorldY);
+  const pWorldRight = gridToIso(maxWorldX, minWorldY);
+  const pWorldBottom = gridToIso(maxWorldX, maxWorldY);
+  const pWorldLeft = gridToIso(minWorldX, maxWorldY);
+
+  const worldPoints = `${pWorldTop.x},${pWorldTop.y} ${pWorldRight.x},${pWorldRight.y} ${pWorldBottom.x},${pWorldBottom.y} ${pWorldLeft.x},${pWorldLeft.y}`;
 
   // Organic decorative scatter elements (Grass tufts, Daisies, Clovers, Buttercups, Pebbles)
-  // Deterministically distributed across the 14x14 farm coordinates so they remain stable
+  // Distributed smoothly across both the main farm and all expansion territories
   const scatterItems = useMemo(() => {
     const items: Array<{
       id: string;
@@ -105,9 +108,39 @@ export const IsoLushGrass: React.FC<IsoLushGrassProps> = React.memo(({
       [10.5, 12.6, 'clover', 1.1, -4],
       [12.1, 12.2, 'pebble', 0.85, 30],
 
-      // Eastern meadow & sunny pasture (onde antes era o rio, agora flores e grama)
+      // Eastern meadow & sunny pasture
       [13.4, 1.6, 'tuft_large', 1.05, 10],
       [13.7, 3.8, 'daisy', 1.0, -8],
+      [15.2, 2.4, 'clover', 1.1, 5],
+      [17.1, 4.2, 'buttercup', 0.95, 12],
+      [18.5, 6.1, 'tuft_small', 1.0, -10],
+      [16.4, 8.3, 'daisy', 1.05, 15],
+      [18.2, 10.4, 'clover', 1.0, -5],
+      [15.8, 12.6, 'tuft_large', 1.1, 8],
+      [17.9, 14.8, 'buttercup', 1.0, -12],
+
+      // Southern extended meadow
+      [3.2, 15.1, 'tuft_large', 1.0, 6],
+      [6.4, 15.8, 'daisy', 1.1, -10],
+      [9.1, 15.4, 'clover', 0.95, 14],
+      [11.8, 16.2, 'buttercup', 1.0, -4],
+      [4.8, 17.1, 'pebble', 1.0, 18],
+      [8.3, 17.5, 'tuft_small', 0.9, -15],
+
+      // Western slopes
+      [-2.1, 2.5, 'tuft_large', 1.0, -8],
+      [-3.8, 4.2, 'clover', 1.05, 10],
+      [-2.4, 6.8, 'daisy', 0.9, -5],
+      [-4.1, 8.5, 'buttercup', 1.1, 12],
+      [-2.8, 10.2, 'tuft_small', 0.95, 7],
+
+      // Northern mountain foothills near mine
+      [2.5, -2.4, 'pebble', 1.1, 15],
+      [5.2, -3.1, 'tuft_small', 1.0, -12],
+      [8.4, -2.8, 'daisy', 0.9, 8],
+      [10.1, -3.5, 'clover', 1.05, -6],
+      [3.8, -5.2, 'pebble', 0.9, 22],
+      [7.2, -5.8, 'tuft_large', 1.1, -10],
       [13.2, 5.9, 'clover', 1.1, 14],
       [13.6, 8.0, 'buttercup', 0.95, -10],
       [13.3, 10.1, 'tuft_small', 1.0, 12],
@@ -170,16 +203,9 @@ export const IsoLushGrass: React.FC<IsoLushGrassProps> = React.memo(({
           <stop offset="100%" stopColor="rgba(38, 20, 8, 0.16)" />
         </linearGradient>
 
-        {/* Clip Path for Pasture Stripes and Dapples */}
+        {/* Clip Path for Entire Unified Pasture and Dapples */}
         <clipPath id="hayday-pasture-clip">
-          <polygon
-            points={`
-              ${pTop.x},${pTop.y}
-              ${pRightEdge.x},${pRightEdge.y}
-              ${pBottomEdge.x},${pBottomEdge.y}
-              ${pLeftEdge.x},${pLeftEdge.y}
-            `}
-          />
+          <polygon points={worldPoints} />
         </clipPath>
       </defs>
 
@@ -187,46 +213,38 @@ export const IsoLushGrass: React.FC<IsoLushGrassProps> = React.memo(({
       <g id="hayday-valley-hills" opacity="0.85">
         {/* Far pale hills spanning north and east horizon */}
         <path
-          d={`M ${pLeftEdge.x - 200} ${pLeftEdge.y - 120} Q ${pTop.x - 180} ${pTop.y - 220} ${pTop.x} ${pTop.y - 170} Q ${pTop.x + 220} ${pTop.y - 230} ${pRightEdge.x + 240} ${pRightEdge.y - 90} Q ${pRightEdge.x + 220} ${pRightEdge.y + 110} ${pBottomEdge.x + 160} ${pBottomEdge.y + 80} L ${pBottomEdge.x + 160} ${pBottomEdge.y + 140} L ${pLeftEdge.x - 200} ${pLeftEdge.y + 100} Z`}
+          d={`M ${pWorldLeft.x - 300} ${pWorldLeft.y - 150} Q ${pWorldTop.x - 200} ${pWorldTop.y - 300} ${pWorldTop.x} ${pWorldTop.y - 220} Q ${pWorldTop.x + 300} ${pWorldTop.y - 320} ${pWorldRight.x + 320} ${pWorldRight.y - 120} Q ${pWorldRight.x + 280} ${pWorldRight.y + 150} ${pWorldBottom.x + 200} ${pWorldBottom.y + 100} L ${pWorldBottom.x + 200} ${pWorldBottom.y + 180} L ${pWorldLeft.x - 300} ${pWorldLeft.y + 140} Z`}
           fill="#86CD54"
           opacity="0.5"
         />
         {/* Mid-distance lush green rolling hills */}
         <path
-          d={`M ${pLeftEdge.x - 120} ${pLeftEdge.y - 50} Q ${pTop.x - 120} ${pTop.y - 140} ${pTop.x - 30} ${pTop.y - 90} Q ${pTop.x + 130} ${pTop.y - 150} ${pRightEdge.x + 150} ${pRightEdge.y - 30} Q ${pRightEdge.x + 130} ${pRightEdge.y + 70} ${pBottomEdge.x + 100} ${pBottomEdge.y + 50} L ${pBottomEdge.x + 100} ${pBottomEdge.y + 90} L ${pLeftEdge.x - 80} ${pLeftEdge.y + 60} Z`}
+          d={`M ${pWorldLeft.x - 180} ${pWorldLeft.y - 80} Q ${pWorldTop.x - 150} ${pWorldTop.y - 180} ${pWorldTop.x - 30} ${pWorldTop.y - 120} Q ${pWorldTop.x + 180} ${pWorldTop.y - 200} ${pWorldRight.x + 200} ${pWorldRight.y - 50} Q ${pWorldRight.x + 160} ${pWorldRight.y + 90} ${pWorldBottom.x + 120} ${pWorldBottom.y + 70} L ${pWorldBottom.x + 120} ${pWorldBottom.y + 120} L ${pWorldLeft.x - 120} ${pWorldLeft.y + 90} Z`}
           fill="#70BF36"
           opacity="0.75"
         />
       </g>
 
-      {/* 1. MAIN LUSH HAY DAY CONTINUOUS GRASS SURFACE */}
+      {/* 1. MAIN LUSH HAY DAY CONTINUOUS GRASS SURFACE - Covers full farm & expansions seamlessly */}
       <polygon
         id="hayday-pasture-polygon"
-        points={`
-          ${pTop.x},${pTop.y}
-          ${pRightEdge.x},${pRightEdge.y}
-          ${pBottomEdge.x},${pBottomEdge.y}
-          ${pLeftEdge.x},${pLeftEdge.y}
-        `}
+        points={worldPoints}
         fill="url(#hd-grass-base-vibrant)"
-        stroke="#438B0E"
-        strokeWidth="2"
       />
 
-      {/* 2. SOFT MANICURED LAWN STRIPES (Subtle diagonal bands at 2:1 isometric angle) */}
-      {/* These provide genuine turf texture without harsh squares or visible tile borders */}
-      {[-8, -5, -2, 1, 4, 7, 10, 13, 16, 19, 22].map((bandIndex) => {
-        const p1 = gridToIso(bandIndex, 0);
-        const p2 = gridToIso(bandIndex + 2.4, 0);
-        const p3 = gridToIso(bandIndex + 2.4 - mapSize, mapSize);
-        const p4 = gridToIso(bandIndex - mapSize, mapSize);
+      {/* 2. SOFT MANICURED LAWN STRIPES (Subtle diagonal bands across extended landscape) */}
+      {[-24, -20, -16, -12, -8, -4, 0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40].map((bandIndex) => {
+        const p1 = gridToIso(bandIndex, minWorldY);
+        const p2 = gridToIso(bandIndex + 2.8, minWorldY);
+        const p3 = gridToIso(bandIndex + 2.8 - (maxWorldY - minWorldY), maxWorldY);
+        const p4 = gridToIso(bandIndex - (maxWorldY - minWorldY), maxWorldY);
 
         return (
           <polygon
             key={`lawn_band_${bandIndex}`}
             points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`}
             fill={bandIndex % 2 === 0 ? '#A6F23E' : '#4E9C11'}
-            opacity={bandIndex % 2 === 0 ? 0.05 : 0.038}
+            opacity={bandIndex % 2 === 0 ? 0.045 : 0.035}
             clipPath="url(#hayday-pasture-clip)"
           />
         );
@@ -234,31 +252,21 @@ export const IsoLushGrass: React.FC<IsoLushGrassProps> = React.memo(({
 
       {/* 3. WARM SUNLIGHT BLOOM ACROSS THE MEADOW */}
       <polygon
-        points={`
-          ${pTop.x},${pTop.y}
-          ${pRightEdge.x},${pRightEdge.y}
-          ${pBottomEdge.x},${pBottomEdge.y}
-          ${pLeftEdge.x},${pLeftEdge.y}
-        `}
+        points={worldPoints}
         fill="url(#hd-sun-bloom)"
       />
 
       {/* 4. SOFT ORGANIC CLOVER & WARM TURF DAPPLES (Clipped to pasture) */}
       <g clipPath="url(#hayday-pasture-clip)">
-        <ellipse cx={pTop.x + 120} cy={pTop.y + 110} rx="180" ry="85" fill="url(#hd-sunny-lawn-dapple)" />
-        <ellipse cx={pLeft.x + 240} cy={pLeft.y + 40} rx="150" ry="70" fill="url(#hd-clover-patch-glow)" />
-        <ellipse cx={pRight.x - 220} cy={pRight.y + 80} rx="160" ry="75" fill="url(#hd-sunny-lawn-dapple)" />
-        <ellipse cx={pBottom.x} cy={pBottom.y - 120} rx="200" ry="90" fill="url(#hd-clover-patch-glow)" />
+        <ellipse cx={pWorldTop.x + 120} cy={pWorldTop.y + 180} rx="320" ry="160" fill="url(#hd-sunny-lawn-dapple)" />
+        <ellipse cx={pWorldLeft.x + 360} cy={pWorldLeft.y + 40} rx="280" ry="140" fill="url(#hd-clover-patch-glow)" />
+        <ellipse cx={pWorldRight.x - 300} cy={pWorldRight.y + 80} rx="300" ry="150" fill="url(#hd-sunny-lawn-dapple)" />
+        <ellipse cx={pWorldBottom.x} cy={pWorldBottom.y - 180} rx="360" ry="180" fill="url(#hd-clover-patch-glow)" />
       </g>
 
       {/* 5. NATURAL EARTH RIM VIGNETTE */}
       <polygon
-        points={`
-          ${pTop.x},${pTop.y}
-          ${pRightEdge.x},${pRightEdge.y}
-          ${pBottomEdge.x},${pBottomEdge.y}
-          ${pLeftEdge.x},${pLeftEdge.y}
-        `}
+        points={worldPoints}
         fill="url(#hd-soil-rim-vignette)"
       />
 

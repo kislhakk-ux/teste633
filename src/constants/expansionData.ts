@@ -173,6 +173,42 @@ const tilesSunflowerPlains: [number, number][] = [
   [21, 13], [22, 13], [23, 13],
 ];
 
+// 11. Vale Verde do Leste (North-East fertile farm fields across road)
+const tilesSouthValley: [number, number][] = [
+  [13, -1], [14, -1], [15, -1], [16, -1], [17, -1], [18, -1],
+  [13, -2], [14, -2], [15, -2], [16, -2], [17, -2], [18, -2],
+  [14, -3], [15, -3], [16, -3], [17, -3], [18, -3],
+  [14, -4], [15, -4], [16, -4], [17, -4],
+  [15, -5], [16, -5],
+];
+
+// 12. Pradaria das Borboletas (North-East highland wildflower meadow)
+const tilesSouthMeadow: [number, number][] = [
+  [13, -6], [14, -6], [15, -6], [16, -6], [17, -6], [18, -6],
+  [13, -7], [14, -7], [15, -7], [16, -7], [17, -7], [18, -7],
+  [14, -8], [15, -8], [16, -8], [17, -8],
+  [14, -9], [15, -9], [16, -9],
+  [15, -10],
+];
+
+// 13. Encosta dos Carvalhos (North-West gentle oak pasture)
+const tilesSouthWestSlopes: [number, number][] = [
+  [-2, 0], [-3, 0], [-4, 0], [-5, 0], [-6, 0],
+  [-2, -1], [-3, -1], [-4, -1], [-5, -1], [-6, -1],
+  [-3, -2], [-4, -2], [-5, -2], [-6, -2],
+  [-4, -3], [-5, -3], [-6, -3],
+  [-4, -4], [-5, -4],
+];
+
+// 14. Platô Dourado do Leste (Far-East high sun plateau)
+const tilesFarEastPlateau: [number, number][] = [
+  [20, 2], [21, 2], [22, 2], [23, 2], [24, 2],
+  [20, 3], [21, 3], [22, 3], [23, 3], [24, 3], [25, 3],
+  [20, 4], [21, 4], [22, 4], [23, 4], [24, 4], [25, 4],
+  [20, 5], [21, 5], [22, 5], [23, 5], [24, 5],
+  [21, 6], [22, 6], [23, 6], [24, 6],
+];
+
 export const EXPANSION_PARCELS: ExpansionParcel[] = [
   {
     id: 'exp_north_1',
@@ -444,6 +480,113 @@ export const EXPANSION_PARCELS: ExpansionParcel[] = [
     y: -9,
     width: 7,
     height: 6,
+  },
+  {
+    id: 'exp_south_valley',
+    name: 'Vale Verde do Leste',
+    subtitle: 'Campos Férteis das Macieiras',
+    description: 'Vasto terreno fértil que expande a fazenda ao norte da estrada, ideal para pomares e celeiros adicionais.',
+    biome: 'fruit_meadow',
+    requiredLevel: 14,
+    cost: {
+      coins: 2200,
+      items: { land_map: 4, marker_stake: 4, brick: 3 },
+    },
+    tiles: createOrganicParcelTiles(tilesSouthValley, 13, 18, -5, -1),
+    bounds: { minX: 13, maxX: 18, minY: -5, maxY: -1 },
+    center: { x: 15.5, y: -2.5 },
+    stakePoints: [
+      { x: 13, y: -1.5 },
+      { x: 16, y: -5 },
+      { x: 18, y: -2 },
+      { x: 15, y: -1 },
+    ],
+    x: 13,
+    y: -5,
+    width: 6,
+    height: 5,
+  },
+  {
+    id: 'exp_south_meadow',
+    name: 'Pradaria das Borboletas',
+    subtitle: 'Encosta Florida das Borboletas',
+    description: 'Belo campo florido no platô norte com um lago cristalino e abundância de flores silvestres.',
+    biome: 'woodland',
+    requiredLevel: 17,
+    cost: {
+      coins: 3100,
+      items: { land_map: 5, marker_stake: 5, brick: 4 },
+    },
+    tiles: createOrganicParcelTiles(tilesSouthMeadow, 13, 18, -10, -6),
+    bounds: { minX: 13, maxX: 18, minY: -10, maxY: -6 },
+    center: { x: 15.5, y: -7.5 },
+    stakePoints: [
+      { x: 13, y: -7 },
+      { x: 16, y: -10 },
+      { x: 18, y: -7.5 },
+      { x: 15, y: -6 },
+    ],
+    lake: {
+      x: 15.5,
+      y: -7.5,
+      name: 'Lago das Ninfas',
+      radiusX: 38,
+      radiusY: 20,
+    },
+    x: 13,
+    y: -10,
+    width: 6,
+    height: 5,
+  },
+  {
+    id: 'exp_south_west_slopes',
+    name: 'Encosta dos Carvalhos',
+    subtitle: 'Bosque Suave do Poente',
+    description: 'Colina arborizada ao noroeste da fazenda, com grandes carvalhos e solo rico para pastagem.',
+    biome: 'woodland',
+    requiredLevel: 20,
+    cost: {
+      coins: 3900,
+      items: { land_map: 6, marker_stake: 6, brick: 5 },
+    },
+    tiles: createOrganicParcelTiles(tilesSouthWestSlopes, -6, -2, -4, 0),
+    bounds: { minX: -6, maxX: -2, minY: -4, maxY: 0 },
+    center: { x: -4, y: -2 },
+    stakePoints: [
+      { x: -6, y: -2 },
+      { x: -4, y: -4 },
+      { x: -2, y: -1 },
+      { x: -4, y: 0 },
+    ],
+    x: -6,
+    y: -4,
+    width: 5,
+    height: 5,
+  },
+  {
+    id: 'exp_far_east_plateau',
+    name: 'Platô Dourado do Leste',
+    subtitle: 'Horizonte do Sol Nascente',
+    description: 'Platô elevado no extremo leste com visão deslumbrante e espaço perfeito para fábricas modernas.',
+    biome: 'fruit_meadow',
+    requiredLevel: 26,
+    cost: {
+      coins: 6200,
+      items: { land_map: 8, marker_stake: 8, brick: 7 },
+    },
+    tiles: createOrganicParcelTiles(tilesFarEastPlateau, 20, 25, 2, 6),
+    bounds: { minX: 20, maxX: 25, minY: 2, maxY: 6 },
+    center: { x: 22.5, y: 4 },
+    stakePoints: [
+      { x: 20, y: 3 },
+      { x: 23, y: 2 },
+      { x: 25, y: 4.5 },
+      { x: 22, y: 6 },
+    ],
+    x: 20,
+    y: 2,
+    width: 6,
+    height: 5,
   },
 ];
 

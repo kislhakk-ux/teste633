@@ -14,6 +14,22 @@ export interface ForestItem {
   seed: number;
 }
 
+const forestCache = new Map<string, ForestItem[]>();
+
+export const clearForestCache = () => {
+  forestCache.clear();
+};
+
+export const getCachedForestForParcel = (
+  parcel: ExpansionParcel | { x: number; y: number; width: number; height: number; id: string; tiles?: { x: number; y: number }[]; biome?: string; lake?: { x: number; y: number } }
+): ForestItem[] => {
+  const cached = forestCache.get(parcel.id);
+  if (cached) return cached;
+  const items = generateForestForParcel(parcel);
+  forestCache.set(parcel.id, items);
+  return items;
+};
+
 /**
  * Generates natural, organic wilderness props for a locked expansion parcel.
  * Uses the parcel's specific organic tiles and biome to distribute varied,
@@ -38,10 +54,16 @@ export const generateForestForParcel = (
   if (tiles.length > 0) {
     // Generate organic clusters over the actual tiles
     tiles.forEach((tile, index) => {
-      // If this tile is directly on the lake center, leave it clear for the lake
+      // 1. Strict River Clearance: Never generate wilderness flora in the river
+      if (tile.y >= 13.2 && tile.x <= 14.2) return;
+
+      // 2. Strict Lake Clearance:
+      // A lake has an ellipse with radiusX 46-52px and radiusY 25-28px.
+      // Tree canopies are 70-90px wide. We ensure a wide buffer around the lake
+      // so NO foliage, trunk, roots, or rocks ever touch or overlap the lake water.
       if (lakePos) {
         const distToLake = Math.hypot(tile.x - lakePos.x, tile.y - lakePos.y);
-        if (distToLake < 1.3) return; // Keep lake water surface open
+        if (distToLake < 2.6) return; // Keep lake water surface and shorelines 100% clear!
       }
 
       const tileSeed = seedBase + tile.x * 17 + tile.y * 53 + index * 7;
@@ -99,9 +121,19 @@ export const generateForestForParcel = (
         const jitterY = (pseudoRandom(tileSeed + 3) - 0.5) * 0.72;
         const scale = 0.84 + pseudoRandom(tileSeed + 4) * 0.36;
 
+        const posX = tile.x + 0.5 + jitterX;
+        const posY = tile.y + 0.5 + jitterY;
+
+        // Additional safety check with jittered position
+        if (lakePos) {
+          const itemDist = Math.hypot(posX - lakePos.x, posY - lakePos.y);
+          if (itemDist < 2.5) return;
+        }
+        if (posY >= 13.2 && posX <= 14.2) return;
+
         items.push({
-          x: tile.x + 0.5 + jitterX,
-          y: tile.y + 0.5 + jitterY,
+          x: posX,
+          y: posY,
           type,
           scale,
           seed: tileSeed,
@@ -112,6 +144,11 @@ export const generateForestForParcel = (
     // Fallback bounding box iteration if no tiles array
     for (let dy = 0; dy < parcel.height; dy++) {
       for (let dx = 0; dx < parcel.width; dx++) {
+        const posX = parcel.x + dx;
+        const posY = parcel.y + dy;
+        if (posY >= 13.2 && posX <= 14.2) continue;
+        if (lakePos && Math.hypot(posX - lakePos.x, posY - lakePos.y) < 2.5) continue;
+
         const tileSeed = seedBase + dx * 19 + dy * 43;
         const rand = pseudoRandom(tileSeed);
         if (rand > 0.25) {
@@ -123,8 +160,8 @@ export const generateForestForParcel = (
           else type = 'bush';
 
           items.push({
-            x: parcel.x + dx + pseudoRandom(tileSeed + 1) * 0.7 + 0.15,
-            y: parcel.y + dy + pseudoRandom(tileSeed + 2) * 0.7 + 0.15,
+            x: posX + pseudoRandom(tileSeed + 1) * 0.7 + 0.15,
+            y: posY + pseudoRandom(tileSeed + 2) * 0.7 + 0.15,
             type,
             scale: 0.85 + pseudoRandom(tileSeed + 3) * 0.35,
             seed: tileSeed,
