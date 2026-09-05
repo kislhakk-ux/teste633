@@ -59,7 +59,7 @@ import { MineModal } from './components/MineModal';
 import { MineRepairModal } from './components/MineRepairModal';
 import { checkRandomToolDrop } from './utils/toolDropSystem';
 import { MiningRollResult } from './constants/mineData';
-import { generateForestForParcel } from './utils/forestGen';
+import { generateForestForParcel, generatePostUnlockObstacles } from './utils/forestGen';
 import { EXPANSION_PARCELS, ExpansionParcel } from './constants/expansionData';
 import { googleSignIn, googleSignOut, loadFarmFromFirestore, saveFarmToFirestore } from './utils/firebase';
 import { validatePlacement, findNextAvailablePosition } from './utils/buildingPlacement';
@@ -1610,12 +1610,12 @@ export default function App() {
       // Add parcel to unlocked list
       next.unlockedParcelIds = [...(next.unlockedParcelIds || []), parcel.id];
 
-      // Convert the visual forest into real interactable FarmEntity obstacles
-      const forestItems = generateForestForParcel(parcel);
-      const newObstacles: FarmEntity[] = forestItems.map((item, index) => ({
-        id: `obstacle_${parcel.id}_${index}`,
-        x: item.x,
-        y: item.y,
+      // Convert only 2-3 corner items into interactive obstacles, leaving the rest open and buildable
+      const postUnlockObstacles = generatePostUnlockObstacles(parcel);
+      const newObstacles: FarmEntity[] = postUnlockObstacles.map((item, index) => ({
+        id: `obstacle_${parcel.id}_${index}_${Date.now()}`,
+        x: Math.floor(item.x),
+        y: Math.floor(item.y),
         width: 1,
         height: 1,
         type: 'obstacle',
@@ -1624,11 +1624,13 @@ export default function App() {
 
       next.entities = [...next.entities, ...newObstacles];
 
-      // Add a small XP reward for expanding
-      const xpReward = 50 * parcel.requiredLevel;
+      // Add XP reward for expanding
+      const xpReward = 60 * parcel.requiredLevel;
       next.xp += xpReward;
       
+      confetti({ particleCount: 75, spread: 70, origin: { y: 0.6 } });
       sound.playLevelUp();
+      showToast(`🎉 Território ${parcel.name} conquistado! Sua fazenda agora é maior!`);
       setUnlockModalParcelId(null);
       
       return next;

@@ -2,6 +2,7 @@ import React from 'react';
 import { Iso3DBoat } from './Iso3DBoat';
 import { Iso3DDeliveryBoat } from './Iso3DDeliveryBoat';
 import { IsoMineEntrance } from './IsoMineEntrance';
+import { Detailed3DOak, Detailed3DPine, CartoonFoliageDefs } from './IsoCartoonFoliage';
 
 interface IsoSceneryProps {
   mapSize: number;
@@ -549,68 +550,12 @@ export const TreeOakCartoon: React.FC<{ x: number; y: number; scale?: number; ha
   scale = 1,
   hasApples = false,
 }) => {
-  return (
-    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
-      {/* Ground Ambient Shadow */}
-      <ellipse cx="0" cy="8" rx="26" ry="11" fill="rgba(0,0,0,0.32)" />
-
-      {/* Chunky Wooden Trunk */}
-      <polygon points="-7,8 7,8 5,-20 -5,-20" fill="url(#tree-trunk-3d)" stroke="#3E2723" strokeWidth="1.2" />
-      <path d="M -7 8 Q -12 11 -14 13" stroke="#4E342E" strokeWidth="3" strokeLinecap="round" />
-      <path d="M 7 8 Q 12 11 14 13" stroke="#4E342E" strokeWidth="3" strokeLinecap="round" />
-
-      {/* Volumetric Spherical Green Foliage Clusters */}
-      <circle cx="-15" cy="-24" r="17" fill="url(#tree-cartoon-oak)" stroke="#33691E" strokeWidth="1.2" />
-      <circle cx="15" cy="-24" r="17" fill="url(#tree-cartoon-oak)" stroke="#33691E" strokeWidth="1.2" />
-      <circle cx="0" cy="-40" r="19" fill="url(#tree-cartoon-oak)" stroke="#33691E" strokeWidth="1.2" />
-      <circle cx="0" cy="-26" r="18" fill="url(#tree-cartoon-oak)" stroke="#33691E" strokeWidth="1.2" />
-
-      {/* Top Gloss Highlights */}
-      <ellipse cx="-4" cy="-44" rx="8" ry="4.5" fill="#DCEDC8" opacity="0.75" />
-      <ellipse cx="-17" cy="-30" rx="7" ry="4" fill="#DCEDC8" opacity="0.75" />
-      <ellipse cx="7" cy="-30" rx="7" ry="4" fill="#DCEDC8" opacity="0.75" />
-
-      {/* Plump Glossy Red 3D Apples */}
-      {hasApples && (
-        <g>
-          {[
-            { cx: -13, cy: -22 },
-            { cx: 2, cy: -20 },
-            { cx: 13, cy: -26 },
-            { cx: -5, cy: -36 },
-            { cx: 9, cy: -34 },
-          ].map((app, i) => (
-            <g key={i}>
-              <circle cx={app.cx} cy={app.cy} r="3.6" fill="#FF1744" stroke="#B71C1C" strokeWidth="0.8" />
-              <circle cx={app.cx - 1.2} cy={app.cy - 1.2} r="1.2" fill="#FFFFFF" />
-            </g>
-          ))}
-        </g>
-      )}
-    </g>
-  );
+  return <Detailed3DOak x={x} y={y} scale={scale} hasFruit={hasApples} />;
 };
 
 // 3D Cartoon Pine / Fir Tree
 export const TreePineCartoon: React.FC<{ x: number; y: number; scale?: number }> = ({ x, y, scale = 1 }) => {
-  return (
-    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
-      {/* Ground Shadow */}
-      <ellipse cx="0" cy="6" rx="20" ry="9" fill="rgba(0,0,0,0.32)" />
-
-      {/* Trunk */}
-      <rect x="-3.5" y="-14" width="7" height="20" rx="1.5" fill="url(#tree-trunk-3d)" stroke="#3E2723" strokeWidth="1" />
-
-      {/* Conical Foliage Layers */}
-      <polygon points="0,-44 -24,-14 24,-14" fill="url(#tree-cartoon-pine)" stroke="#004D40" strokeWidth="1.2" />
-      <polygon points="0,-56 -20,-28 20,-28" fill="url(#tree-cartoon-pine)" stroke="#004D40" strokeWidth="1.2" />
-      <polygon points="0,-68 -15,-42 15,-42" fill="url(#tree-cartoon-pine)" stroke="#004D40" strokeWidth="1.2" />
-
-      {/* Glossy Edge Rim Highlights */}
-      <line x1="-14" y1="-16" x2="0" y2="-24" stroke="#E0F2F1" strokeWidth="2" strokeLinecap="round" opacity="0.75" />
-      <line x1="-10" y1="-30" x2="0" y2="-38" stroke="#E0F2F1" strokeWidth="2" strokeLinecap="round" opacity="0.75" />
-    </g>
-  );
+  return <Detailed3DPine x={x} y={y} scale={scale} />;
 };
 
 // 3D Cartoon Butterfly

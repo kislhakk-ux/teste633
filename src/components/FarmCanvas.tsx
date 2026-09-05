@@ -61,6 +61,15 @@ import { IsoNpcVisitor } from './isometric/IsoNpcVisitor';
 import { IsoBeeTree } from './isometric/IsoBeeTree';
 import { IsoNectarBush } from './isometric/IsoNectarBush';
 import { IsoScenery, TreeOakCartoon, TreePineCartoon } from './isometric/IsoScenery';
+import { IsoExpansionTerritory } from './isometric/IsoExpansionTerritory';
+import {
+  Detailed3DOak,
+  Detailed3DPine,
+  Detailed3DBoulder,
+  Detailed3DBush,
+  Detailed3DFallenLog,
+  Detailed3DFruitTree,
+} from './isometric/IsoCartoonFoliage';
 import { IsoLushGrass } from './isometric/IsoLushGrass';
 import { pseudoRandom, generateForestForParcel } from '../utils/forestGen';
 import { Iso3DSpriteBuilding } from './isometric/Iso3DSpriteBuilding';
@@ -995,83 +1004,15 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
           />
         </svg>
 
-        {/* Expansion Parcels Rendering (Locked ones only) */}
+        {/* Organic 3D Cartoon Expansion Territories Layer */}
         <svg className="absolute inset-0 overflow-visible pointer-events-none" style={{ width: 1, height: 1 }}>
-          {EXPANSION_PARCELS.map((parcel) => {
-            const isUnlocked = unlockedParcelIds.includes(parcel.id);
-            if (isUnlocked) return null;
-
-            // Viewport Culling Optimization for Expansion Parcels
-            if (
-              viewportBoundingBox &&
-              (parcel.x + parcel.width < viewportBoundingBox.minX ||
-               parcel.x > viewportBoundingBox.maxX ||
-               parcel.y + parcel.height < viewportBoundingBox.minY ||
-               parcel.y > viewportBoundingBox.maxY)
-            ) {
-              return null;
-            }
-
-            const p1 = gridToIso(parcel.x, parcel.y); // Top
-            const p2 = gridToIso(parcel.x + parcel.width, parcel.y); // Right
-            const p3 = gridToIso(parcel.x + parcel.width, parcel.y + parcel.height); // Bottom
-            const p4 = gridToIso(parcel.x, parcel.y + parcel.height); // Left
-            const center = gridToIso(parcel.x + parcel.width / 2, parcel.y + parcel.height / 2);
-            const forestItems = generateForestForParcel(parcel);
-
-            return (
-              <g key={parcel.id} className="cursor-pointer pointer-events-auto group" onClick={() => onOpenExpansionModal?.(parcel.id)}>
-                {/* Darker untamed grass overlay */}
-                <polygon
-                  points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`}
-                  fill="rgba(0, 30, 0, 0.2)"
-                  stroke="white"
-                  strokeWidth="3"
-                  strokeDasharray="10 10"
-                  className="opacity-60 group-hover:opacity-100 transition-opacity"
-                />
-                
-                {/* Render the dense forest */}
-                {forestItems.map((item, idx) => {
-                  const p = gridToIso(item.x, item.y);
-                  const scale = 0.8 + pseudoRandom(item.x * 100) * 0.4;
-                  return (
-                    <g key={idx} className="opacity-90 transition-opacity">
-                      {item.type === 'oak' && <TreeOakCartoon x={p.x} y={p.y} scale={scale} />}
-                      {item.type === 'pine' && <TreePineCartoon x={p.x} y={p.y} scale={scale} />}
-                      {item.type === 'rock' && (
-                        <g transform={`translate(${p.x}, ${p.y}) scale(${scale})`}>
-                          <ellipse cx="0" cy="5" rx="12" ry="5" fill="rgba(0,0,0,0.3)" />
-                          <path d="M -8 5 Q 0 -5 10 5 L -8 5" fill="#757575" stroke="#424242" strokeWidth="1.5" />
-                        </g>
-                      )}
-                      {item.type === 'bush' && (
-                        <g transform={`translate(${p.x}, ${p.y}) scale(${scale})`}>
-                          <ellipse cx="0" cy="5" rx="8" ry="4" fill="rgba(0,0,0,0.3)" />
-                          <circle cx="0" cy="-5" r="8" fill="#558B2F" stroke="#33691E" strokeWidth="1" />
-                        </g>
-                      )}
-                    </g>
-                  );
-                })}
-                
-                {/* Small Interactive Expansion Sign at the center */}
-                <g transform={`translate(${center.x}, ${center.y})`} className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                  {/* Glowing halo */}
-                  <ellipse cx="0" cy="10" rx="30" ry="15" fill="rgba(255, 235, 59, 0.4)" className="animate-pulse" />
-                  
-                  {/* Sign board */}
-                  <g transform="translate(0, -20) scale(1.5)" className="animate-bounce">
-                    <rect x="-1" y="0" width="2" height="15" fill="#4E342E" />
-                    <polygon points="-15,0 15,0 15,-12 -15,-12" fill="#FFCC80" stroke="#E65100" strokeWidth="1" />
-                    <text x="0" y="-3" fontSize="6" fontWeight="bold" fill="#D84315" textAnchor="middle">
-                      EXPANDIR
-                    </text>
-                  </g>
-                </g>
-              </g>
-            );
-          })}
+          <IsoExpansionTerritory
+            unlockedParcelIds={unlockedParcelIds}
+            gridToIso={gridToIso}
+            onOpenExpansionModal={onOpenExpansionModal}
+            viewportBoundingBox={viewportBoundingBox}
+            playerLevel={playerLevel}
+          />
         </svg>
 
         {/* Isometric Interactive Farm Grid (Seamless in normal mode, clean guides in move mode) */}
@@ -2353,27 +2294,19 @@ function renderEntityVisual(ctx: VisualContext) {
 
           {/* Random variation based on ID or coords */}
           {(() => {
-            const scale = 0.8 + (Math.sin(entity.x * 100) * 0.4);
+            const scale = 0.85 + (Math.sin(entity.x * 137 + entity.y * 311) * 0.2);
             return (
-              <g className={`transition-transform duration-200 ${isSelected ? 'scale-110' : ''}`} style={{ transform: `scale(${scale})` }}>
-                {type === 'pine' && <TreePineCartoon x={0} y={0} scale={1} />}
-                {type === 'oak' && <TreeOakCartoon x={0} y={0} scale={1} />}
-                {type === 'rock' && (
-                  <svg width="60" height="40" viewBox="-30 -20 60 40" className="overflow-visible">
-                    <ellipse cx="0" cy="5" rx="12" ry="5" fill="rgba(0,0,0,0.3)" />
-                    <path d="M -15 5 Q 0 -15 15 5 L -15 5" fill="#757575" stroke="#424242" strokeWidth="2" />
-                    <path d="M -5 5 Q 5 -5 10 5" fill="#9E9E9E" stroke="#616161" strokeWidth="1" />
-                  </svg>
-                )}
-                {type === 'bush' && (
-                  <svg width="40" height="40" viewBox="-20 -20 40 40" className="overflow-visible">
-                    <ellipse cx="0" cy="5" rx="8" ry="4" fill="rgba(0,0,0,0.3)" />
-                    <circle cx="0" cy="-5" r="10" fill="#558B2F" stroke="#33691E" strokeWidth="1.5" />
-                    <circle cx="-3" cy="-8" r="3" fill="#689F38" />
-                    <circle cx="4" cy="-4" r="2" fill="#7CB342" />
-                  </svg>
-                )}
-              </g>
+              <svg
+                width="120"
+                height="120"
+                viewBox="-60 -70 120 120"
+                className={`overflow-visible transition-transform duration-200 ${isSelected ? 'scale-110' : ''}`}
+              >
+                {type === 'pine' && <Detailed3DPine x={0} y={0} scale={scale} seed={entity.x * 17} />}
+                {type === 'oak' && <Detailed3DOak x={0} y={0} scale={scale} seed={entity.y * 31} hasFruit={true} />}
+                {type === 'rock' && <Detailed3DBoulder x={0} y={0} scale={scale} />}
+                {type === 'bush' && <Detailed3DBush x={0} y={0} scale={scale} hasBerries={true} />}
+              </svg>
             );
           })()}
         </div>

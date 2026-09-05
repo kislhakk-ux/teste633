@@ -1,5 +1,10 @@
 import { FarmEntity, GridPos } from '../types/game';
-import { EXPANSION_PARCELS, isTileInBaseFarm } from '../constants/expansionData';
+import {
+  EXPANSION_PARCELS,
+  isTileInBaseFarm,
+  isTileInParcel,
+  LEGACY_PARCEL_ALIASES,
+} from '../constants/expansionData';
 
 export const MAP_SIZE = 14;
 
@@ -35,9 +40,10 @@ export function isWithinMapBounds(
         tileUnlocked = true;
       } else {
         // 2) Check if tile belongs to any UNLOCKED expansion parcel
-        for (const parcelId of unlockedParcelIds) {
-          const p = EXPANSION_PARCELS.find(exp => exp.id === parcelId);
-          if (p && cx >= p.x && cx < p.x + p.width && cy >= p.y && cy < p.y + p.height) {
+        for (const rawId of unlockedParcelIds) {
+          const parcelId = LEGACY_PARCEL_ALIASES[rawId] || rawId;
+          const p = EXPANSION_PARCELS.find((exp) => exp.id === parcelId);
+          if (p && isTileInParcel(p, cx, cy)) {
             tileUnlocked = true;
             break;
           }
@@ -162,9 +168,9 @@ export function findNextAvailablePosition(
   margin = 0,
   unlockedParcelIds: string[] = []
 ): GridPos {
-  // Since map size can vary based on expansions, let's search in a wider range
-  for (let gy = -10; gy <= MAP_SIZE - height; gy++) {
-    for (let gx = -10; gx <= MAP_SIZE - width; gx++) {
+  // Search across the full perimeter of base farm and unlocked expansions
+  for (let gy = -11; gy <= 20; gy++) {
+    for (let gx = -4; gx <= 22; gx++) {
       if (isValidPlacement(gx, gy, width, height, entities, null, margin, unlockedParcelIds)) {
         return { x: gx, y: gy };
       }
