@@ -69,6 +69,7 @@ import {
   Detailed3DBush,
   Detailed3DFallenLog,
   Detailed3DFruitTree,
+  Detailed3DForestLake,
 } from './isometric/IsoCartoonFoliage';
 import { IsoLushGrass } from './isometric/IsoLushGrass';
 import { pseudoRandom, generateForestForParcel } from '../utils/forestGen';
@@ -235,7 +236,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
     return entities.find((e) => e.id === id) || null;
   }, [entities, draggingEntityId, movingEntityId]);
 
-  // Real-time space occupation validation
+  // Real-time space occupation validation (including base farm and all unlocked expansion territories)
   const placementValidation = useMemo(() => {
     if (!activeMovedEntity || !hoveredTile) return null;
     return validatePlacement(
@@ -244,9 +245,11 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
       activeMovedEntity.width || 1,
       activeMovedEntity.height || 1,
       entities,
-      activeMovedEntity.id
+      activeMovedEntity.id,
+      0,
+      unlockedParcelIds
     );
-  }, [activeMovedEntity, hoveredTile, entities]);
+  }, [activeMovedEntity, hoveredTile, entities, unlockedParcelIds]);
 
   // Sync visual bee count based on current Stage * 5
   const beeTree = useMemo(() => entities.find((e) => e.type === 'bee_tree'), [entities]);
@@ -412,7 +415,9 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
         ent.width || 1,
         ent.height || 1,
         entities,
-        entityId
+        entityId,
+        0,
+        unlockedParcelIds
       );
 
       if (validation.isValid) {
@@ -422,7 +427,7 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
         sound.playWoodHit();
       }
     },
-    [entities, onMoveEntityPosition]
+    [entities, onMoveEntityPosition, unlockedParcelIds]
   );
 
   const isCropPlotReady = useCallback((entity: FarmEntity) => {
@@ -651,14 +656,16 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
         const nextX = e.clientX - dragStart.x;
         const nextY = e.clientY - dragStart.y;
         
-        // Clamp boundaries based on map size and current zoom
+        // Clamp boundaries based on expanded map size and current zoom
         const paddingX = window.innerWidth / 2;
         const paddingY = window.innerHeight / 2;
+        const extentX = (MAP_SIZE + 16) * 92 * zoom;
+        const extentY = (MAP_SIZE + 14) * 46 * zoom;
         
-        const minX = -MAP_SIZE * 92 * zoom + paddingX;
-        const maxX = MAP_SIZE * 92 * zoom + paddingX;
-        const minY = -MAP_SIZE * 46 * zoom + paddingY;
-        const maxY = MAP_SIZE * 46 * zoom + paddingY;
+        const minX = -extentX + paddingX;
+        const maxX = extentX + paddingX;
+        const minY = -extentY + paddingY;
+        const maxY = extentY + paddingY;
         
         return {
           x: Math.min(maxX, Math.max(minX, nextX)),
@@ -771,14 +778,16 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
         const nextX = e.touches[0].clientX - dragStart.x;
         const nextY = e.touches[0].clientY - dragStart.y;
         
-        // Clamp boundaries based on map size and current zoom
+        // Clamp boundaries based on expanded map size and current zoom
         const paddingX = window.innerWidth / 2;
         const paddingY = window.innerHeight / 2;
+        const extentX = (MAP_SIZE + 16) * 92 * zoom;
+        const extentY = (MAP_SIZE + 14) * 46 * zoom;
         
-        const minX = -MAP_SIZE * 92 * zoom + paddingX;
-        const maxX = MAP_SIZE * 92 * zoom + paddingX;
-        const minY = -MAP_SIZE * 46 * zoom + paddingY;
-        const maxY = MAP_SIZE * 46 * zoom + paddingY;
+        const minX = -extentX + paddingX;
+        const maxX = extentX + paddingX;
+        const minY = -extentY + paddingY;
+        const maxY = extentY + paddingY;
         
         return {
           x: Math.min(maxX, Math.max(minX, nextX)),
@@ -1009,7 +1018,10 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
           <IsoExpansionTerritory
             unlockedParcelIds={unlockedParcelIds}
             gridToIso={gridToIso}
-            onOpenExpansionModal={onOpenExpansionModal}
+            onOpenExpansionModal={(parcelId) => {
+              if (wasMapDraggedRef.current) return;
+              onOpenExpansionModal?.(parcelId);
+            }}
             viewportBoundingBox={viewportBoundingBox}
             playerLevel={playerLevel}
           />
@@ -2282,6 +2294,7 @@ function renderEntityVisual(ctx: VisualContext) {
       if (type === 'oak') toolRequired = '🪚 Serrote';
       if (type === 'rock') toolRequired = '🧨 Dinamite';
       if (type === 'bush') toolRequired = '🪓 Machado';
+      if (type === 'lake') toolRequired = '⛏️ Pá';
 
       return (
         <div className="relative flex flex-col items-center justify-center cursor-pointer">
@@ -2297,15 +2310,16 @@ function renderEntityVisual(ctx: VisualContext) {
             const scale = 0.85 + (Math.sin(entity.x * 137 + entity.y * 311) * 0.2);
             return (
               <svg
-                width="120"
-                height="120"
-                viewBox="-60 -70 120 120"
+                width={type === 'lake' ? '180' : '120'}
+                height={type === 'lake' ? '120' : '120'}
+                viewBox={type === 'lake' ? '-90 -60 180 120' : '-60 -70 120 120'}
                 className={`overflow-visible transition-transform duration-200 ${isSelected ? 'scale-110' : ''}`}
               >
                 {type === 'pine' && <Detailed3DPine x={0} y={0} scale={scale} seed={entity.x * 17} />}
                 {type === 'oak' && <Detailed3DOak x={0} y={0} scale={scale} seed={entity.y * 31} hasFruit={true} />}
                 {type === 'rock' && <Detailed3DBoulder x={0} y={0} scale={scale} />}
                 {type === 'bush' && <Detailed3DBush x={0} y={0} scale={scale} hasBerries={true} />}
+                {type === 'lake' && <Detailed3DForestLake x={0} y={0} radiusX={52} radiusY={28} name="Lago Natural" />}
               </svg>
             );
           })()}

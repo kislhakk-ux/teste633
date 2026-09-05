@@ -168,9 +168,9 @@ export function findNextAvailablePosition(
   margin = 0,
   unlockedParcelIds: string[] = []
 ): GridPos {
-  // Search across the full perimeter of base farm and unlocked expansions
-  for (let gy = -11; gy <= 20; gy++) {
-    for (let gx = -4; gx <= 22; gx++) {
+  // Search across the full perimeter of base farm and all unlocked expansion territories
+  for (let gy = -12; gy <= 22; gy++) {
+    for (let gx = -9; gx <= 26; gx++) {
       if (isValidPlacement(gx, gy, width, height, entities, null, margin, unlockedParcelIds)) {
         return { x: gx, y: gy };
       }

@@ -313,6 +313,7 @@ export const ActionRadial: React.FC<ActionRadialProps> = ({
       if (oType === 'pine' || oType === 'bush') { toolRequired = 'axe'; toolName = 'Machado'; icon = '🪓'; }
       if (oType === 'oak') { toolRequired = 'saw'; toolName = 'Serrote'; icon = '🪚'; actionName = 'Serrar'; }
       if (oType === 'rock') { toolRequired = 'dynamite'; toolName = 'Dinamite'; icon = '🧨'; actionName = 'Explodir'; }
+      if (oType === 'lake') { toolRequired = 'shovel'; toolName = 'Pá'; icon = '⛏️'; actionName = 'Drenar Lago'; }
     }
 
     const toolCount = inventory[toolRequired] || 0;

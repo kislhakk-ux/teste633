@@ -131,17 +131,6 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
                   />
                 );
               })}
-
-              {/* Keep ornamental lake on unlocked land */}
-              {parcel.lake && (
-                <Detailed3DForestLake
-                  x={gridToIso(parcel.lake.x, parcel.lake.y).x}
-                  y={gridToIso(parcel.lake.x, parcel.lake.y).y}
-                  radiusX={parcel.lake.radiusX || 48}
-                  radiusY={parcel.lake.radiusY || 26}
-                  name={parcel.lake.name}
-                />
-              )}
             </g>
           );
         }
@@ -156,10 +145,13 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
           <g
             key={`locked_${parcel.id}`}
             id={`parcel-${parcel.id}`}
-            className="cursor-pointer pointer-events-auto group transition-all duration-300"
-            onClick={() => onOpenExpansionModal?.(parcel.id)}
+            className="cursor-pointer pointer-events-auto"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenExpansionModal?.(parcel.id);
+            }}
           >
-            {/* A. Seamless Natural Sunny Grass Ground (Matches farm lawn - no dark grid!) */}
+            {/* A. Seamless Natural Sunny Grass Ground */}
             <g className="opacity-95">
               {parcel.tiles.map((tile) => {
                 const pTop = gridToIso(tile.x, tile.y);
@@ -174,7 +166,6 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
                     fill="url(#hd-natural-lawn-grad)"
                     stroke="rgba(109, 191, 27, 0.25)"
                     strokeWidth="0.4"
-                    className="transition-colors group-hover:brightness-105"
                   />
                 );
               })}
@@ -219,14 +210,11 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
               );
             })}
 
-            {/* E. Dense, Lush 3D Cartoon Flora, Rocks, and Boulders ("mais cheia de pedras e arvores") */}
+            {/* E. Dense, Lush 3D Cartoon Flora, Rocks, and Boulders */}
             {forestItems.map((item, idx) => {
               const itemIso = gridToIso(item.x, item.y);
               return (
-                <g
-                  key={`flora_${parcel.id}_${idx}`}
-                  className="transition-transform duration-200 group-hover:scale-105"
-                >
+                <g key={`flora_${parcel.id}_${idx}`}>
                   <ProceduralFoliageProp
                     type={item.type}
                     x={itemIso.x}
@@ -241,20 +229,20 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
             {/* F. Interactive 3D Wooden Expansion Signpost at Center */}
             <g
               transform={`translate(${centerIso.x}, ${centerIso.y})`}
-              className="pointer-events-none transition-all duration-300"
+              className="pointer-events-none"
             >
-              {/* Pulsing Sunlit Ambient Aura on Hover */}
+              {/* Soft Sunlit Ground Shadow */}
               <ellipse
                 cx="0"
                 cy="8"
-                rx="48"
-                ry="24"
+                rx="42"
+                ry="20"
                 fill="url(#hd-expand-glow)"
-                className="opacity-40 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"
+                className="opacity-20"
               />
 
               {/* Wooden Signpost Assembly */}
-              <g className="transition-transform duration-200 group-hover:-translate-y-2 group-hover:scale-110">
+              <g>
                 {/* Ground Shadow */}
                 <ellipse cx="0" cy="12" rx="20" ry="8" fill="rgba(0,0,0,0.35)" />
 

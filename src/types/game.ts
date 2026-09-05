@@ -260,7 +260,7 @@ export interface FarmEntity {
   decorationType?: DecorationType;
   beeTreeData?: BeeTreeData;
   nectarBushData?: NectarBushData;
-  obstacleData?: { type: 'pine' | 'oak' | 'rock' | 'bush' };
+  obstacleData?: { type: 'pine' | 'oak' | 'rock' | 'bush' | 'lake' };
   appleTreeData?: {
     harvestsLeft: number;
     readyAt: number;

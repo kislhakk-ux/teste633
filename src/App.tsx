@@ -62,7 +62,7 @@ import { MiningRollResult } from './constants/mineData';
 import { generateForestForParcel, generatePostUnlockObstacles } from './utils/forestGen';
 import { EXPANSION_PARCELS, ExpansionParcel } from './constants/expansionData';
 import { googleSignIn, googleSignOut, loadFarmFromFirestore, saveFarmToFirestore } from './utils/firebase';
-import { validatePlacement, findNextAvailablePosition } from './utils/buildingPlacement';
+import { validatePlacement, findNextAvailablePosition, isWithinMapBounds } from './utils/buildingPlacement';
 
 function applyWongamerVip(state: GameState, email?: string): GameState {
   const name = (state.farmName || '').toLowerCase();
@@ -1457,10 +1457,32 @@ export default function App() {
     showToast('🏡 De volta à sua fazenda!');
   };
 
-  // 14. Limpeza de Obstáculos e Árvores Mortas
+  // 14. Limpeza de Obstáculos e Árvores Mortas (Apenas áreas que o jogador já possui/desbloqueou)
   const handleRemoveDeadEntity = (entityId: string) => {
     const entity = gameState.entities.find((e) => e.id === entityId);
     if (!entity) return;
+
+    // Regra: Somente o dono da fazenda pode limpar obstáculos
+    if (visitingFarm) {
+      showToast('🔒 Apenas o proprietário pode limpar obstáculos nesta fazenda!');
+      sound.playWoodHit();
+      return;
+    }
+
+    // Regra: Só pode remover se o local estiver na fazenda base ou em um território já desbloqueado
+    const isOwner = isWithinMapBounds(
+      entity.x,
+      entity.y,
+      entity.width || 1,
+      entity.height || 1,
+      gameState.unlockedParcelIds
+    );
+
+    if (!isOwner) {
+      showToast('🔒 Você só pode remover pedras, árvores e lagos de terrenos que você já desbloqueou e possui!');
+      sound.playWoodHit();
+      return;
+    }
 
     let toolRequired: ItemId | null = null;
     let toolName = '';
@@ -1474,6 +1496,7 @@ export default function App() {
       if (oType === 'pine' || oType === 'bush') { toolRequired = 'axe'; toolName = 'Machadinha'; }
       if (oType === 'oak') { toolRequired = 'saw'; toolName = 'Serrote'; }
       if (oType === 'rock') { toolRequired = 'dynamite'; toolName = 'Dinamite'; }
+      if (oType === 'lake') { toolRequired = 'shovel'; toolName = 'Pá'; }
     }
 
     if (toolRequired) {
@@ -1499,11 +1522,23 @@ export default function App() {
       // Remove after animation
       setTimeout(() => {
         sound.playDing();
-        setGameState(prev => ({
-          ...prev,
-          entities: prev.entities.filter(e => e.id !== entityId),
-          xp: prev.xp + 5 // Little XP reward for cleaning
-        }));
+        setGameState(prev => {
+          const isLake = entity.type === 'obstacle' && entity.obstacleData?.type === 'lake';
+          const isRock = entity.type === 'obstacle' && entity.obstacleData?.type === 'rock';
+          const xpGain = isLake ? 35 : isRock ? 15 : 8;
+          const coinGain = isLake ? 75 : 0;
+          return {
+            ...prev,
+            entities: prev.entities.filter(e => e.id !== entityId),
+            xp: prev.xp + xpGain,
+            coins: prev.coins + coinGain,
+          };
+        });
+        showToast(
+          entity.type === 'obstacle' && entity.obstacleData?.type === 'lake'
+            ? '🌊 Lago drenado com sucesso! Espaço liberado para novas construções!'
+            : '✨ Terreno limpo com sucesso!'
+        );
       }, 1500);
     }
   };
@@ -1621,6 +1656,19 @@ export default function App() {
         type: 'obstacle',
         obstacleData: { type: item.type },
       }));
+
+      // Se o território possuir um lago natural, ele é adicionado como obstáculo interativo para o novo dono
+      if (parcel.lake) {
+        newObstacles.push({
+          id: `obstacle_lake_${parcel.id}_${Date.now()}`,
+          x: Math.floor(parcel.lake.x),
+          y: Math.floor(parcel.lake.y),
+          width: 2,
+          height: 2,
+          type: 'obstacle',
+          obstacleData: { type: 'lake' },
+        });
+      }
 
       next.entities = [...next.entities, ...newObstacles];
 

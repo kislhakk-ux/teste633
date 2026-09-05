@@ -437,62 +437,6 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
       <TreeOakCartoon x={pTop.x + 95} y={pTop.y - 30} scale={1.3} hasApples={true} />
       <TreePineCartoon x={pTop.x + 155} y={pTop.y - 15} scale={1.05} />
 
-      {/* 9. WIDE 3D FISHING RIVER (Eastern Edge) */}
-      {/* 3D River Bank (Inner Cliff) */}
-      <polygon
-        points={`
-          ${pTop.x + 80},${pTop.y - 40}
-          ${pRight.x + 120},${pRight.y + 20}
-          ${pBottom.x + 120},${pBottom.y + 90}
-          ${pBottom.x + 105},${pBottom.y + 80}
-          ${pRight.x + 105},${pRight.y + 10}
-          ${pTop.x + 65},${pTop.y - 50}
-        `}
-        fill="url(#river-bank-3d)"
-        stroke="#3E2723"
-        strokeWidth="1.5"
-      />
-      {/* Deep Water Polygon */}
-      <polygon
-        points={`
-          ${pTop.x + 65},${pTop.y - 25}
-          ${pRight.x + 105},${pRight.y + 35}
-          ${pBottom.x + 105},${pBottom.y + 105}
-          ${pRight.x + 25},${pRight.y + 85}
-          ${pTop.x + 35},${pTop.y + 5}
-        `}
-        fill="url(#river-water-3d)"
-        stroke="#01579B"
-        strokeWidth="2"
-      />
-      {/* Animated Caustics & Flow */}
-      <path d={`M ${pRight.x + 60} ${pRight.y + 35} Q ${pRight.x + 75} ${pRight.y + 40} ${pRight.x + 90} ${pRight.y + 35}`} stroke="#81D4FA" strokeWidth="2.5" fill="none" opacity="0.7" className="animate-pulse" strokeLinecap="round" />
-      <path d={`M ${pRight.x + 40} ${pRight.y + 60} Q ${pRight.x + 55} ${pRight.y + 65} ${pRight.x + 70} ${pRight.y + 60}`} stroke="#81D4FA" strokeWidth="2" fill="none" opacity="0.6" className="animate-pulse" strokeLinecap="round" style={{animationDelay: '1s'}} />
-
-      {/* Flora & Details (Eastern Edge) */}
-      <WaterLily x={pRight.x + 70} y={pRight.y + 45} scale={0.9} />
-      <Cattails x={pTop.x + 50} y={pTop.y - 15} />
-      <Cattails x={pRight.x + 40} y={pRight.y + 70} />
-      <RiverStone x={pTop.x + 55} y={pTop.y - 10} scale={1.5} />
-      
-      {/* Animated Jumping Fish! */}
-      <AnimatedJumpingFish x={pRight.x + 75} y={pRight.y + 55} delay="1.5s" />
-
-      {/* River Shore Sand/Dirt */}
-      <polygon
-        points={`
-          ${pTop.x + 50},${pTop.y - 10}
-          ${pRight.x + 40},${pRight.y + 70}
-          ${pBottom.x + 100},${pBottom.y + 85}
-          ${pBottom.x + 80},${pBottom.y + 95}
-          ${pRight.x + 20},${pRight.y + 80}
-          ${pTop.x + 30},${pTop.y - 5}
-        `}
-        fill="#D7CCC8"
-        stroke="#BCAAA4"
-        strokeWidth="1.5"
-      />
-
       {/* 8. ANIMATED BUTTERFLIES */}
       <g className="animate-bounce" style={{ animationDuration: '2.8s' }}>
         <ButterflyCartoon x={pTop.x + 60} y={pTop.y + 30} wingColor="#E040FB" />

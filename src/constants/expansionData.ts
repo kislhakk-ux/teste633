@@ -135,6 +135,44 @@ const tilesEastTerrace: [number, number][] = [
   [20, 7], [21, 7],
 ];
 
+// 7. Bosque dos Cedros Antigos (South-East territory below East Valley)
+const tilesSouthGrove: [number, number][] = [
+  [14, 13], [15, 13], [16, 13], [17, 13], [18, 13],
+  [14, 14], [15, 14], [16, 14], [17, 14], [18, 14], [19, 14],
+  [14, 15], [15, 15], [16, 15], [17, 15], [18, 15], [19, 15],
+  [14, 16], [15, 16], [16, 16], [17, 16], [18, 16],
+  [15, 17], [16, 17], [17, 17],
+];
+
+// 8. Pasto do Pôr do Sol (West / North-West Rolling Pasture)
+const tilesWestPasture: [number, number][] = [
+  [-1, 0], [-2, 0], [-3, 0], [-4, 0],
+  [-1, 1], [-2, 1], [-3, 1], [-4, 1], [-5, 1],
+  [-1, 2], [-2, 2], [-3, 2], [-4, 2], [-5, 2], [-6, 2],
+  [-1, 3], [-2, 3], [-3, 3], [-4, 3], [-5, 3],
+  [-1, 4], [-2, 4], [-3, 4], [-4, 4],
+  [-2, 5], [-3, 5],
+];
+
+// 9. Mirante da Montanha (High North-West Ridge Vista)
+const tilesMountainView: [number, number][] = [
+  [-3, -4], [-4, -4], [-5, -4], [-6, -4],
+  [-2, -5], [-3, -5], [-4, -5], [-5, -5], [-6, -5], [-7, -5],
+  [-2, -6], [-3, -6], [-4, -6], [-5, -6], [-6, -6], [-7, -6], [-8, -6],
+  [-3, -7], [-4, -7], [-5, -7], [-6, -7], [-7, -7],
+  [-4, -8], [-5, -8], [-6, -8],
+];
+
+// 10. Planície dos Girassóis (Far East Lowland Prairie)
+const tilesSunflowerPlains: [number, number][] = [
+  [20, 8], [21, 8], [22, 8], [23, 8],
+  [19, 9], [20, 9], [21, 9], [22, 9], [23, 9], [24, 9],
+  [19, 10], [20, 10], [21, 10], [22, 10], [23, 10], [24, 10], [25, 10],
+  [20, 11], [21, 11], [22, 11], [23, 11], [24, 11], [25, 11],
+  [20, 12], [21, 12], [22, 12], [23, 12], [24, 12],
+  [21, 13], [22, 13], [23, 13],
+];
+
 export const EXPANSION_PARCELS: ExpansionParcel[] = [
   {
     id: 'exp_north_1',
@@ -298,6 +336,113 @@ export const EXPANSION_PARCELS: ExpansionParcel[] = [
     x: 18,
     y: 2,
     width: 6,
+    height: 6,
+  },
+  {
+    id: 'exp_west_pasture',
+    name: 'Pasto do Pôr do Sol',
+    subtitle: 'Colinas Suaves do Oeste',
+    description: 'Pasto amplo e plano a oeste da fazenda, ideal para criação de animais, plantações e pomares sob o sol poente.',
+    biome: 'pasture',
+    requiredLevel: 12,
+    cost: {
+      coins: 1600,
+      items: { land_map: 3, marker_stake: 3, brick: 2 },
+    },
+    tiles: createOrganicParcelTiles(tilesWestPasture, -6, -1, 0, 5),
+    bounds: { minX: -6, maxX: -1, minY: 0, maxY: 5 },
+    center: { x: -3.5, y: 2.5 },
+    stakePoints: [
+      { x: -6, y: 2 },
+      { x: -2, y: 0 },
+      { x: -1, y: 3 },
+      { x: -3, y: 5 },
+    ],
+    x: -6,
+    y: 0,
+    width: 6,
+    height: 6,
+  },
+  {
+    id: 'exp_south_grove',
+    name: 'Bosque dos Cedros',
+    subtitle: 'Reserva Selvagem do Sudeste',
+    description: 'Bosque sereno e fértil repleto de cedros majestosos, rochedos e um lago tranquilo para relaxar e produzir.',
+    biome: 'woodland',
+    requiredLevel: 19,
+    cost: {
+      coins: 3600,
+      items: { land_map: 5, marker_stake: 5, brick: 4 },
+    },
+    tiles: createOrganicParcelTiles(tilesSouthGrove, 14, 19, 13, 17),
+    bounds: { minX: 14, maxX: 19, minY: 13, maxY: 17 },
+    center: { x: 16.5, y: 15 },
+    stakePoints: [
+      { x: 14, y: 13.5 },
+      { x: 19, y: 14 },
+      { x: 17, y: 17 },
+      { x: 14, y: 16 },
+    ],
+    lake: {
+      x: 16.8,
+      y: 15.2,
+      name: 'Lago dos Cedros',
+      radiusX: 46,
+      radiusY: 25,
+    },
+    x: 14,
+    y: 13,
+    width: 6,
+    height: 5,
+  },
+  {
+    id: 'exp_sunflower_plains',
+    name: 'Planície dos Girassóis',
+    subtitle: 'Vasto Território Oriental',
+    description: 'Planície ensolarada de solo fértil que se estende ao leste, perfeita para expandir grandes complexos de plantio e fábricas.',
+    biome: 'fruit_meadow',
+    requiredLevel: 23,
+    cost: {
+      coins: 5000,
+      items: { land_map: 7, marker_stake: 7, brick: 6 },
+    },
+    tiles: createOrganicParcelTiles(tilesSunflowerPlains, 19, 25, 8, 13),
+    bounds: { minX: 19, maxX: 25, minY: 8, maxY: 13 },
+    center: { x: 22, y: 10.5 },
+    stakePoints: [
+      { x: 19, y: 9.5 },
+      { x: 25, y: 10.5 },
+      { x: 23, y: 13 },
+      { x: 20, y: 12 },
+    ],
+    x: 19,
+    y: 8,
+    width: 7,
+    height: 6,
+  },
+  {
+    id: 'exp_mountain_view',
+    name: 'Mirante da Montanha',
+    subtitle: 'Pico dos Pinheiros Alpinos',
+    description: 'O ponto mais alto da região com ar puro da montanha, grandes depósitos rochosos de minério e vista exuberante de todo o vale.',
+    biome: 'highland',
+    requiredLevel: 28,
+    cost: {
+      coins: 7200,
+      items: { land_map: 9, marker_stake: 9, brick: 8 },
+    },
+    tiles: createOrganicParcelTiles(tilesMountainView, -8, -2, -9, -4),
+    bounds: { minX: -8, maxX: -2, minY: -9, maxY: -4 },
+    center: { x: -5, y: -6.5 },
+    stakePoints: [
+      { x: -8, y: -6 },
+      { x: -3, y: -4 },
+      { x: -2, y: -6 },
+      { x: -5, y: -9 },
+    ],
+    x: -8,
+    y: -9,
+    width: 7,
     height: 6,
   },
 ];
