@@ -66,7 +66,20 @@ export type ItemId =
   | 'sushi'
   | 'fish_pie'
   | 'shrimp_skewer'
-  | 'shrimp';
+  | 'shrimp'
+  // Mining Tools
+  | 'pickaxe'
+  | 'shovel'
+  | 'tnt_barrel'
+  // Mining Ores & Resources
+  | 'coal'
+  | 'iron_ore'
+  | 'silver_ore'
+  | 'gold_ore'
+  // Smelted Metal Bars
+  | 'iron_bar'
+  | 'silver_bar'
+  | 'gold_bar';
 
 export type StorageType = 'silo' | 'barn';
 
@@ -117,7 +130,8 @@ export type BuildingType =
   | 'bbq_grill'
   | 'popcorn_pot'
   | 'honey_extractor'
-  | 'lure_maker';
+  | 'lure_maker'
+  | 'smelter';
 
 export interface Recipe {
   id: ItemId;
@@ -329,6 +343,14 @@ export interface FishingBoat {
   spots: FishingSpot[];
 }
 
+export interface MineState {
+  status: 'locked' | 'broken' | 'repairing' | 'repaired';
+  repairStartedAt?: number;
+  totalMined?: number;
+  lastMinedRewards?: { itemId: ItemId; count: number }[];
+  lastMinedAt?: number;
+}
+
 export interface GameState {
   farmName: string;
   level: number;
@@ -353,6 +375,7 @@ export interface GameState {
   unlockedParcelIds?: string[]; // IDs of unlocked expansion parcels
   fishingBoat?: FishingBoat;
   fishCollection?: Record<string, { caught: number, largestWeight?: number }>;
+  mine?: MineState;
   deliveryBoat?: {
     status: 'away' | 'docked';
     arrivesAt?: number; // Time it will arrive (if away)

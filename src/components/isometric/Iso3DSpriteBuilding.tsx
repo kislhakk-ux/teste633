@@ -51,77 +51,7 @@ export const Iso3DSpriteBuilding: React.FC<Iso3DSpriteBuildingProps> = React.mem
       }
       className={`relative ${!widthPx ? widthClass : ''} ${!heightPx ? heightClass : ''} flex items-end justify-center select-none pointer-events-none transition-transform duration-150`}
     >
-      {/* 1. Authentic Dimetric 2:1 Isometric Foundation Curb - DEACTIVATED FOR SEAMLESS GRASS INTEGRATION */}
-      {false && baseType !== 'none' && (
-        <div className="absolute bottom-1 w-[90%] h-14 flex items-center justify-center pointer-events-auto cursor-pointer z-0">
-          <svg
-            viewBox="0 0 160 80"
-            className="w-full h-full overflow-visible"
-          >
-            <defs>
-              <linearGradient id="iso-stone-top" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor={baseType === 'cobblestone' ? '#E0E0E0' : baseType === 'wood' ? '#D7CCC8' : '#D7CCC8'} />
-                <stop offset="50%" stopColor={baseType === 'cobblestone' ? '#BDBDBD' : baseType === 'wood' ? '#BCAAA4' : '#BCAAA4'} />
-                <stop offset="100%" stopColor={baseType === 'cobblestone' ? '#9E9E9E' : baseType === 'wood' ? '#8D6E63' : '#8D6E63'} />
-              </linearGradient>
-              <linearGradient id="iso-stone-side-l" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#757575" />
-                <stop offset="100%" stopColor="#424242" />
-              </linearGradient>
-              <linearGradient id="iso-stone-side-r" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#616161" />
-                <stop offset="100%" stopColor="#212121" />
-              </linearGradient>
-            </defs>
-
-            {/* Platform Top Facet (2:1 Diamond) */}
-            <polygon
-              points="80,12 152,44 80,72 8,44"
-              fill="url(#iso-stone-top)"
-              stroke={baseType === 'wood' ? '#6D4C41' : '#616161'}
-              strokeWidth="1.2"
-              opacity="0.85"
-            />
-            {/* Front Left Bevel Rim */}
-            <polygon
-              points="8,44 80,72 80,77 8,49"
-              fill="url(#iso-stone-side-l)"
-              opacity="0.9"
-            />
-            {/* Front Right Bevel Rim */}
-            <polygon
-              points="80,72 152,44 152,49 80,77"
-              fill="url(#iso-stone-side-r)"
-              opacity="0.9"
-            />
-
-            {/* Cobblestone / Timber details on top */}
-            {baseType === 'cobblestone' && (
-              <>
-                <ellipse cx="80" cy="42" rx="6" ry="3" fill="#EEEEEE" opacity="0.6" />
-                <ellipse cx="60" cy="36" rx="5" ry="2.5" fill="#EEEEEE" opacity="0.5" />
-                <ellipse cx="100" cy="36" rx="5" ry="2.5" fill="#EEEEEE" opacity="0.5" />
-                <ellipse cx="80" cy="56" rx="6" ry="3" fill="#EEEEEE" opacity="0.5" />
-                <ellipse cx="44" cy="46" rx="5" ry="2.5" fill="#EEEEEE" opacity="0.4" />
-                <ellipse cx="116" cy="46" rx="5" ry="2.5" fill="#EEEEEE" opacity="0.4" />
-              </>
-            )}
-
-            {baseType === 'wood' && (
-              <>
-                <line x1="44" y1="28" x2="116" y2="60" stroke="#5D4037" strokeWidth="1" opacity="0.5" />
-                <line x1="26" y1="36" x2="98" y2="68" stroke="#5D4037" strokeWidth="1" opacity="0.5" />
-                <line x1="62" y1="20" x2="134" y2="52" stroke="#5D4037" strokeWidth="1" opacity="0.5" />
-              </>
-            )}
-
-            {/* Perimeter Grass Tufts on Border */}
-            <path d="M 12 43 Q 14 36 18 42 M 148 42 Q 146 35 142 41 M 80 73 Q 82 66 85 73" stroke="#8bc34a" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.8" />
-          </svg>
-        </div>
-      )}
-
-      {/* 2. Main Building 3D Model anchored firmly */}
+      {/* Main Building 3D Model anchored directly on the terrain */}
       <div
         className={`relative z-10 w-full h-full flex items-end justify-center pb-0 pointer-events-none ${
           isWorking ? 'animate-machine-pulse' : ''
@@ -132,7 +62,7 @@ export const Iso3DSpriteBuilding: React.FC<Iso3DSpriteBuildingProps> = React.mem
             src={cutoutSrc}
             alt={alt}
             referrerPolicy="no-referrer"
-            className="max-w-full max-h-full w-auto h-auto pointer-events-none transition-all duration-300 filter drop-shadow-[0_8px_14px_rgba(0,0,0,0.32)]"
+            className="max-w-full max-h-full w-auto h-auto pointer-events-none transition-all duration-300"
             style={{
               filter: 'contrast(1.04) saturate(1.08)',
             }}

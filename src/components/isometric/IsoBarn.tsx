@@ -2,7 +2,7 @@ import React from 'react';
 
 export const IsoBarn: React.FC<{ isSelected?: boolean }> = ({ isSelected }) => {
   return (
-    <div className="relative w-48 h-44 flex items-center justify-center filter drop-shadow-[0_12px_18px_rgba(0,0,0,0.38)]">
+    <div className="relative w-48 h-44 flex items-center justify-center pointer-events-none select-none">
       <svg
         viewBox="0 0 210 190"
         className="w-full h-full overflow-visible pointer-events-none select-none"
@@ -54,14 +54,7 @@ export const IsoBarn: React.FC<{ isSelected?: boolean }> = ({ isSelected }) => {
           </linearGradient>
         </defs>
 
-        {/* Ambient Ground Shadow */}
-        <ellipse cx="105" cy="158" rx="88" ry="28" fill="rgba(0,0,0,0.32)" />
-
-        {/* 1. 3D Foundation Platform */}
-        <polygon points="105,156 36,122 36,134 105,168" fill="#546E7A" stroke="#37474F" strokeWidth="1.2" />
-        <polygon points="105,156 172,122 172,134 105,168" fill="#37474F" stroke="#212121" strokeWidth="1.2" />
-
-        {/* 2. Main Red Barn Walls */}
+        {/* Main Red Barn Walls - flush on ground */}
         <polygon points="105,86 40,118 40,132 105,164" fill="url(#hd-barn-red-l)" stroke="#B71C1C" strokeWidth="1.2" />
         <polygon points="105,86 168,118 168,132 105,164" fill="url(#hd-barn-red-r)" stroke="#7F0000" strokeWidth="1.2" />
 

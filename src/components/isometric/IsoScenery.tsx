@@ -1,6 +1,7 @@
 import React from 'react';
 import { Iso3DBoat } from './Iso3DBoat';
 import { Iso3DDeliveryBoat } from './Iso3DDeliveryBoat';
+import { IsoMineEntrance } from './IsoMineEntrance';
 
 interface IsoSceneryProps {
   mapSize: number;
@@ -11,6 +12,10 @@ interface IsoSceneryProps {
   deliveryBoatStatus?: 'away' | 'docked';
   onBoatClick?: () => void;
   onDeliveryBoatClick?: () => void;
+  mineStatus?: 'locked' | 'broken' | 'repairing' | 'repaired';
+  mineRepairStartedAt?: number;
+  playerLevel?: number;
+  onMineClick?: () => void;
 }
 
 export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
@@ -22,6 +27,10 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
   deliveryBoatStatus = 'away',
   onBoatClick,
   onDeliveryBoatClick,
+  mineStatus = 'broken',
+  mineRepairStartedAt,
+  playerLevel = 1,
+  onMineClick,
 }) => {
   // Key boundary points
   const pTop = gridToIso(0, 0);
@@ -493,6 +502,42 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
       <g className="animate-bounce" style={{ animationDuration: '3.2s' }}>
         <ButterflyCartoon x={pBottom.x + 30} y={pBottom.y + 18} wingColor="#76FF03" />
       </g>
+
+      {/* 10. AUTHENTIC 3D CARTOON MINE ENTRANCE (Permanent Corner Mountain Feature) */}
+      {(() => {
+        const mx = pTop.x - 135;
+        const my = pTop.y - 70;
+        return (
+          <g id="farm-mine-area">
+            {/* Gravel Footpath & Rail Bed connecting Road to Mine */}
+            <polygon
+              points={`
+                ${mx - 25},${my + 28}
+                ${mx + 25},${my + 28}
+                ${pTop.x - 75},${pTop.y - 20}
+                ${pTop.x - 105},${pTop.y - 10}
+              `}
+              fill="#78716C"
+              stroke="#57534E"
+              strokeWidth="1"
+              opacity="0.85"
+            />
+            {/* Railway track extensions to the road */}
+            <line x1={mx - 15} y1={my + 32} x2={pTop.x - 95} y2={pTop.y - 12} stroke="#475569" strokeWidth="2" strokeDasharray="6 4" />
+            <line x1={mx + 15} y1={my + 32} x2={pTop.x - 78} y2={pTop.y - 18} stroke="#475569" strokeWidth="2" strokeDasharray="6 4" />
+
+            {/* The Majestic 3D IsoMineEntrance */}
+            <g transform={`translate(${mx}, ${my})`}>
+              <IsoMineEntrance
+                status={mineStatus}
+                repairStartedAt={mineRepairStartedAt}
+                playerLevel={playerLevel}
+                onClick={onMineClick}
+              />
+            </g>
+          </g>
+        );
+      })()}
     </g>
   );
 });

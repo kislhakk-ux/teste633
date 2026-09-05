@@ -50,6 +50,7 @@ import { IsoSugarMill } from './isometric/IsoSugarMill';
 import { IsoPopcornPot } from './isometric/IsoPopcornPot';
 import { IsoBBQGrill } from './isometric/IsoBBQGrill';
 import { IsoHoneyExtractor } from './isometric/IsoHoneyExtractor';
+import { IsoSmelter } from './isometric/IsoSmelter';
 import { IsoCropPlot } from './isometric/IsoCropPlot';
 import { IsoAnimalPen } from './isometric/IsoAnimalPen';
 import { IsoOrderBoard } from './isometric/IsoOrderBoard';
@@ -84,6 +85,7 @@ interface FarmCanvasProps {
   onQuickPlantCrop?: (entityId: string, cropId: string) => void;
   inventory?: Record<string, number>;
   onQuickCollectAnimal: (entityId: string, animalIndex: number) => void;
+  onQuickFeedAnimals?: (entityId: string) => void;
   onQuickCollectBuilding: (entityId: string) => void;
   isMovingMode: boolean;
   onMoveEntityPosition?: (entityId: string, newX: number, newY: number) => void;
@@ -129,6 +131,11 @@ interface FarmCanvasProps {
   // Delivery Boat System
   deliveryBoatStatus?: 'away' | 'docked';
   onDeliveryBoatClick?: () => void;
+
+  // Mining System
+  mineStatus?: 'locked' | 'broken' | 'repairing' | 'repaired';
+  mineRepairStartedAt?: number;
+  onMineClick?: () => void;
 }
 
 
@@ -170,12 +177,16 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
   onRemoveDeadEntity,
   inventory = {},
   onQuickPlantCrop,
+  onQuickFeedAnimals,
   unlockedParcelIds = [],
   onOpenExpansionModal,
   fishingBoatStatus,
   onFishingBoatClick,
   deliveryBoatStatus,
   onDeliveryBoatClick,
+  mineStatus = 'broken',
+  mineRepairStartedAt,
+  onMineClick,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -977,6 +988,10 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
             onBoatClick={onFishingBoatClick}
             deliveryBoatStatus={deliveryBoatStatus}
             onDeliveryBoatClick={onDeliveryBoatClick}
+            mineStatus={mineStatus}
+            mineRepairStartedAt={mineRepairStartedAt}
+            playerLevel={playerLevel}
+            onMineClick={onMineClick}
           />
         </svg>
 
@@ -1449,13 +1464,13 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
           const isSelected = selectedEntity?.id === entity.id;
           const isMovingThis = movingEntityId === entity.id || draggingEntityId === entity.id;
           const isDraggingThis = draggingEntityId === entity.id;
-          const targetX = (isDraggingThis && hoveredTile) ? hoveredTile.x : entity.x;
-          const targetY = (isDraggingThis && hoveredTile) ? hoveredTile.y : entity.y;
+          const targetX = (isMovingThis && hoveredTile) ? hoveredTile.x : entity.x;
+          const targetY = (isMovingThis && hoveredTile) ? hoveredTile.y : entity.y;
 
           // 1. Calculate structural placement and ground footpoint
           const anchorDef = getEntityAnchorDef(
             entity,
-            '3d_rendered'
+            graphicsStyle
           );
           const placement = calculateIsoPlacement(
             targetX,
@@ -1471,48 +1486,31 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
 
           return (
             <React.Fragment key={entity.id}>
-              {/* Ground Contact Shadow (Anchored to the exact ground footpoint) */}
-              <div
-                id={`entity-shadow-${entity.id}`}
-                className="absolute pointer-events-none select-none transition-opacity duration-200"
-                style={{
-                  left: placement.shadow.left,
-                  top: placement.shadow.top,
-                  width: `${placement.shadow.width}px`,
-                  height: `${placement.shadow.height}px`,
-                  transform: placement.shadow.transform,
-                  zIndex: placement.shadow.zIndex,
-                  opacity: isMovingThis ? 0.25 : placement.shadow.opacity,
-                }}
-                aria-hidden="true"
-              >
-                {/* Outer soft ambient ground shadow (2:1 isometric ratio) */}
+              {/* Natural, Soft Ambient Contact Shadow (Ground footpoint) */}
+              {placement.shadow.opacity > 0 && (
                 <div
-                  className="w-full h-full rounded-[50%] blur-[4px]"
+                  id={`entity-shadow-${entity.id}`}
+                  className="absolute pointer-events-none select-none transition-opacity duration-200"
                   style={{
-                    background:
-                      'radial-gradient(ellipse at 50% 50%, rgba(15, 23, 42, 0.44) 0%, rgba(15, 23, 42, 0.26) 45%, rgba(15, 23, 42, 0.08) 70%, transparent 95%)',
+                    left: placement.shadow.left,
+                    top: placement.shadow.top,
+                    width: `${placement.shadow.width}px`,
+                    height: `${placement.shadow.height}px`,
+                    transform: placement.shadow.transform,
+                    zIndex: placement.shadow.zIndex,
+                    opacity: isMovingThis ? 0.2 : placement.shadow.opacity,
                   }}
-                />
-
-                {/* Core contact occlusion shadow directly under the foundation */}
-                <div
-                  className="absolute inset-x-[15%] inset-y-[15%] rounded-[50%] blur-[2px]"
-                  style={{
-                    background:
-                      'radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.60) 0%, rgba(0, 0, 0, 0.25) 55%, transparent 85%)',
-                  }}
-                />
-
-                {/* Natural warm earth tint to blend subtly into the lawn grass */}
-                <div
-                  className="absolute inset-x-[8%] inset-y-[8%] rounded-[50%] blur-[3px] opacity-35 mix-blend-multiply"
-                  style={{
-                    background:
-                      'radial-gradient(ellipse at 50% 50%, #3E2723 0%, #5D4037 38%, transparent 78%)',
-                  }}
-                />
-              </div>
+                  aria-hidden="true"
+                >
+                  <div
+                    className="w-full h-full rounded-[50%] blur-[3px]"
+                    style={{
+                      background:
+                        'radial-gradient(ellipse at 50% 50%, rgba(25, 45, 15, 0.32) 0%, rgba(25, 45, 15, 0.12) 55%, transparent 80%)',
+                    }}
+                  />
+                </div>
+              )}
 
               {/* Main Entity Visual Container anchored precisely at footpoint */}
               <div
@@ -1591,6 +1589,8 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
                   onOpenLuckyWheel,
                   onOpenBeeTree,
                   onRemoveDeadEntity,
+                  inventory,
+                  onFeedAnimals: onQuickFeedAnimals,
                 })}
               </div>
             </React.Fragment>
@@ -1763,6 +1763,8 @@ interface VisualContext {
   onOpenLuckyWheel?: () => void;
   onOpenBeeTree?: (entity: FarmEntity) => void;
   onRemoveDeadEntity?: (entityId: string) => void;
+  inventory?: Record<string, number>;
+  onFeedAnimals?: (entityId: string) => void;
 }
 
 // Sub-renderer for rich realistic Hay Day isometric entity graphics
@@ -1773,6 +1775,8 @@ function renderEntityVisual(ctx: VisualContext) {
     onHarvestCrop,
     onCollectAnimal,
     onCollectBuilding,
+    onFeedAnimals,
+    inventory = {},
     isSelected,
     graphicsStyle,
     siloUsed,
@@ -1816,12 +1820,20 @@ function renderEntityVisual(ctx: VisualContext) {
     case 'animal_pen': {
       const pen = entity.animalData;
       if (!pen) return null;
+      const penDef = ANIMAL_PENS[pen.animalType];
+      const feedCount = penDef ? (inventory[penDef.feedId] || 0) : 0;
       return (
         <IsoAnimalPen
           animalType={pen.animalType}
           animals={pen.animals}
           currentTime={currentTime}
           onCollectAnimal={(idx) => onCollectAnimal(entity.id, idx)}
+          onFeedAnimals={() => {
+            if (onFeedAnimals) {
+              onFeedAnimals(entity.id);
+            }
+          }}
+          hasFeed={feedCount > 0}
         />
       );
     }
@@ -1867,6 +1879,7 @@ function renderEntityVisual(ctx: VisualContext) {
               {bData.buildingType === 'popcorn_pot' && <IsoPopcornPot isWorking={isWorking} />}
               {bData.buildingType === 'bbq_grill' && <IsoBBQGrill isWorking={isWorking} />}
               {bData.buildingType === 'honey_extractor' && <IsoHoneyExtractor isWorking={isWorking} />}
+              {bData.buildingType === 'smelter' && <IsoSmelter isWorking={isWorking} />}
             </>
           )}
 

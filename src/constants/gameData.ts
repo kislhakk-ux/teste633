@@ -627,6 +627,112 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     minLevel: 30,
     description: 'Mel puro e dourado centrifugado no Melzeiro.',
   },
+
+  // Mining Tools
+  shovel: {
+    id: 'shovel',
+    name: 'Pá',
+    category: 'material',
+    storage: 'barn',
+    icon: '🥄',
+    basePrice: 80,
+    minLevel: 24,
+    description: 'Ferramenta para escavar sedimentos e pequenos minérios na mina.',
+  },
+  pickaxe: {
+    id: 'pickaxe',
+    name: 'Picareta',
+    category: 'material',
+    storage: 'barn',
+    icon: '⛏️',
+    basePrice: 120,
+    minLevel: 24,
+    description: 'Ferramenta de aço para quebrar veios de rocha sólida na mina.',
+  },
+  tnt_barrel: {
+    id: 'tnt_barrel',
+    name: 'Barril de TNT',
+    category: 'material',
+    storage: 'barn',
+    icon: '🛢️',
+    basePrice: 350,
+    minLevel: 24,
+    description: 'Barril de alta carga explosiva para detonações massivas na mina.',
+  },
+
+  // Mining Ores & Minerals
+  coal: {
+    id: 'coal',
+    name: 'Carvão Mineral',
+    category: 'material',
+    storage: 'barn',
+    icon: '🪨',
+    basePrice: 10,
+    minLevel: 24,
+    description: 'Combustível fóssil rico extraído das profundezas da mina.',
+  },
+  iron_ore: {
+    id: 'iron_ore',
+    name: 'Minério de Ferro',
+    category: 'material',
+    storage: 'barn',
+    icon: '🪙',
+    basePrice: 15,
+    minLevel: 24,
+    description: 'Minério de ferro bruto pronto para fundir em barras resistentes.',
+  },
+  silver_ore: {
+    id: 'silver_ore',
+    name: 'Minério de Prata',
+    category: 'material',
+    storage: 'barn',
+    icon: '🔘',
+    basePrice: 28,
+    minLevel: 27,
+    description: 'Minério prateado reluzente de grande nobreza e valor.',
+  },
+  gold_ore: {
+    id: 'gold_ore',
+    name: 'Minério de Ouro',
+    category: 'material',
+    storage: 'barn',
+    icon: '✨',
+    basePrice: 45,
+    minLevel: 30,
+    description: 'Pepitas de ouro nativo brilhante para fundir em barras nobres.',
+  },
+
+  // Smelted Metal Bars
+  iron_bar: {
+    id: 'iron_bar',
+    name: 'Barra de Ferro',
+    category: 'material',
+    storage: 'barn',
+    icon: '⛓️',
+    basePrice: 55,
+    minLevel: 24,
+    description: 'Lingote forjado na Fundição. Essencial para ferramentas e comércio.',
+  },
+  silver_bar: {
+    id: 'silver_bar',
+    name: 'Barra de Prata',
+    category: 'material',
+    storage: 'barn',
+    icon: '🥈',
+    basePrice: 95,
+    minLevel: 27,
+    description: 'Barra nobre de prata fundida, muito procurada por mercadores.',
+  },
+  gold_bar: {
+    id: 'gold_bar',
+    name: 'Barra de Ouro',
+    category: 'material',
+    storage: 'barn',
+    icon: '🥇',
+    basePrice: 160,
+    minLevel: 30,
+    description: 'Barra de ouro maciço de altíssimo prestígio e valor no mercado.',
+  },
 };
 
 export const CROPS: Partial<Record<ItemId, CropDef>> = {
@@ -835,6 +941,15 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     cost: 15000,
     minLevel: 25,
     description: 'Produz iscas, redes e armadilhas para pesca.',
+    baseQueueSlots: 3,
+  },
+  smelter: {
+    type: 'smelter',
+    name: 'Fundição',
+    icon: '🔥🏭',
+    cost: 12500,
+    minLevel: 24,
+    description: 'Funde minérios extraídos da mina em barras sólidas de ferro, prata e ouro.',
     baseQueueSlots: 3,
   },
 };
@@ -1182,6 +1297,40 @@ export const RECIPES: Recipe[] = [
       { itemId: 'wood_plank', count: 1 }, // Used as skewer stick
     ],
     minLevel: 25,
+  },
+  // Smelter Recipes
+  {
+    id: 'iron_bar',
+    name: 'Barra de Ferro',
+    building: 'smelter',
+    produceTimeSeconds: 120, // 2 minutes
+    xp: 15,
+    ingredients: [
+      { itemId: 'iron_ore', count: 3 },
+    ],
+    minLevel: 24,
+  },
+  {
+    id: 'silver_bar',
+    name: 'Barra de Prata',
+    building: 'smelter',
+    produceTimeSeconds: 180, // 3 minutes
+    xp: 24,
+    ingredients: [
+      { itemId: 'silver_ore', count: 3 },
+    ],
+    minLevel: 27,
+  },
+  {
+    id: 'gold_bar',
+    name: 'Barra de Ouro',
+    building: 'smelter',
+    produceTimeSeconds: 240, // 4 minutes
+    xp: 35,
+    ingredients: [
+      { itemId: 'gold_ore', count: 3 },
+    ],
+    minLevel: 30,
   },
 ];
 

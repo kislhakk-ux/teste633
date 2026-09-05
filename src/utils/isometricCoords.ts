@@ -93,135 +93,150 @@ export const ISO_ANCHOR_REGISTRY: {
   vector: Record<string, IsoAnchorDef>;
 } = {
   '3d_rendered': {
-    // Farmhouse (2x2)
+    // Farmhouse (2x2) - measured base ground center
     farmhouse: {
       widthPx: 208,
       heightPx: 208,
-      anchorX: 0.5,
-      anchorY: 0.803,
-      shadow: { width: 168, height: 84, opacity: 0.5 },
+      anchorX: 0.556,
+      anchorY: 0.705,
+      shadow: { width: 168, height: 84, opacity: 0.25 },
     },
-    // Silo (1x2)
+    // Silo (1x2) - measured base ground center
     silo: {
       widthPx: 160,
       heightPx: 208,
-      anchorX: 0.5,
-      anchorY: 0.825,
-      shadow: { width: 126, height: 63, opacity: 0.48 },
+      anchorX: 0.426,
+      anchorY: 0.810,
+      shadow: { width: 126, height: 63, opacity: 0.25 },
     },
-    // Barn (2x2)
+    // Barn (2x2) - measured base ground center
     barn: {
       widthPx: 208,
       heightPx: 208,
-      anchorX: 0.5,
-      anchorY: 0.803,
-      shadow: { width: 168, height: 84, opacity: 0.5 },
+      anchorX: 0.521,
+      anchorY: 0.752,
+      shadow: { width: 168, height: 84, opacity: 0.25 },
     },
     // Order Board (1x1)
     order_board: {
       widthPx: 144,
       heightPx: 144,
-      anchorX: 0.5,
-      anchorY: 0.82,
-      shadow: { width: 84, height: 42, opacity: 0.42 },
+      anchorX: 0.422,
+      anchorY: 0.790,
+      shadow: { width: 84, height: 42, opacity: 0.20 },
     },
     // Roadside Shop (2x1)
     roadside_shop: {
       widthPx: 176,
       heightPx: 176,
-      anchorX: 0.5,
-      anchorY: 0.765,
-      shadow: { width: 126, height: 63, opacity: 0.46 },
+      anchorX: 0.503,
+      anchorY: 0.700,
+      shadow: { width: 126, height: 63, opacity: 0.22 },
     },
     // Lucky Wheel Truck (2x1)
     lucky_wheel: {
       widthPx: 176,
       heightPx: 176,
-      anchorX: 0.5,
-      anchorY: 0.765,
-      shadow: { width: 126, height: 63, opacity: 0.46 },
+      anchorX: 0.583,
+      anchorY: 0.760,
+      shadow: { width: 126, height: 63, opacity: 0.22 },
     },
     // Production Machines (2x2)
     bakery: {
       widthPx: 176,
       heightPx: 176,
-      anchorX: 0.5,
-      anchorY: 0.765,
-      shadow: { width: 168, height: 84, opacity: 0.48 },
+      anchorX: 0.507,
+      anchorY: 0.662,
+      shadow: { width: 168, height: 84, opacity: 0.24 },
     },
     feed_mill: {
       widthPx: 176,
       heightPx: 176,
-      anchorX: 0.5,
-      anchorY: 0.765,
-      shadow: { width: 168, height: 84, opacity: 0.48 },
+      anchorX: 0.521,
+      anchorY: 0.681,
+      shadow: { width: 168, height: 84, opacity: 0.24 },
     },
     dairy: {
       widthPx: 176,
       heightPx: 176,
-      anchorX: 0.5,
-      anchorY: 0.765,
-      shadow: { width: 168, height: 84, opacity: 0.48 },
+      anchorX: 0.499,
+      anchorY: 0.651,
+      shadow: { width: 168, height: 84, opacity: 0.24 },
     },
     sugar_mill: {
       widthPx: 176,
       heightPx: 176,
-      anchorX: 0.5,
-      anchorY: 0.765,
-      shadow: { width: 168, height: 84, opacity: 0.48 },
+      anchorX: 0.524,
+      anchorY: 0.712,
+      shadow: { width: 168, height: 84, opacity: 0.24 },
     },
     popcorn_pot: {
       widthPx: 176,
       heightPx: 176,
-      anchorX: 0.5,
-      anchorY: 0.765,
-      shadow: { width: 168, height: 84, opacity: 0.48 },
+      anchorX: 0.508,
+      anchorY: 0.712,
+      shadow: { width: 168, height: 84, opacity: 0.24 },
     },
     bbq_grill: {
       widthPx: 176,
       heightPx: 176,
-      anchorX: 0.5,
-      anchorY: 0.765,
-      shadow: { width: 168, height: 84, opacity: 0.48 },
+      anchorX: 0.439,
+      anchorY: 0.724,
+      shadow: { width: 168, height: 84, opacity: 0.24 },
     },
     honey_extractor: {
       widthPx: 176,
       heightPx: 176,
-      anchorX: 0.5,
-      anchorY: 0.765,
-      shadow: { width: 168, height: 84, opacity: 0.48 },
+      anchorX: 0.536,
+      anchorY: 0.665,
+      shadow: { width: 168, height: 84, opacity: 0.24 },
     },
     // Bee Tree (2x2)
     bee_tree: {
-      widthPx: 160,
-      heightPx: 180,
-      anchorX: 0.5,
-      anchorY: 0.82,
-      shadow: { width: 140, height: 70, opacity: 0.45 },
+      widthPx: 192,
+      heightPx: 192,
+      anchorX: 0.501,
+      anchorY: 0.743,
+      shadow: { width: 140, height: 70, opacity: 0.24 },
     },
     // Nectar Bush (1x1)
     nectar_bush: {
+      widthPx: 112,
+      heightPx: 112,
+      anchorX: 0.500,
+      anchorY: 0.733,
+      shadow: { width: 70, height: 35, opacity: 0.18 },
+    },
+    // Dead Obstacles
+    dead_tree: {
+      widthPx: 128,
+      heightPx: 128,
+      anchorX: 0.490,
+      anchorY: 0.786,
+      shadow: { width: 84, height: 42, opacity: 0.20 },
+    },
+    dead_bush: {
       widthPx: 96,
       heightPx: 96,
-      anchorX: 0.5,
-      anchorY: 0.72,
-      shadow: { width: 70, height: 35, opacity: 0.35 },
+      anchorX: 0.500,
+      anchorY: 0.750,
+      shadow: { width: 70, height: 35, opacity: 0.18 },
     },
-    // Crop Plot (1x1)
+    // Crop Plot (1x1) - flat on ground, 0 external shadow
     crop_plot: {
       widthPx: 128,
       heightPx: 96,
-      anchorX: 0.5,
-      anchorY: 0.38,
-      shadow: { width: 84, height: 42, opacity: 0.32 },
+      anchorX: 0.500,
+      anchorY: 0.385,
+      shadow: { width: 84, height: 42, opacity: 0 },
     },
     // Animal Pen (2x2)
     animal_pen: {
       widthPx: 192,
       heightPx: 160,
-      anchorX: 0.5,
-      anchorY: 0.46875,
-      shadow: { width: 168, height: 84, opacity: 0.38 },
+      anchorX: 0.500,
+      anchorY: 0.475,
+      shadow: { width: 168, height: 84, opacity: 0.22 },
     },
   },
   vector: {
@@ -424,9 +439,10 @@ export function getEntityAnchorDef(
     buildingData?: { buildingType: string };
     decorationType?: string;
   },
-  graphicsStyle: '3d_rendered' | 'vector' = '3d_rendered'
+  graphicsStyle: '3d_rendered' | 'vector' | '2d_flat' = '3d_rendered'
 ): IsoAnchorDef {
-  const styleRegistry = ISO_ANCHOR_REGISTRY[graphicsStyle] || ISO_ANCHOR_REGISTRY['3d_rendered'];
+  const styleKey = graphicsStyle === 'vector' ? 'vector' : '3d_rendered';
+  const styleRegistry = ISO_ANCHOR_REGISTRY[styleKey] || ISO_ANCHOR_REGISTRY['3d_rendered'];
 
   let def: IsoAnchorDef | undefined;
 
@@ -461,32 +477,7 @@ export function getEntityAnchorDef(
     }
   }
 
-  // Apply our math-grounding rule for buildings, production machines, bee tree, nectar bush, and dead obstacles
-  const isBuildingOrStructure =
-    entity.type === 'building' ||
-    entity.type === 'farmhouse' ||
-    entity.type === 'silo' ||
-    entity.type === 'barn' ||
-    entity.type === 'order_board' ||
-    entity.type === 'roadside_shop' ||
-    entity.type === 'lucky_wheel' ||
-    entity.type === 'bee_tree' ||
-    entity.type === 'nectar_bush' ||
-    entity.type === 'dead_tree' ||
-    entity.type === 'dead_bush';
-
   if (def) {
-    if (isBuildingOrStructure) {
-      const w = entity.width || 1;
-      const h = entity.height || 1;
-      const yOffset = (w + h) * 10.5; // (w + h) * HALF_TILE_H / 2
-      def.anchorY = 1 - yOffset / def.heightPx;
-
-      // Small adjustment for vector buildings which have default internal SVG padding
-      if (graphicsStyle === 'vector') {
-        def.anchorY = Math.min(0.98, def.anchorY + 0.04);
-      }
-    }
     return def;
   }
 

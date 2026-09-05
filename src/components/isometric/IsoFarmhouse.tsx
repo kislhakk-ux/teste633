@@ -2,7 +2,7 @@ import React from 'react';
 
 export const IsoFarmhouse: React.FC<{ isSelected?: boolean }> = ({ isSelected }) => {
   return (
-    <div className="relative w-48 h-44 flex items-center justify-center filter drop-shadow-[0_12px_18px_rgba(0,0,0,0.38)]">
+    <div className="relative w-48 h-44 flex items-center justify-center pointer-events-none select-none">
       <svg
         viewBox="0 0 210 195"
         className="w-full h-full overflow-visible pointer-events-none select-none"
@@ -57,20 +57,6 @@ export const IsoFarmhouse: React.FC<{ isSelected?: boolean }> = ({ isSelected })
             <stop offset="100%" stopColor="#01579B" />
           </linearGradient>
         </defs>
-
-        {/* Ambient Ground Shadow */}
-        <ellipse cx="105" cy="164" rx="86" ry="26" fill="rgba(0,0,0,0.32)" />
-
-        {/* 1. Cobblestone Foundation */}
-        <polygon points="105,152 40,118 40,132 105,166" fill="url(#hd-fh-stone)" stroke="#37474F" strokeWidth="1.2" />
-        <polygon points="105,152 170,118 170,132 105,166" fill="#455A64" stroke="#263238" strokeWidth="1.2" />
-
-        {/* Round Cobblestone Reliefs */}
-        <ellipse cx="54" cy="128" rx="4" ry="2.5" fill="#ECEFF1" stroke="#37474F" strokeWidth="0.6" />
-        <ellipse cx="74" cy="138" rx="4.5" ry="2.8" fill="#ECEFF1" stroke="#37474F" strokeWidth="0.6" />
-        <ellipse cx="94" cy="148" rx="4.5" ry="2.8" fill="#ECEFF1" stroke="#37474F" strokeWidth="0.6" />
-        <ellipse cx="120" cy="148" rx="4.5" ry="2.8" fill="#ECEFF1" stroke="#37474F" strokeWidth="0.6" />
-        <ellipse cx="142" cy="138" rx="4" ry="2.5" fill="#ECEFF1" stroke="#37474F" strokeWidth="0.6" />
 
         {/* 2. Main 2-Story House Structure */}
         {/* Left Sunlit Wall */}

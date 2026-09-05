@@ -134,6 +134,20 @@ export function getInitialGameState(): GameState {
     bolt: 1,
     axe: 3,
     saw: 3,
+    shovel: 2,
+    pickaxe: 2,
+    dynamite: 2,
+    tnt_barrel: 1,
+    silver_ore: 0,
+    gold_ore: 0,
+    iron_ore: 0,
+    coal_ore: 0,
+    platinum_ore: 0,
+    silver_bar: 0,
+    gold_bar: 0,
+    iron_bar: 0,
+    coal_bar: 0,
+    platinum_bar: 0,
     nectar: 0,
     honey: 0,
   };
@@ -191,6 +205,10 @@ export function getInitialGameState(): GameState {
       arrivesAt: Date.now() + 1000 * 60, // Arrives in 1 min the first time!
       crates: [],
     },
+    mine: {
+      status: 'broken',
+      totalMined: 0,
+    },
   };
 }
 
@@ -208,6 +226,14 @@ export function loadGameState(): GameState {
       // Ensure graphics style
       if (!parsed.graphicsStyle) {
         parsed.graphicsStyle = '3d_rendered';
+      }
+
+      // Ensure mine exists
+      if (!parsed.mine) {
+        parsed.mine = {
+          status: (parsed.level || 1) >= 24 ? 'broken' : 'locked',
+          totalMined: 0,
+        };
       }
 
       // Ensure fishing boat exists

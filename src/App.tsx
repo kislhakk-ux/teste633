@@ -55,6 +55,10 @@ import { UnlockParcelModal } from './components/UnlockParcelModal';
 import { FishingBoatModal } from './components/FishingBoatModal';
 import { DeliveryBoatModal } from './components/DeliveryBoatModal';
 import { FishingLakeView } from './components/FishingLakeView';
+import { MineModal } from './components/MineModal';
+import { MineRepairModal } from './components/MineRepairModal';
+import { checkRandomToolDrop } from './utils/toolDropSystem';
+import { ToolItemId, MiningResult } from './types/game';
 import { generateForestForParcel } from './utils/forestGen';
 import { EXPANSION_PARCELS, ExpansionParcel } from './constants/expansionData';
 import { googleSignIn, googleSignOut, loadFarmFromFirestore, saveFarmToFirestore } from './utils/firebase';
@@ -77,6 +81,7 @@ function applyWongamerVip(state: GameState, email?: string): GameState {
       siloLevel: Math.max(state.siloLevel || 1, 100),
       barnLevel: Math.max(state.barnLevel || 1, 100),
       fishingBoat: { ...(state.fishingBoat || { spots: [] }), status: 'broken' },
+      mine: { ...(state.mine || { totalMined: 0 }), status: state.mine?.status || 'broken' },
       inventory: {
         ...state.inventory,
         land_map: Math.max(state.inventory?.land_map || 0, 50),
@@ -85,6 +90,9 @@ function applyWongamerVip(state: GameState, email?: string): GameState {
         axe: Math.max(state.inventory?.axe || 0, 50),
         saw: Math.max(state.inventory?.saw || 0, 50),
         dynamite: Math.max(state.inventory?.dynamite || 0, 50),
+        tnt_barrel: Math.max(state.inventory?.tnt_barrel || 0, 50),
+        shovel: Math.max(state.inventory?.shovel || 0, 50),
+        pickaxe: Math.max(state.inventory?.pickaxe || 0, 50),
       },
     };
   }
@@ -123,6 +131,8 @@ export default function App() {
   const [isFishingBoatModalOpen, setIsFishingBoatModalOpen] = useState(false);
   const [isDeliveryBoatModalOpen, setIsDeliveryBoatModalOpen] = useState(false);
   const [isFishingLakeMode, setIsFishingLakeMode] = useState(false);
+  const [isMineModalOpen, setIsMineModalOpen] = useState(false);
+  const [isMineRepairModalOpen, setIsMineRepairModalOpen] = useState(false);
   const [unlockModalParcelId, setUnlockModalParcelId] = useState<string | null>(null);
   const [onlineCount, setOnlineCount] = useState<number>(1);
   const [onlineFarms, setOnlineFarms] = useState<OnlineFarm[]>([]);
@@ -147,10 +157,8 @@ export default function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
-  // Authentication requirement state
-  const [isAuthRequired, setIsAuthRequired] = useState<boolean>(() => {
-    return localStorage.getItem('hayday_google_logged_in') !== 'true';
-  });
+  // Authentication requirement state (false by default so user can play immediately)
+  const [isAuthRequired, setIsAuthRequired] = useState<boolean>(false);
 
   // Initial cloud restore if session exists in localStorage
   useEffect(() => {
@@ -546,6 +554,17 @@ export default function App() {
           newFishingBoat.spots = newSpots;
         }
 
+        // 7. Process Mine Repair Timer
+        let newMine = prev.mine ? { ...prev.mine } : undefined;
+        if (newMine && newMine.status === 'repairing' && newMine.repairStartedAt) {
+          if (now - newMine.repairStartedAt >= 36 * 3600 * 1000) {
+            updated = true;
+            newMine.status = 'repaired';
+            showToast('🎉 As obras na Mina foram concluídas! A mina está aberta!');
+            sound.playCelebration();
+          }
+        }
+
         // Check for XP Level Up
         const getXpRequirement = (lvl: number) => {
           if (LEVEL_XP_REQUIREMENTS[lvl]) return LEVEL_XP_REQUIREMENTS[lvl];
@@ -584,6 +603,7 @@ export default function App() {
           activeVisitor: newVisitor,
           fishingBoat: newFishingBoat,
           deliveryBoat: newDeliveryBoat,
+          mine: newMine,
           stats: newStats,
         };
       });
@@ -726,6 +746,14 @@ export default function App() {
         }
         return a;
       });
+
+      // Random tool drop opportunity
+      const toolDrop = checkRandomToolDrop('crop', barnUsed, barnCap, prev.level);
+      if (toolDrop) {
+        newInv[toolDrop.itemId] = (newInv[toolDrop.itemId] || 0) + toolDrop.count;
+        const it = ITEMS[toolDrop.itemId];
+        showToast(`🎁 Você encontrou ${it?.icon || '⛏️'} ${it?.name || 'Ferramenta'} enquanto colhia!`);
+      }
 
       return {
         ...prev,
@@ -890,6 +918,14 @@ export default function App() {
         }
         return a;
       });
+
+      // Random tool drop opportunity
+      const toolDrop = checkRandomToolDrop('animal', barnUsed, barnCap, prev.level);
+      if (toolDrop) {
+        newInv[toolDrop.itemId] = (newInv[toolDrop.itemId] || 0) + toolDrop.count;
+        const it = ITEMS[toolDrop.itemId];
+        showToast(`🎁 Você encontrou ${it?.icon || '⛏️'} ${it?.name || 'Ferramenta'} cuidando dos bichinhos!`);
+      }
 
       return {
         ...prev,
@@ -2363,6 +2399,115 @@ export default function App() {
     setIsFishingBoatModalOpen(true);
   };
 
+  // Mining System Handlers
+  const handleMineClick = () => {
+    const status = gameState.mine?.status || (gameState.level >= 24 ? 'broken' : 'locked');
+    if (status === 'repaired') {
+      setIsMineModalOpen(true);
+    } else {
+      setIsMineRepairModalOpen(true);
+    }
+  };
+
+  const handleStartMineRepair = () => {
+    if (gameState.coins < 25000) {
+      showToast('⚠️ Moedas insuficientes (25.000 moedas necessárias)!');
+      return;
+    }
+    sound.playCoin();
+    sound.playHammer();
+    setGameState((prev) => ({
+      ...prev,
+      coins: prev.coins - 25000,
+      mine: {
+        ...(prev.mine || { totalMined: 0 }),
+        status: 'repairing',
+        repairStartedAt: Date.now(),
+      },
+    }));
+    showToast('🔨 Obras iniciadas na Mina! Em 36 horas ela estará restaurada.');
+  };
+
+  const handleSpeedUpMineRepair = (gemsCost: number) => {
+    if (gameState.gems < gemsCost) {
+      showToast('💎 Diamantes insuficientes!');
+      return;
+    }
+    sound.playCelebration();
+    setGameState((prev) => ({
+      ...prev,
+      gems: prev.gems - gemsCost,
+      mine: {
+        ...(prev.mine || { totalMined: 0 }),
+        status: 'repaired',
+      },
+    }));
+    setIsMineRepairModalOpen(false);
+    setIsMineModalOpen(true);
+    showToast('🎉 Mina totalmente restaurada e aberta para exploração!');
+  };
+
+  const handleFinishMineRepair = () => {
+    sound.playCelebration();
+    setGameState((prev) => ({
+      ...prev,
+      mine: {
+        ...(prev.mine || { totalMined: 0 }),
+        status: 'repaired',
+      },
+    }));
+    setIsMineRepairModalOpen(false);
+    setIsMineModalOpen(true);
+    showToast('🎉 Mina inaugurada com sucesso!');
+  };
+
+  const handleMineSuccess = (toolId: ToolItemId, result: MiningResult) => {
+    setGameState((prev) => {
+      const next = { ...prev };
+      const nextInv = { ...next.inventory };
+
+      // Deduct 1 tool
+      nextInv[toolId] = Math.max(0, (nextInv[toolId] || 0) - 1);
+
+      // Add barn items
+      for (const [itemId, count] of Object.entries(result.barnItems)) {
+        const id = itemId as ItemId;
+        nextInv[id] = (nextInv[id] || 0) + (count || 0);
+      }
+      next.inventory = nextInv;
+
+      // Add direct gems
+      if (result.directGems > 0) {
+        next.gems = (next.gems || 0) + result.directGems;
+      }
+
+      // Add XP & level up progression
+      let newXp = (next.xp || 0) + result.totalXp;
+      let newLvl = next.level;
+      let req = LEVEL_XP_REQUIREMENTS[newLvl] || Math.round(1000 + newLvl * 1500);
+      while (newXp >= req) {
+        newXp -= req;
+        newLvl += 1;
+        req = LEVEL_XP_REQUIREMENTS[newLvl] || Math.round(1000 + newLvl * 1500);
+        sound.playLevelUp();
+        setLevelUpPopupLevel(newLvl);
+      }
+      next.xp = newXp;
+      next.level = newLvl;
+
+      // Update mine progress
+      next.mine = {
+        ...(next.mine || {}),
+        status: 'repaired',
+        totalMined: (next.mine?.totalMined || 0) + 1,
+        lastMinedAt: Date.now(),
+        lastMinedRewards: result.barnItems,
+      };
+
+      return next;
+    });
+  };
+
   if (isFishingLakeMode) {
     return (
       <FishingLakeView
@@ -2423,6 +2568,9 @@ export default function App() {
         inventory={gameState.inventory}
         fishingBoatStatus={gameState.fishingBoat?.status || 'broken'}
         onFishingBoatClick={handleFishingBoatClick}
+        mineStatus={gameState.mine?.status || (gameState.level >= 24 ? 'broken' : 'locked')}
+        mineRepairStartedAt={gameState.mine?.repairStartedAt}
+        onMineClick={handleMineClick}
         onQuickPlantCrop={handleQuickPlantCrop}
         onSelectEntity={(ent) => {
           if (visitingFarm) {
@@ -2451,6 +2599,7 @@ export default function App() {
         }}
         onQuickHarvestCrop={handleHarvestCrop}
         onQuickCollectAnimal={handleCollectAnimal}
+        onQuickFeedAnimals={handleFeedAnimals}
         onQuickCollectBuilding={(bId) => handleCollectAllCompleted(bId)}
         isMovingMode={isMovingMode}
         onMoveEntityPosition={handleMoveEntityPosition}
@@ -2605,6 +2754,7 @@ export default function App() {
         }}
         googleUser={googleUser}
         onLogout={handleLogout}
+        onGoogleLogin={handleGoogleLogin}
       />
 
       {/* Full Modal Dialogs */}
@@ -2809,6 +2959,26 @@ export default function App() {
               },
             }));
           }}
+        />
+      )}
+
+      {/* Mine Repair Modal */}
+      {isMineRepairModalOpen && (
+        <MineRepairModal
+          gameState={gameState}
+          onClose={() => setIsMineRepairModalOpen(false)}
+          onStartRepair={handleStartMineRepair}
+          onSpeedUpRepair={handleSpeedUpMineRepair}
+          onFinishRepair={handleFinishMineRepair}
+        />
+      )}
+
+      {/* Mine Active Exploration Modal */}
+      {isMineModalOpen && (
+        <MineModal
+          gameState={gameState}
+          onClose={() => setIsMineModalOpen(false)}
+          onMineSuccess={handleMineSuccess}
         />
       )}
     </div>
