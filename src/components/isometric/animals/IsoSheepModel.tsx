@@ -14,7 +14,7 @@ export const IsoSheepModel: React.FC<AnimalVisualProps> = React.memo(({
     <g
       id={`sheep-${index}`}
       transform={`translate(${x}, ${y})`}
-      className={`cursor-pointer transition-transform duration-200 ${
+      className={`cursor-pointer transition-transform duration-200 select-none ${
         isReady ? 'animate-animal-ready' : ''
       }`}
       onClick={(e) => {
@@ -23,153 +23,123 @@ export const IsoSheepModel: React.FC<AnimalVisualProps> = React.memo(({
       }}
     >
       <defs>
-        {/* 3D Wool Cloud Gradient */}
-        <radialGradient id={`wool-puff-${index}`} cx="35%" cy="30%" r="70%">
+        {/* 3D Fluffy Wool Fleece Gradient */}
+        <radialGradient id={`wool-cloud-${index}`} cx="40%" cy="30%" r="68%">
           <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="65%" stopColor="#ECEFF1" />
-          <stop offset="90%" stopColor="#CFD8DC" />
-          <stop offset="100%" stopColor="#90A4AE" />
+          <stop offset="55%" stopColor="#F5F5F5" />
+          <stop offset="85%" stopColor="#E0E0E0" />
+          <stop offset="100%" stopColor="#BDBDBD" />
         </radialGradient>
 
-        {/* 3D Sheep Head Dark Slate Gradient */}
-        <radialGradient id={`sheep-face-${index}`} cx="40%" cy="35%" r="65%">
-          <stop offset="0%" stopColor="#546E7A" />
-          <stop offset="60%" stopColor="#37474F" />
-          <stop offset="100%" stopColor="#212121" />
+        {/* 3D Black Velvet Sheep Face & Ears */}
+        <radialGradient id={`sheep-face-${index}`} cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#424242" />
+          <stop offset="65%" stopColor="#263238" />
+          <stop offset="100%" stopColor="#1A1A1A" />
         </radialGradient>
-
-        {/* Shears Gold Gradient */}
-        <linearGradient id={`shears-gold-${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFF59D" />
-          <stop offset="50%" stopColor="#FFD54F" />
-          <stop offset="100%" stopColor="#FF8F00" />
-        </linearGradient>
       </defs>
 
       {/* 1. Ground Contact Shadow */}
-      <ellipse cx="0" cy="11" rx="20" ry="7.5" fill="rgba(0,0,0,0.28)" />
+      <ellipse cx="2" cy="11" rx="19" ry="6.5" fill="rgba(0,0,0,0.28)" />
 
-      {/* 2. Slender Black Trotter Legs */}
+      {/* 2. Dainty Black Hooved Legs */}
       <g id="sheep-legs">
-        {/* Back Legs */}
-        <rect x="-9" y="7" width="4" height="10" rx="1.5" fill="#37474F" stroke="#212121" strokeWidth="0.8" />
-        <rect x="-9" y="14" width="4" height="3" fill="#212121" />
+        {/* Back legs */}
+        <rect x="-10" y="5" width="4.2" height="9" rx="2" fill="#263238" stroke="#1A1A1A" strokeWidth="0.8" />
+        <rect x="-10" y="11.5" width="4.2" height="2.5" rx="1" fill="#000000" />
 
-        <rect x="-2" y="8" width="4" height="10" rx="1.5" fill="#455A64" stroke="#212121" strokeWidth="0.8" />
-        <rect x="-2" y="15" width="4" height="3" fill="#212121" />
+        <rect x="-2" y="6" width="4.2" height="9" rx="2" fill="#263238" stroke="#1A1A1A" strokeWidth="0.8" />
+        <rect x="-2" y="12.5" width="4.2" height="2.5" rx="1" fill="#000000" />
 
-        {/* Front Legs */}
-        <rect x="5" y="7" width="4" height="10" rx="1.5" fill="#37474F" stroke="#212121" strokeWidth="0.8" />
-        <rect x="5" y="14" width="4" height="3" fill="#212121" />
+        {/* Front legs */}
+        <rect x="6" y="5" width="4.2" height="9" rx="2" fill="#37474F" stroke="#1A1A1A" strokeWidth="0.8" />
+        <rect x="6" y="11.5" width="4.2" height="2.5" rx="1" fill="#000000" />
 
-        <rect x="11" y="8" width="4" height="10" rx="1.5" fill="#455A64" stroke="#212121" strokeWidth="0.8" />
-        <rect x="11" y="15" width="4" height="3" fill="#212121" />
+        <rect x="12" y="6" width="4" height="8.5" rx="2" fill="#37474F" stroke="#1A1A1A" strokeWidth="0.8" />
+        <rect x="12" y="12" width="4" height="2.5" rx="1" fill="#000000" />
       </g>
 
-      {/* 3. Cloud-like Fluffy Wool Body (with breathing animation) */}
-      <g className={isFed && !isReady ? 'animate-sheep-breathe' : ''}>
-        {/* Overlapping Volumetric Puffs of Wool */}
-        {/* Back Puffs */}
-        <circle cx="-10" cy="-6" r={isReady ? 9.5 : 8} fill={`url(#wool-puff-${index})`} stroke="#B0BEC5" strokeWidth="1" />
-        <circle cx="-2" cy="-9" r={isReady ? 10 : 8.5} fill={`url(#wool-puff-${index})`} stroke="#B0BEC5" strokeWidth="1" />
-        <circle cx="7" cy="-7" r={isReady ? 9.5 : 8} fill={`url(#wool-puff-${index})`} stroke="#B0BEC5" strokeWidth="1" />
+      {/* 3. Main Fluffy 3D Cloud Wool Fleece Body */}
+      <g id="wool-fleece">
+        {/* Outer Cloud Puffs creating ultra-plump volumetric silhouette */}
+        <circle cx="-10" cy="-4" r="6.5" fill={`url(#wool-cloud-${index})`} stroke="#BDBDBD" strokeWidth="0.8" />
+        <circle cx="-5" cy="-7" r="7" fill={`url(#wool-cloud-${index})`} stroke="#BDBDBD" strokeWidth="0.8" />
+        <circle cx="2" cy="-7" r="7" fill={`url(#wool-cloud-${index})`} stroke="#BDBDBD" strokeWidth="0.8" />
+        <circle cx="8" cy="-5" r="6.5" fill={`url(#wool-cloud-${index})`} stroke="#BDBDBD" strokeWidth="0.8" />
+        <circle cx="12" cy="1" r="6" fill={`url(#wool-cloud-${index})`} stroke="#BDBDBD" strokeWidth="0.8" />
+        <circle cx="8" cy="5" r="6" fill={`url(#wool-cloud-${index})`} stroke="#BDBDBD" strokeWidth="0.8" />
+        <circle cx="0" cy="6" r="6.5" fill={`url(#wool-cloud-${index})`} stroke="#BDBDBD" strokeWidth="0.8" />
+        <circle cx="-8" cy="4" r="6.5" fill={`url(#wool-cloud-${index})`} stroke="#BDBDBD" strokeWidth="0.8" />
+        <circle cx="-13" cy="0" r="6" fill={`url(#wool-cloud-${index})`} stroke="#BDBDBD" strokeWidth="0.8" />
 
-        {/* Lower Puffs */}
-        <circle cx="-11" cy="4" r={isReady ? 9 : 7.5} fill={`url(#wool-puff-${index})`} stroke="#B0BEC5" strokeWidth="1" />
-        <circle cx="-3" cy="6" r={isReady ? 9.5 : 8} fill={`url(#wool-puff-${index})`} stroke="#B0BEC5" strokeWidth="1" />
-        <circle cx="6" cy="5" r={isReady ? 9 : 7.5} fill={`url(#wool-puff-${index})`} stroke="#B0BEC5" strokeWidth="1" />
+        {/* Center Plump Fill */}
+        <ellipse cx="0" cy="0" rx="12" ry="9" fill={`url(#wool-cloud-${index})`} />
 
-        {/* Central Core Puff */}
-        <circle cx="-2" cy="-1" r={isReady ? 13 : 11} fill={`url(#wool-puff-${index})`} stroke="#B0BEC5" strokeWidth="1.2" />
+        {/* Specular Highlight Puffs */}
+        <circle cx="-4" cy="-4" r="2.8" fill="#FFFFFF" opacity="0.8" />
+        <circle cx="3" cy="-4" r="2.5" fill="#FFFFFF" opacity="0.8" />
+      </g>
 
-        {/* Specular White Highlights on Puffs */}
-        <circle cx="-5" cy="-5" r="4.5" fill="#FFFFFF" opacity="0.85" />
-        <circle cx="2" cy="-6" r="3.5" fill="#FFFFFF" opacity="0.85" />
-        <circle cx="-7" cy="2" r="3.2" fill="#FFFFFF" opacity="0.75" />
+      {/* 4. Tiny Tail Puff */}
+      <circle cx="-14" cy="2" r="3.2" fill={`url(#wool-cloud-${index})`} stroke="#BDBDBD" strokeWidth="0.8" />
 
-        {/* Extra Puffy Cloud Puffs when Ready to Shear! */}
-        {isReady && (
-          <g id="super-fluffy-wool">
-            <circle cx="-14" cy="-1" r="6" fill={`url(#wool-puff-${index})`} stroke="#B0BEC5" strokeWidth="0.8" />
-            <circle cx="11" cy="-2" r="6" fill={`url(#wool-puff-${index})`} stroke="#B0BEC5" strokeWidth="0.8" />
-            <circle cx="-2" cy="-12" r="5" fill={`url(#wool-puff-${index})`} stroke="#B0BEC5" strokeWidth="0.8" />
-          </g>
-        )}
+      {/* 5. 3D Velvet Sheep Face & Head */}
+      <g id="sheep-head" transform="translate(11, -3)">
+        {/* Head Base */}
+        <ellipse cx="0" cy="0" rx="7.2" ry="6.2" fill={`url(#sheep-face-${index})`} stroke="#1A1A1A" strokeWidth="0.8" />
 
-        {/* Sheep Head with Nibbling Motion */}
-        <g
-          id="sheep-head"
-          transform="translate(15, -4)"
-          className={isFed && !isReady ? 'animate-sheep-nibble' : ''}
-        >
-          {/* Droopy Slate Black Ears */}
-          <ellipse cx="-4" cy="-2" rx="3.2" ry="6" fill={`url(#sheep-face-${index})`} stroke="#212121" strokeWidth="0.8" transform="rotate(25 -4 -2)" />
-          <ellipse cx="-4" cy="-2" rx="1.8" ry="4" fill="#37474F" transform="rotate(25 -4 -2)" />
+        {/* Fluffy Wool Forelock (Crown of curls) */}
+        <circle cx="-2" cy="-6" r="3" fill={`url(#wool-cloud-${index})`} stroke="#BDBDBD" strokeWidth="0.6" />
+        <circle cx="2" cy="-6.5" r="3.5" fill={`url(#wool-cloud-${index})`} stroke="#BDBDBD" strokeWidth="0.6" />
+        <circle cx="5" cy="-5.5" r="2.8" fill={`url(#wool-cloud-${index})`} stroke="#BDBDBD" strokeWidth="0.6" />
 
-          {/* Head Base */}
-          <ellipse cx="0" cy="0" rx="8" ry="7.2" fill={`url(#sheep-face-${index})`} stroke="#212121" strokeWidth="1.2" />
-          <ellipse cx="-1.5" cy="-2.5" rx="3" ry="1.6" fill="#78909C" opacity="0.6" />
+        {/* Floppy Drooping Velvet Ears */}
+        <ellipse cx="-6" cy="-2" rx="4.5" ry="2.2" fill={`url(#sheep-face-${index})`} stroke="#1A1A1A" strokeWidth="0.6" transform="rotate(-30 -6 -2)" />
+        <ellipse cx="6" cy="-2" rx="4.5" ry="2.2" fill={`url(#sheep-face-${index})`} stroke="#1A1A1A" strokeWidth="0.6" transform="rotate(30 6 -2)" />
 
-          {/* Forehead Fluffy Wool Crown Curls */}
-          <circle cx="-2" cy="-6.5" r="3.8" fill={`url(#wool-puff-${index})`} stroke="#B0BEC5" strokeWidth="0.8" />
-          <circle cx="2.5" cy="-6.2" r="3.6" fill={`url(#wool-puff-${index})`} stroke="#B0BEC5" strokeWidth="0.8" />
-          <circle cx="0" cy="-5" r="3" fill="#FFFFFF" />
+        {/* Big Expressive 3D Cartoon Eye */}
+        <g id="sheep-eye" transform="translate(1.5, -2)">
+          <circle cx="0" cy="0" r="2.6" fill="#FFFFFF" stroke="#000000" strokeWidth="0.6" />
+          <circle cx="0.4" cy="0" r="1.6" fill="#3E2723" />
+          <circle cx="0.6" cy="0" r="1" fill="#000000" />
+          <circle cx="0" cy="-0.6" r="0.7" fill="#FFFFFF" />
+          <circle cx="0.9" cy="0.3" r="0.3" fill="#FFFFFF" />
+        </g>
 
-          {/* Cute Big Cartoon Eyes */}
-          <circle cx="2" cy="-2.5" r="2.6" fill="#FFFFFF" stroke="#212121" strokeWidth="0.6" />
-          <circle cx="2.5" cy="-2.5" r="1.6" fill="#000000" />
-          <circle cx="1.8" cy="-3.1" r="0.7" fill="#FFFFFF" />
-          <circle cx="2.8" cy="-2.1" r="0.35" fill="#FFFFFF" />
-
-          {/* Muzzle / Nostrils / Smile */}
-          <circle cx="6" cy="1" r="0.9" fill="#212121" />
-          <path d="M 4 2.5 Q 6 4 7 2.5" stroke="#212121" strokeWidth="0.8" fill="none" strokeLinecap="round" />
-
-          {/* Blade of Clover in mouth when fed */}
+        {/* Snout with Chewing Motion when fed */}
+        <g className={isFed && !isReady ? 'animate-cow-chew' : ''} transform="translate(4.5, 2.5)">
+          <ellipse cx="0" cy="0" rx="4" ry="2.8" fill="#37474F" />
+          {/* Nostrils */}
+          <circle cx="-1.2" cy="0" r="0.8" fill="#1A1A1A" />
+          <circle cx="1.2" cy="0" r="0.8" fill="#1A1A1A" />
+          {/* Fresh Green Grass Strand in mouth when fed */}
           {isFed && (
-            <g transform="translate(6, 2.5) scale(0.65)">
-              <line x1="0" y1="0" x2="6" y2="-2" stroke="#4CAF50" strokeWidth="1.2" strokeLinecap="round" />
-              <circle cx="6" cy="-2" r="2" fill="#81C784" />
+            <g transform="translate(3, 1) scale(0.65)">
+              <line x1="0" y1="0" x2="5" y2="-2" stroke="#4CAF50" strokeWidth="1.2" strokeLinecap="round" />
+              <circle cx="5" cy="-2" r="1.8" fill="#81C784" />
             </g>
           )}
         </g>
       </g>
 
-      {/* 4. Ready for Shearing Celebration Overlay */}
+      {/* 6. Ready Wool Harvest Sparkles (No floating text badges!) */}
       {isReady && (
-        <g id="wool-ready" className="animate-golden-sparkle">
-          {/* Floating Shears & Wool Skein Badge */}
-          <g transform="translate(20, -22)">
-            <rect x="-14" y="-8" width="28" height="15" rx="7.5" fill="#37474F" stroke={`url(#shears-gold-${index})`} strokeWidth="1.5" />
-            <text x="0" y="3.5" fontSize="8.5" fontWeight="bold" fill="#FFFFFF" textAnchor="middle">✂️ Lã</text>
+        <g id="wool-ready-sparkle" className="animate-golden-sparkle">
+          <g transform="translate(16, -12)">
+            <path d="M 0 -3 L 0.8 -0.8 L 3 0 L 0.8 0.8 L 0 3 L -0.8 0.8 L -3 0 L -0.8 -0.8 Z" fill="#FFD700" stroke="#FFA000" strokeWidth="0.4" />
           </g>
-
-          {/* Sparkle Stars */}
-          <g transform="translate(-16, -14)">
-            <path d="M 0 -4 L 1 -1 L 4 0 L 1 1 L 0 4 L -1 1 L -4 0 L -1 -1 Z" fill="#FFD700" stroke="#FFA000" strokeWidth="0.5" />
-          </g>
-          <g transform="translate(8, -26)">
-            <path d="M 0 -3 L 0.8 -0.8 L 3 0 L 0.8 0.8 L 0 3 L -0.8 0.8 L -3 0 L -0.8 -0.8 Z" fill="#FFD700" stroke="#FFA000" strokeWidth="0.5" />
+          <g transform="translate(-14, -10)">
+            <path d="M 0 -2.5 L 0.6 -0.6 L 2.5 0 L 0.6 0.6 L 0 2.5 L -0.6 0.6 L -2.5 0 L -0.6 -0.6 Z" fill="#FFD700" stroke="#FFA000" strokeWidth="0.4" />
           </g>
         </g>
       )}
 
-      {/* 5. Hungry Thought Bubble ("🌾") when not fed */}
-      {!isFed && (
-        <g id="hungry-bubble" className="animate-thought-float" transform="translate(14, -28)">
-          <circle cx="0" cy="0" r="8.5" fill="#FFFFFF" stroke="#FFA000" strokeWidth="1.2" />
-          <circle cx="-4" cy="7.5" r="2.2" fill="#FFFFFF" stroke="#FFA000" strokeWidth="0.8" />
-          <circle cx="-7" cy="11.5" r="1.4" fill="#FFFFFF" />
-          <text x="0" y="3.5" fontSize="9.5" textAnchor="middle">🌾</text>
-        </g>
-      )}
-
-      {/* 6. Speech Bubble on Tap */}
+      {/* 7. Compact Speech Bubble on direct Tap */}
       {bubbleText && (
-        <g id="speech-bubble" transform="translate(2, -32)" className="animate-in zoom-in duration-150">
-          <rect x="-24" y="-12" width="48" height="15" rx="7.5" fill="#455A64" stroke="#FFFFFF" strokeWidth="1.2" />
-          <polygon points="-3,3 3,3 0,6" fill="#455A64" />
-          <text x="0" y="-1.5" fill="#FFFFFF" fontSize="8.5" fontWeight="bold" textAnchor="middle">
+        <g id="speech-bubble" transform="translate(0, -18)" className="animate-in zoom-in duration-150">
+          <rect x="-22" y="-10" width="44" height="13" rx="6.5" fill="#37474F" stroke="#FFFFFF" strokeWidth="1" />
+          <polygon points="-2,3 2,3 0,5" fill="#37474F" />
+          <text x="0" y="-1" fill="#FFFFFF" fontSize="8" fontWeight="bold" textAnchor="middle">
             {bubbleText}
           </text>
         </g>

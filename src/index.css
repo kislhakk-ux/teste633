@@ -307,13 +307,13 @@
     transform: translateY(0) scale(1, 1);
   }
   30% {
-    transform: translateY(-8px) scale(0.96, 1.05);
+    transform: translateY(-3px) scale(0.98, 1.02);
   }
   50% {
-    transform: translateY(0) scale(1.05, 0.94);
+    transform: translateY(0) scale(1.02, 0.98);
   }
   70% {
-    transform: translateY(-4px) scale(0.98, 1.02);
+    transform: translateY(-1.5px) scale(0.99, 1.01);
   }
 }
 

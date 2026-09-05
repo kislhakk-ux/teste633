@@ -27,27 +27,27 @@ export interface PenAnimalPosition {
   delay?: string;
 }
 
-// 3 distinct animated positions per pen type for optimal isometric depth
+// 3 distinct animated positions per pen type strictly contained inside the pen interior
 export const PEN_ANIMAL_POSITIONS: Record<AnimalType, PenAnimalPosition[]> = {
   chicken: [
-    { x: 74, y: 76, scale: 1.05, facing: 'right', delay: '0s' },
-    { x: 114, y: 64, scale: 0.95, facing: 'left', delay: '0.8s' },
-    { x: 148, y: 84, scale: 1.02, facing: 'right', delay: '1.5s' },
+    { x: 80, y: 70, scale: 1.05, facing: 'right', delay: '0s' },
+    { x: 108, y: 58, scale: 0.98, facing: 'left', delay: '0.8s' },
+    { x: 130, y: 72, scale: 1.02, facing: 'right', delay: '1.5s' },
   ],
   cow: [
-    { x: 72, y: 78, scale: 1.02, facing: 'right', delay: '0s' },
-    { x: 112, y: 65, scale: 0.96, facing: 'left', delay: '1.2s' },
-    { x: 146, y: 82, scale: 1.0, facing: 'right', delay: '2.1s' },
+    { x: 82, y: 74, scale: 1.02, facing: 'right', delay: '0s' },
+    { x: 110, y: 60, scale: 0.96, facing: 'left', delay: '1.2s' },
+    { x: 132, y: 74, scale: 1.0, facing: 'right', delay: '2.1s' },
   ],
   pig: [
-    { x: 76, y: 76, scale: 1.02, facing: 'right', delay: '0.4s' },
-    { x: 110, y: 68, scale: 0.98, facing: 'left', delay: '1.6s' },
-    { x: 144, y: 82, scale: 1.0, facing: 'right', delay: '0s' },
+    { x: 82, y: 72, scale: 1.02, facing: 'right', delay: '0.4s' },
+    { x: 108, y: 62, scale: 0.98, facing: 'left', delay: '1.6s' },
+    { x: 132, y: 74, scale: 1.0, facing: 'right', delay: '0s' },
   ],
   sheep: [
-    { x: 70, y: 76, scale: 1.0, facing: 'right', delay: '0s' },
-    { x: 112, y: 64, scale: 0.95, facing: 'left', delay: '1.1s' },
-    { x: 146, y: 80, scale: 1.02, facing: 'right', delay: '1.9s' },
+    { x: 80, y: 72, scale: 1.0, facing: 'right', delay: '0s' },
+    { x: 110, y: 60, scale: 0.95, facing: 'left', delay: '1.1s' },
+    { x: 132, y: 72, scale: 1.02, facing: 'right', delay: '1.9s' },
   ],
 };
 

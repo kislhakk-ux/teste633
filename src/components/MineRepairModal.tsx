@@ -150,7 +150,7 @@ export const MineRepairModal: React.FC<MineRepairModalProps> = ({
               <button
                 disabled={!canAffordCoins}
                 onClick={() => {
-                  sound.playBuy();
+                  sound.playCoin();
                   onStartRepair();
                 }}
                 className={`w-full py-3 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-lg transition-transform ${

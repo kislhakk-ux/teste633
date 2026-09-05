@@ -58,7 +58,7 @@ import { FishingLakeView } from './components/FishingLakeView';
 import { MineModal } from './components/MineModal';
 import { MineRepairModal } from './components/MineRepairModal';
 import { checkRandomToolDrop } from './utils/toolDropSystem';
-import { ToolItemId, MiningResult } from './types/game';
+import { MiningRollResult } from './constants/mineData';
 import { generateForestForParcel } from './utils/forestGen';
 import { EXPANSION_PARCELS, ExpansionParcel } from './constants/expansionData';
 import { googleSignIn, googleSignOut, loadFarmFromFirestore, saveFarmToFirestore } from './utils/firebase';
@@ -561,7 +561,7 @@ export default function App() {
             updated = true;
             newMine.status = 'repaired';
             showToast('🎉 As obras na Mina foram concluídas! A mina está aberta!');
-            sound.playCelebration();
+            sound.playLevelUp();
           }
         }
 
@@ -748,11 +748,13 @@ export default function App() {
       });
 
       // Random tool drop opportunity
-      const toolDrop = checkRandomToolDrop('crop', barnUsed, barnCap, prev.level);
-      if (toolDrop) {
-        newInv[toolDrop.itemId] = (newInv[toolDrop.itemId] || 0) + toolDrop.count;
-        const it = ITEMS[toolDrop.itemId];
-        showToast(`🎁 Você encontrou ${it?.icon || '⛏️'} ${it?.name || 'Ferramenta'} enquanto colhia!`);
+      if (barnUsed < barnCap) {
+        const toolDrop = checkRandomToolDrop(prev.level, 'harvest_crop');
+        if (toolDrop) {
+          newInv[toolDrop.itemId] = (newInv[toolDrop.itemId] || 0) + toolDrop.count;
+          const it = ITEMS[toolDrop.itemId];
+          showToast(`🎁 Você encontrou ${it?.icon || '⛏️'} ${it?.name || 'Ferramenta'} enquanto colhia!`);
+        }
       }
 
       return {
@@ -920,11 +922,13 @@ export default function App() {
       });
 
       // Random tool drop opportunity
-      const toolDrop = checkRandomToolDrop('animal', barnUsed, barnCap, prev.level);
-      if (toolDrop) {
-        newInv[toolDrop.itemId] = (newInv[toolDrop.itemId] || 0) + toolDrop.count;
-        const it = ITEMS[toolDrop.itemId];
-        showToast(`🎁 Você encontrou ${it?.icon || '⛏️'} ${it?.name || 'Ferramenta'} cuidando dos bichinhos!`);
+      if (barnUsed < barnCap) {
+        const toolDrop = checkRandomToolDrop(prev.level, 'collect_animal');
+        if (toolDrop) {
+          newInv[toolDrop.itemId] = (newInv[toolDrop.itemId] || 0) + toolDrop.count;
+          const it = ITEMS[toolDrop.itemId];
+          showToast(`🎁 Você encontrou ${it?.icon || '⛏️'} ${it?.name || 'Ferramenta'} cuidando dos bichinhos!`);
+        }
       }
 
       return {
@@ -2415,7 +2419,7 @@ export default function App() {
       return;
     }
     sound.playCoin();
-    sound.playHammer();
+    sound.playWoodHit();
     setGameState((prev) => ({
       ...prev,
       coins: prev.coins - 25000,
@@ -2433,7 +2437,7 @@ export default function App() {
       showToast('💎 Diamantes insuficientes!');
       return;
     }
-    sound.playCelebration();
+    sound.playLevelUp();
     setGameState((prev) => ({
       ...prev,
       gems: prev.gems - gemsCost,
@@ -2448,7 +2452,7 @@ export default function App() {
   };
 
   const handleFinishMineRepair = () => {
-    sound.playCelebration();
+    sound.playLevelUp();
     setGameState((prev) => ({
       ...prev,
       mine: {
@@ -2461,7 +2465,10 @@ export default function App() {
     showToast('🎉 Mina inaugurada com sucesso!');
   };
 
-  const handleMineSuccess = (toolId: ToolItemId, result: MiningResult) => {
+  const handleMineSuccess = (
+    toolId: 'shovel' | 'pickaxe' | 'dynamite' | 'tnt_barrel',
+    result: MiningRollResult
+  ) => {
     setGameState((prev) => {
       const next = { ...prev };
       const nextInv = { ...next.inventory };
@@ -2470,9 +2477,10 @@ export default function App() {
       nextInv[toolId] = Math.max(0, (nextInv[toolId] || 0) - 1);
 
       // Add barn items
-      for (const [itemId, count] of Object.entries(result.barnItems)) {
-        const id = itemId as ItemId;
-        nextInv[id] = (nextInv[id] || 0) + (count || 0);
+      const barnItemsRecord: Record<string, number> = {};
+      for (const item of result.barnItems) {
+        nextInv[item.itemId] = (nextInv[item.itemId] || 0) + item.count;
+        barnItemsRecord[item.itemId] = (barnItemsRecord[item.itemId] || 0) + item.count;
       }
       next.inventory = nextInv;
 
@@ -2965,7 +2973,11 @@ export default function App() {
       {/* Mine Repair Modal */}
       {isMineRepairModalOpen && (
         <MineRepairModal
-          gameState={gameState}
+          status={gameState.mine?.status === 'repairing' ? 'repairing' : (gameState.level >= 24 ? 'broken' : 'locked')}
+          playerLevel={gameState.level}
+          coins={gameState.coins}
+          gems={gameState.gems}
+          repairStartedAt={gameState.mine?.repairStartedAt}
           onClose={() => setIsMineRepairModalOpen(false)}
           onStartRepair={handleStartMineRepair}
           onSpeedUpRepair={handleSpeedUpMineRepair}
@@ -2976,7 +2988,11 @@ export default function App() {
       {/* Mine Active Exploration Modal */}
       {isMineModalOpen && (
         <MineModal
-          gameState={gameState}
+          playerLevel={gameState.level}
+          inventory={gameState.inventory}
+          gems={gameState.gems}
+          barnUsed={barnUsed}
+          barnCap={barnCap}
           onClose={() => setIsMineModalOpen(false)}
           onMineSuccess={handleMineSuccess}
         />

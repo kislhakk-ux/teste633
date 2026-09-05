@@ -14,7 +14,7 @@ export const IsoCowModel: React.FC<AnimalVisualProps> = React.memo(({
     <g
       id={`cow-${index}`}
       transform={`translate(${x}, ${y})`}
-      className={`cursor-pointer transition-transform duration-200 ${
+      className={`cursor-pointer transition-transform duration-200 select-none ${
         isReady ? 'animate-animal-ready' : ''
       }`}
       onClick={(e) => {
@@ -23,176 +23,174 @@ export const IsoCowModel: React.FC<AnimalVisualProps> = React.memo(({
       }}
     >
       <defs>
-        {/* 3D Cow Body Gradient (White porcelain with warm soft shadow) */}
-        <radialGradient id={`cow-body-${index}`} cx="40%" cy="35%" r="65%">
+        {/* 3D Cow Body Lighting */}
+        <radialGradient id={`cow-body-${index}`} cx="38%" cy="30%" r="70%">
           <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="65%" stopColor="#F5F5F5" />
-          <stop offset="90%" stopColor="#E0E0E0" />
+          <stop offset="60%" stopColor="#F5F5F5" />
+          <stop offset="85%" stopColor="#E0E0E0" />
           <stop offset="100%" stopColor="#B0BEC5" />
         </radialGradient>
 
-        {/* Cow Black Patch Gradient */}
-        <radialGradient id={`cow-spot-${index}`} cx="40%" cy="35%" r="65%">
+        {/* 3D Dark Cow Patch */}
+        <radialGradient id={`cow-spot-${index}`} cx="40%" cy="32%" r="68%">
           <stop offset="0%" stopColor="#455A64" />
-          <stop offset="50%" stopColor="#263238" />
+          <stop offset="55%" stopColor="#263238" />
           <stop offset="100%" stopColor="#1A2024" />
         </radialGradient>
 
-        {/* Pink Snout / Udder Gradient */}
-        <radialGradient id={`cow-pink-${index}`} cx="40%" cy="30%" r="70%">
+        {/* 3D Pink Snout & Udder */}
+        <radialGradient id={`cow-pink-${index}`} cx="38%" cy="28%" r="70%">
           <stop offset="0%" stopColor="#FF80AB" />
-          <stop offset="60%" stopColor="#FF4081" />
+          <stop offset="55%" stopColor="#FF4081" />
           <stop offset="100%" stopColor="#C2185B" />
         </radialGradient>
 
-        {/* Golden Bell Gradient */}
+        {/* 3D Golden Brass Bell */}
         <linearGradient id={`cow-bell-${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#FFF59D" />
-          <stop offset="40%" stopColor="#FFD54F" />
-          <stop offset="80%" stopColor="#FFB300" />
-          <stop offset="100%" stopColor="#FF8F00" />
+          <stop offset="35%" stopColor="#FFD54F" />
+          <stop offset="75%" stopColor="#FFB300" />
+          <stop offset="100%" stopColor="#E65100" />
         </linearGradient>
 
-        {/* Milk Bottle Glass Gradient */}
-        <linearGradient id={`milk-bottle-${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#E0F7FA" />
-          <stop offset="50%" stopColor="#FFFFFF" />
-          <stop offset="100%" stopColor="#B2EBF2" />
+        {/* Stainless Steel Milk Pail */}
+        <linearGradient id={`milk-pail-${index}`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#ECEFF1" />
+          <stop offset="50%" stopColor="#CFD8DC" />
+          <stop offset="85%" stopColor="#90A4AE" />
+          <stop offset="100%" stopColor="#607D8B" />
         </linearGradient>
       </defs>
 
       {/* 1. Ground Contact Shadow */}
-      <ellipse cx="4" cy="14" rx="24" ry="9" fill="rgba(0,0,0,0.28)" />
+      <ellipse cx="2" cy="12" rx="20" ry="7" fill="rgba(0,0,0,0.3)" />
 
-      {/* 2. Swishing Tail at Back */}
-      <g id="cow-tail" transform="translate(-16, 2)" className="animate-tail-swish">
-        <path
-          d="M 0 0 Q -8 8 -6 16"
-          stroke="#37474F"
-          strokeWidth="2.5"
-          fill="none"
-          strokeLinecap="round"
-        />
-        {/* Tail Fluffy Tip */}
-        <ellipse cx="-6" cy="17" rx="3" ry="4.5" fill={`url(#cow-spot-${index})`} />
+      {/* 2. Stainless Steel Milk Canister sitting in straw when Ready (No floating text!) */}
+      {isReady && (
+        <g id="milk-can" transform="translate(18, 2)">
+          {/* Can shadow */}
+          <ellipse cx="0" cy="8" rx="6" ry="2.5" fill="rgba(0,0,0,0.25)" />
+          {/* Main Can body */}
+          <polygon points="-4,-2 4,-2 5,7 -5,7" fill={`url(#milk-pail-${index})`} stroke="#455A64" strokeWidth="0.8" />
+          {/* Top neck & lid */}
+          <ellipse cx="0" cy="-2" rx="4" ry="1.8" fill="#ECEFF1" stroke="#455A64" strokeWidth="0.6" />
+          <rect x="-2.5" y="-5" width="5" height="3" rx="1" fill={`url(#milk-pail-${index})`} stroke="#455A64" strokeWidth="0.6" />
+          {/* Wire bail handle */}
+          <path d="M -4 1 Q 0 -6 4 1" stroke="#37474F" strokeWidth="0.8" fill="none" />
+          {/* Fresh white milk shimmer inside rim */}
+          <ellipse cx="0" cy="-3.5" rx="2" ry="0.8" fill="#FFFFFF" />
+          {/* Compact sparkle star */}
+          <path d="M 5 -4 L 5.5 -2.5 L 7 -2 L 5.5 -1.5 L 5 0 L 4.5 -1.5 L 3 -2 L 4.5 -2.5 Z" fill="#FFD700" stroke="#FFA000" strokeWidth="0.3" />
+        </g>
+      )}
+
+      {/* 3. Swishing Tail */}
+      <g id="cow-tail" transform="translate(-14, 0)" className="animate-tail-swish">
+        <path d="M 0 0 Q -7 6 -5 13" stroke="#37474F" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+        <ellipse cx="-5" cy="14" rx="2.5" ry="3.8" fill={`url(#cow-spot-${index})`} />
       </g>
 
-      {/* 3. Short Chubby Legs with Hooves */}
+      {/* 4. Chunky Legs & Hooves */}
       <g id="cow-legs">
         {/* Back Legs */}
-        <rect x="-13" y="6" width="5.5" height="12" rx="2" fill="#ECEFF1" stroke="#37474F" strokeWidth="1" />
-        <rect x="-13" y="14" width="5.5" height="4" rx="1" fill="#263238" />
+        <rect x="-11" y="4" width="4.8" height="10" rx="1.5" fill="#ECEFF1" stroke="#37474F" strokeWidth="0.8" />
+        <rect x="-11" y="11" width="4.8" height="3.5" rx="1" fill="#263238" />
 
-        <rect x="-4" y="8" width="5.5" height="12" rx="2" fill="#ECEFF1" stroke="#37474F" strokeWidth="1" />
-        <rect x="-4" y="16" width="5.5" height="4" rx="1" fill="#263238" />
+        <rect x="-3" y="6" width="4.8" height="10" rx="1.5" fill="#ECEFF1" stroke="#37474F" strokeWidth="0.8" />
+        <rect x="-3" y="13" width="4.8" height="3.5" rx="1" fill="#263238" />
 
         {/* Front Legs */}
-        <rect x="7" y="6" width="5.5" height="12" rx="2" fill="#FFFFFF" stroke="#37474F" strokeWidth="1" />
-        <rect x="7" y="14" width="5.5" height="4" rx="1" fill="#263238" />
+        <rect x="6" y="4" width="4.8" height="10" rx="1.5" fill="#FFFFFF" stroke="#37474F" strokeWidth="0.8" />
+        <rect x="6" y="11" width="4.8" height="3.5" rx="1" fill="#263238" />
 
-        <rect x="15" y="8" width="5" height="11" rx="2" fill="#FFFFFF" stroke="#37474F" strokeWidth="1" />
-        <rect x="15" y="15" width="5" height="4" rx="1" fill="#263238" />
+        <rect x="13" y="6" width="4.5" height="9.5" rx="1.5" fill="#FFFFFF" stroke="#37474F" strokeWidth="0.8" />
+        <rect x="13" y="12.5" width="4.5" height="3.5" rx="1" fill="#263238" />
       </g>
 
-      {/* 4. Udder (Enlarged & Glowing when Ready to Milk) */}
-      <g id="udder" transform="translate(-6, 9)">
-        <ellipse
-          cx="0"
-          cy="0"
-          rx={isReady ? 8 : 6}
-          ry={isReady ? 6 : 4.5}
-          fill={`url(#cow-pink-${index})`}
-          stroke="#C2185B"
-          strokeWidth="0.8"
-        />
-        <circle cx="-3" cy="4" r={isReady ? 2 : 1.5} fill="#C2185B" />
-        <circle cx="2" cy="4" r={isReady ? 2 : 1.5} fill="#C2185B" />
-        {isReady && (
-          <ellipse cx="-1" cy="-1.5" rx="3.5" ry="2" fill="#FFFFFF" opacity="0.6" />
-        )}
+      {/* 5. Plump Udder */}
+      <g id="udder" transform="translate(-5, 7)">
+        <ellipse cx="0" cy="0" rx="6.5" ry="4.5" fill={`url(#cow-pink-${index})`} stroke="#C2185B" strokeWidth="0.9" />
+        {/* Teats */}
+        <ellipse cx="-3.5" cy="4" rx="1.2" ry="2.2" fill={`url(#cow-pink-${index})`} />
+        <ellipse cx="-1" cy="4.5" rx="1.2" ry="2.2" fill={`url(#cow-pink-${index})`} />
+        <ellipse cx="1.5" cy="4.5" rx="1.2" ry="2.2" fill={`url(#cow-pink-${index})`} />
+        <ellipse cx="4" cy="4" rx="1.2" ry="2.2" fill={`url(#cow-pink-${index})`} />
       </g>
 
-      {/* 5. Chubby Holstein Cow Body */}
-      <g id="cow-torso">
-        <ellipse
-          cx="0"
-          cy="0"
-          rx="19"
-          ry="14.5"
-          fill={`url(#cow-body-${index})`}
-          stroke="#37474F"
-          strokeWidth="1.4"
-        />
-        {/* Specular Highlight along cow back */}
-        <ellipse cx="-4" cy="-6" rx="9" ry="3.5" fill="#FFFFFF" opacity="0.8" />
+      {/* 6. Main Chubby 3D Barrel Body */}
+      <g id="cow-body">
+        <ellipse cx="0" cy="0" rx="17" ry="11" fill={`url(#cow-body-${index})`} stroke="#37474F" strokeWidth="1" />
+        {/* Specular 3D Highlight Curve */}
+        <ellipse cx="-4" cy="-4" rx="10" ry="4" fill="#FFFFFF" opacity="0.65" />
 
-        {/* Big Organic Black Spots */}
+        {/* Distinctive Organic Black Cow Patches */}
         <path
-          d="M -11 -7 Q -4 -15 3 -9 Q 0 1 -9 -3 Z"
+          d="M -12 -5 Q -8 -9 -3 -6 Q 0 -3 -2 2 Q -7 5 -11 1 Z"
           fill={`url(#cow-spot-${index})`}
         />
         <path
-          d="M 5 2 Q 14 -1 11 9 Q 3 11 5 2 Z"
+          d="M 3 -8 Q 9 -7 8 -2 Q 6 3 2 1 Z"
           fill={`url(#cow-spot-${index})`}
         />
-        <circle cx="-13" cy="4" r="3" fill={`url(#cow-spot-${index})`} />
+        <ellipse cx="-6" cy="5" rx="4" ry="2.5" fill={`url(#cow-spot-${index})`} />
       </g>
 
-      {/* 6. Red Collar & Golden Chime Bell */}
-      <g id="collar">
-        <path d="M 9 -2 Q 13 4 16 1" stroke="#E53935" strokeWidth="3.5" fill="none" strokeLinecap="round" />
-        {/* Golden Cowbell */}
-        <g transform="translate(12.5, 6)">
-          <path d="M -3 0 L 3 0 L 4 5 L -4 5 Z" fill={`url(#cow-bell-${index})`} stroke="#E65100" strokeWidth="0.8" />
-          <circle cx="0" cy="5.5" r="1.5" fill="#FFA000" />
-          <ellipse cx="-1" cy="2" rx="1.5" ry="1" fill="#FFFFFF" opacity="0.8" />
-        </g>
+      {/* 7. Golden Brass Cowbell on Leather Collar */}
+      <g id="cowbell" transform="translate(10, 4)">
+        {/* Leather Strap */}
+        <path d="M 0 -7 Q 3 2 1 6" stroke="#8D6E63" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+        {/* Bell */}
+        <polygon points="-3,5 3,5 4,11 -4,11" fill={`url(#cow-bell-${index})`} stroke="#BF360C" strokeWidth="0.8" />
+        <ellipse cx="0" cy="11" rx="4" ry="1.5" fill="#FF8F00" stroke="#BF360C" strokeWidth="0.6" />
+        <circle cx="0" cy="11.5" r="1" fill="#4E342E" />
       </g>
 
-      {/* 7. Cute 3D Cow Head with Chewing Cud & Ear Twitching */}
-      <g id="cow-head" transform="translate(17, -7)">
-        {/* Ears with twitch animation */}
-        <g id="ears" className={isFed && !isReady ? 'animate-cow-ears' : ''}>
-          <ellipse cx="-6" cy="-8" rx="3" ry="5.5" fill="#FFFFFF" stroke="#37474F" strokeWidth="1" transform="rotate(-35 -6 -8)" />
-          <ellipse cx="-6" cy="-8" rx="1.8" ry="3.5" fill="#FF80AB" transform="rotate(-35 -6 -8)" />
-
-          <ellipse cx="6" cy="-8" rx="3" ry="5.5" fill="#FFFFFF" stroke="#37474F" strokeWidth="1" transform="rotate(35 6 -8)" />
-          <ellipse cx="6" cy="-8" rx="1.8" ry="3.5" fill="#FF80AB" transform="rotate(35 6 -8)" />
-        </g>
-
-        {/* Golden Horns */}
-        <path d="M -5 -9 Q -9 -16 -4 -16 Q -3 -12 -2 -9" fill="#FFD54F" stroke="#FFA000" strokeWidth="0.8" />
-        <path d="M 5 -9 Q 9 -16 4 -16 Q 3 -12 2 -9" fill="#FFD54F" stroke="#FFA000" strokeWidth="0.8" />
-
+      {/* 8. 3D Cartoon Cow Head */}
+      <g id="cow-head" transform="translate(14, -6)">
         {/* Head Base */}
-        <ellipse cx="0" cy="0" rx="10.5" ry="9.5" fill={`url(#cow-body-${index})`} stroke="#37474F" strokeWidth="1.4" />
-        {/* Black patch across forehead */}
-        <path d="M -4 -8 Q 6 -11 4 -3 Q -3 -3 -4 -8 Z" fill={`url(#cow-spot-${index})`} />
-        {/* Forehead Specular */}
-        <ellipse cx="-2" cy="-4" rx="4" ry="2" fill="#FFFFFF" opacity="0.75" />
+        <ellipse cx="0" cy="0" rx="9" ry="8.5" fill={`url(#cow-body-${index})`} stroke="#37474F" strokeWidth="1" />
 
-        {/* Big Cartoon Eyes */}
-        <g id="eyes">
-          <circle cx="0.5" cy="-3.5" r="3.2" fill="#FFFFFF" stroke="#212121" strokeWidth="0.8" />
-          <circle cx="1" cy="-3.5" r="2.2" fill="#212121" />
-          <circle cx="0.2" cy="-4.2" r="0.9" fill="#FFFFFF" />
-          <circle cx="1.5" cy="-2.8" r="0.45" fill="#FFFFFF" />
-          {/* Eyelash */}
-          <path d="M -1 -7 Q 1 -8 3 -7" stroke="#212121" strokeWidth="0.8" fill="none" />
+        {/* Head Dark Spot across forehead */}
+        <path d="M -5 -7 Q 1 -8 3 -4 Q 0 1 -4 -1 Z" fill={`url(#cow-spot-${index})`} />
+
+        {/* Cute Ivory Horns */}
+        <path d="M -5 -7 Q -7 -13 -3 -12" stroke="#FFF9C4" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+        <path d="M 3 -7 Q 5 -13 9 -11" stroke="#FFF9C4" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+
+        {/* Floppy 3D Ears */}
+        {/* Left Ear */}
+        <g transform="translate(-8, -4) rotate(-22)">
+          <ellipse cx="0" cy="0" rx="5" ry="2.8" fill={`url(#cow-body-${index})`} stroke="#37474F" strokeWidth="0.8" />
+          <ellipse cx="0" cy="0" rx="3.2" ry="1.6" fill={`url(#cow-pink-${index})`} />
+        </g>
+        {/* Right Ear */}
+        <g transform="translate(7, -5) rotate(24)">
+          <ellipse cx="0" cy="0" rx="5" ry="2.8" fill={`url(#cow-body-${index})`} stroke="#37474F" strokeWidth="0.8" />
+          <ellipse cx="0" cy="0" rx="3.2" ry="1.6" fill={`url(#cow-pink-${index})`} />
         </g>
 
-        {/* Pink Snout / Muzzle (with chewing motion when fed!) */}
-        <g id="snout" className={isFed && !isReady ? 'animate-cow-chew' : ''} transform="translate(6, 3)">
-          <ellipse cx="0" cy="0" rx="7.2" ry="5.5" fill={`url(#cow-pink-${index})`} stroke="#C2185B" strokeWidth="1.1" />
-          <ellipse cx="-1.5" cy="-1.5" rx="3.5" ry="1.5" fill="#FFFFFF" opacity="0.65" />
+        {/* Expressive Big 3D Cartoon Eye */}
+        <g id="cow-eye" transform="translate(2, -3)">
+          <circle cx="0" cy="0" r="3" fill="#FFFFFF" stroke="#212121" strokeWidth="0.7" />
+          <circle cx="0.5" cy="0" r="1.8" fill="#3E2723" />
+          <circle cx="0.7" cy="0" r="1.1" fill="#1A1A1A" />
+          {/* Double Specular Catchlights */}
+          <circle cx="0" cy="-0.8" r="0.8" fill="#FFFFFF" />
+          <circle cx="1.2" cy="0.4" r="0.35" fill="#FFFFFF" />
+        </g>
+
+        {/* Pink Snout / Muzzle with cute Chewing Motion when fed */}
+        <g id="snout" className={isFed && !isReady ? 'animate-cow-chew' : ''} transform="translate(5, 3)">
+          <ellipse cx="0" cy="0" rx="6.5" ry="4.8" fill={`url(#cow-pink-${index})`} stroke="#C2185B" strokeWidth="1" />
+          <ellipse cx="-1.2" cy="-1.5" rx="3" ry="1.3" fill="#FFFFFF" opacity="0.65" />
           {/* Nostrils */}
-          <circle cx="-2.2" cy="0.2" r="1.3" fill="#880E4F" />
-          <circle cx="2.2" cy="0.2" r="1.3" fill="#880E4F" />
-          {/* Gentle Smile */}
-          <path d="M -3 2.5 Q 0 4.5 3 2.5" stroke="#880E4F" strokeWidth="0.9" fill="none" strokeLinecap="round" />
-          {/* Cute Clover in mouth when fed */}
+          <circle cx="-1.8" cy="0.2" r="1.1" fill="#880E4F" />
+          <circle cx="1.8" cy="0.2" r="1.1" fill="#880E4F" />
+          {/* Smile */}
+          <path d="M -2.5 2 Q 0 3.8 2.5 2" stroke="#880E4F" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+          {/* Fresh green clover in mouth when fed */}
           {isFed && (
-            <g transform="translate(4, 2.5) scale(0.7)">
+            <g transform="translate(3.5, 2) scale(0.65)">
               <circle cx="2" cy="-1" r="2" fill="#7CB342" />
               <circle cx="4" cy="1" r="2" fill="#7CB342" />
               <line x1="0" y1="0" x2="3" y2="0" stroke="#558B2F" strokeWidth="1" />
@@ -201,43 +199,12 @@ export const IsoCowModel: React.FC<AnimalVisualProps> = React.memo(({
         </g>
       </g>
 
-      {/* 8. Ready for Milking Celebration Overlay */}
-      {isReady && (
-        <g id="milk-ready" className="animate-golden-sparkle">
-          {/* Floating Glass Milk Bottle */}
-          <g transform="translate(24, -20)">
-            <rect x="-4" y="-3" width="8" height="12" rx="2" fill={`url(#milk-bottle-${index})`} stroke="#0097A7" strokeWidth="0.8" />
-            <rect x="-2" y="-6" width="4" height="3" fill="#FFFFFF" stroke="#0097A7" strokeWidth="0.6" />
-            <ellipse cx="0" cy="-6" rx="2.5" ry="1" fill="#E0F7FA" />
-            <text x="0" y="5" fontSize="7" textAnchor="middle">🥛</text>
-          </g>
-
-          {/* Sparkle Stars */}
-          <g transform="translate(-16, -14)">
-            <path d="M 0 -4 L 1 -1 L 4 0 L 1 1 L 0 4 L -1 1 L -4 0 L -1 -1 Z" fill="#FFD700" stroke="#FFA000" strokeWidth="0.5" />
-          </g>
-          <g transform="translate(8, -26)">
-            <path d="M 0 -3 L 0.8 -0.8 L 3 0 L 0.8 0.8 L 0 3 L -0.8 0.8 L -3 0 L -0.8 -0.8 Z" fill="#FFD700" stroke="#FFA000" strokeWidth="0.5" />
-          </g>
-        </g>
-      )}
-
-      {/* 9. Hungry Thought Bubble ("🌾") when not fed */}
-      {!isFed && (
-        <g id="hungry-bubble" className="animate-thought-float" transform="translate(14, -28)">
-          <circle cx="0" cy="0" r="8.5" fill="#FFFFFF" stroke="#FFA000" strokeWidth="1.2" />
-          <circle cx="-4" cy="7.5" r="2.2" fill="#FFFFFF" stroke="#FFA000" strokeWidth="0.8" />
-          <circle cx="-7" cy="11.5" r="1.4" fill="#FFFFFF" />
-          <text x="0" y="3.5" fontSize="9.5" textAnchor="middle">🌾</text>
-        </g>
-      )}
-
-      {/* 10. Speech Bubble on Tap */}
+      {/* 9. Compact Speech Bubble on direct Tap */}
       {bubbleText && (
-        <g id="speech-bubble" transform="translate(4, -32)" className="animate-in zoom-in duration-150">
-          <rect x="-26" y="-12" width="52" height="15" rx="7.5" fill="#1565C0" stroke="#FFFFFF" strokeWidth="1.2" />
-          <polygon points="-3,3 3,3 0,6" fill="#1565C0" />
-          <text x="0" y="-1.5" fill="#FFFFFF" fontSize="8.5" fontWeight="bold" textAnchor="middle">
+        <g id="speech-bubble" transform="translate(4, -20)" className="animate-in zoom-in duration-150">
+          <rect x="-22" y="-10" width="44" height="13" rx="6.5" fill="#1565C0" stroke="#FFFFFF" strokeWidth="1" />
+          <polygon points="-2,3 2,3 0,5" fill="#1565C0" />
+          <text x="0" y="-1" fill="#FFFFFF" fontSize="8" fontWeight="bold" textAnchor="middle">
             {bubbleText}
           </text>
         </g>
