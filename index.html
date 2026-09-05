@@ -20,6 +20,26 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Hay Day" />
     
+    <!-- Early script error trap to prevent blank white screens if any script fails -->
+    <script>
+      window.__appLoaded = false;
+      window.addEventListener('error', function (event) {
+        if (window.__appLoaded) return;
+        var errBox = document.getElementById('app-error-display');
+        var preloader = document.getElementById('app-preloader');
+        if (errBox) {
+          errBox.style.display = 'flex';
+          var msgEl = document.getElementById('app-error-message');
+          if (msgEl) {
+            msgEl.textContent = (event.message || 'Erro ao carregar arquivos do jogo.') + (event.filename ? ' (' + event.filename.split('/').pop() + ':' + event.lineno + ')' : '');
+          }
+        }
+        if (preloader) {
+          preloader.style.display = 'none';
+        }
+      });
+    </script>
+
     <!-- Google AdMob / AdSense for Games (H5 Ads) & Web Tag -->
     <script async
       data-ad-client="ca-pub-2377512488351478"
@@ -28,13 +48,46 @@
       src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2377512488351478">
     </script>
     <script>
-      window.adsbygoogle = window.adsbygoogle || [];
-      window.adBreak = window.adBreak || function(o) { (window.adsbygoogle = window.adsbygoogle || []).push(o); };
-      window.adConfig = window.adConfig || function(o) { (window.adsbygoogle = window.adsbygoogle || []).push(o); };
+      try {
+        window.adsbygoogle = window.adsbygoogle || [];
+        window.adBreak = window.adBreak || function(o) { (window.adsbygoogle = window.adsbygoogle || []).push(o); };
+        window.adConfig = window.adConfig || function(o) { (window.adsbygoogle = window.adsbygoogle || []).push(o); };
+      } catch (e) {
+        console.warn('AdSense init error:', e);
+      }
     </script>
   </head>
-  <body class="select-none overflow-hidden touch-manipulation">
-    <div id="root"></div>
+  <body class="select-none overflow-hidden touch-manipulation bg-[#5c9420]">
+    <div id="root">
+      <!-- Instant Farm Preloader to eliminate white screen while scripts download -->
+      <div id="app-preloader" style="position:fixed;inset:0;background:linear-gradient(135deg, #74a822 0%, #528c12 50%, #3a6809 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;color:white;z-index:99999;text-align:center;padding:20px;">
+        <div style="font-size:64px;margin-bottom:12px;filter:drop-shadow(0 4px 10px rgba(0,0,0,0.3));animation:bounce 1s infinite alternate;">🚜</div>
+        <h1 style="font-size:26px;font-weight:900;margin:0 0 6px 0;letter-spacing:-0.5px;text-shadow:0 2px 8px rgba(0,0,0,0.4);">Hay Day Farm Simulator</h1>
+        <p style="font-size:14px;color:#e8f5c8;margin:0 0 20px 0;font-weight:500;">Carregando a fazenda e o mercado...</p>
+        <div style="width:160px;height:8px;background:rgba(0,0,0,0.25);border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,0.3);">
+          <div style="width:65%;height:100%;background:#ffeb3b;border-radius:999px;animation:pulse 1.2s infinite ease-in-out;"></div>
+        </div>
+        <noscript style="margin-top:16px;color:#ffcdd2;font-size:13px;">O jogo requer JavaScript ativado para funcionar.</noscript>
+      </div>
+
+      <!-- Fallback Error Card if JavaScript bundle cannot execute -->
+      <div id="app-error-display" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#528c12,#3a6809);flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;color:white;z-index:99999;padding:24px;text-align:center;">
+        <div style="background:rgba(255,255,255,0.95);border-radius:24px;padding:28px 24px;max-width:380px;width:100%;color:#3e2723;box-shadow:0 20px 40px rgba(0,0,0,0.4);border:4px solid #fbc02d;">
+          <div style="font-size:48px;margin-bottom:8px;">🌾</div>
+          <h2 style="font-size:20px;font-weight:900;margin:0 0 8px 0;color:#2e7d32;">Ops! Falha ao Carregar</h2>
+          <p style="font-size:13px;color:#5d4037;line-height:1.5;margin:0 0 16px 0;">Ocorreu uma instabilidade na conexão com o servidor ao carregar a fazenda.</p>
+          <div id="app-error-message" style="font-family:monospace;font-size:11px;background:#f5f5f5;padding:8px;border-radius:8px;color:#c62828;margin-bottom:16px;word-break:break-all;max-height:80px;overflow:auto;"></div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button onclick="window.location.reload();" style="background:#4caf50;color:white;border:none;padding:12px;border-radius:12px;font-weight:bold;font-size:14px;cursor:pointer;box-shadow:0 4px 8px rgba(0,0,0,0.2);">
+              🔄 Recarregar Jogo
+            </button>
+            <button onclick="localStorage.removeItem('hayday_farm_simulator_save_v1');window.location.reload();" style="background:#fff3e0;color:#e65100;border:1px solid #ffe0b2;padding:10px;border-radius:12px;font-weight:600;font-size:12px;cursor:pointer;">
+              🧹 Limpar Cache Salvo e Recomeçar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

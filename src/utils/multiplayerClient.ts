@@ -73,13 +73,17 @@ class MultiplayerClient {
   }
 
   public getApiUrl(endpoint: string): string {
-    const isCapacitor = window.location.protocol.startsWith('capacitor') || 
-                        (window.location.protocol.startsWith('http') && 
-                         (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && 
-                         !window.location.port);
+    const isCapacitor = typeof window !== 'undefined' && (
+      window.location.protocol.startsWith('capacitor') || 
+      (window.location.protocol.startsWith('http') && 
+       (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && 
+       !window.location.port)
+    );
 
     if (isCapacitor) {
-      const prodServer = (process.env as any)?.PRODUCTION_SERVER_URL || 'teste633.onrender.com';
+      const prodServer = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_PRODUCTION_SERVER_URL) ||
+                         (typeof process !== 'undefined' && process.env?.PRODUCTION_SERVER_URL) ||
+                         'teste633.onrender.com';
       const cleanProdServer = prodServer.replace(/^wss?:\/\//, '').replace(/\/ws$/, '').replace(/^https?:\/\//, '');
       return `https://${cleanProdServer}${endpoint}`;
     }
@@ -146,7 +150,9 @@ class MultiplayerClient {
       let wsUrl = '';
       if (isCapacitor) {
         // Target production server (can be overridden by environment variable or falls back to a hosted Render instance)
-        const prodServer = process.env.PRODUCTION_SERVER_URL || 'teste633.onrender.com';
+        const prodServer = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_PRODUCTION_SERVER_URL) ||
+                           (typeof process !== 'undefined' && process.env?.PRODUCTION_SERVER_URL) ||
+                           'teste633.onrender.com';
         wsUrl = prodServer.startsWith('ws') ? prodServer : `wss://${prodServer}/ws`;
       } else {
         wsUrl = `${wsProtocol}//${host}/ws`;

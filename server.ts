@@ -189,7 +189,9 @@ function getSanitizedFarms(): OnlineFarm[] {
 async function startServer() {
   const app = express();
   const server = http.createServer(app);
-  const PORT = 3000;
+  // Strictly preserve port 3000 for Google AI Studio, adapt to process.env.PORT when deployed on Render
+  const isRender = process.env.RENDER === 'true';
+  const PORT = isRender && process.env.PORT ? Number(process.env.PORT) : 3000;
 
   // CORS and JSON Middleware
   app.use((req, res, next) => {
