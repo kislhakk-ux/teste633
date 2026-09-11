@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Harvest Horizon</string>
+    <string name="title_activity_main">Harvest Horizon</string>
+    <string name="package_name">com.harvest.horizon</string>
+    <string name="custom_url_scheme">com.harvest.horizon</string>
+    <string name="server_client_id">1091471592373-3rlulsf8dqeqovfg6kghp01tu00avpf4.apps.googleusercontent.com</string>
+</resources>

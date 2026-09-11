@@ -1,0 +1,6 @@
+{
+  "name": "Hay Day Farm Simulator",
+  "description": "Isometric cozy farm game inspired by Hay Day with real-time multiplayer newspaper trading, multi-device cross-play, roadside shops, crop harvesting, animal pens, and production buildings.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
