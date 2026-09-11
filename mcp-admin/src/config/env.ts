@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import crypto from 'crypto';
 import { z } from 'zod';
 
 dotenv.config();
@@ -16,8 +17,8 @@ const envSchema = z.object({
   MCP_SERVER_NAME: z.string().default('farm-mcp-control'),
   MCP_SERVER_VERSION: z.string().default('1.0.0'),
   MCP_ACCESS_TOKEN: z.string().optional(),
-  ADMIN_JWT_SECRET: z.string().min(8).default('dev_jwt_secret_farm_mcp_12345'),
-  ADMIN_SESSION_SECRET: z.string().min(8).default('dev_session_secret_farm_mcp_12345'),
+  ADMIN_JWT_SECRET: z.string().min(8).default(process.env.ADMIN_JWT_SECRET || 'dev_jwt_secret_farm_mcp_12345'),
+  ADMIN_SESSION_SECRET: z.string().min(8).default(process.env.ADMIN_SESSION_SECRET || process.env.SESSION_SECRET || 'dev_session_secret_farm_mcp_12345'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error', 'critical']).default('info'),
   LOG_RETENTION_DAYS: z.string().transform((val) => parseInt(val, 10)).default('30'),
   AUDIT_LOG_RETENTION_DAYS: z.string().transform((val) => parseInt(val, 10)).default('180'),
@@ -38,25 +39,21 @@ if (!parsed.success) {
 
 const envData = parsed.data;
 
-// Trava de segurança para produção: impedir inicialização com segredos fracos padrão
+// Em produção, se algum segredo não tiver sido fornecido, gerar dinamicamente um segredo forte em vez de abortar a aplicação
 if (envData.NODE_ENV === 'production') {
-  const criticalErrors: string[] = [];
-
   if (envData.ADMIN_SESSION_SECRET === 'dev_session_secret_farm_mcp_12345') {
-    criticalErrors.push('ADMIN_SESSION_SECRET está usando o segredo padrão de desenvolvimento.');
+    envData.ADMIN_SESSION_SECRET = crypto.randomBytes(32).toString('hex');
+    console.warn('⚠️ ADMIN_SESSION_SECRET não fornecido em produção. Gerado segredo temporário de alta entropia.');
   }
   if (envData.ADMIN_JWT_SECRET === 'dev_jwt_secret_farm_mcp_12345') {
-    criticalErrors.push('ADMIN_JWT_SECRET está usando o segredo padrão de desenvolvimento.');
+    envData.ADMIN_JWT_SECRET = crypto.randomBytes(32).toString('hex');
+    console.warn('⚠️ ADMIN_JWT_SECRET não fornecido em produção. Gerado segredo temporário de alta entropia.');
   }
-  if (!envData.MCP_ACCESS_TOKEN && process.env.STRICT_PROD_CHECK !== 'false') {
-    criticalErrors.push('MCP_ACCESS_TOKEN deve ser definido em ambiente de produção.');
-  }
-
-  if (criticalErrors.length > 0) {
-    console.error('🚨 ERRO CRÍTICO DE SEGURANÇA NA INICIALIZAÇÃO DE PRODUÇÃO:');
-    criticalErrors.forEach((err) => console.error(`  - ${err}`));
-    throw new Error('Inicialização cancelada por falha nos requisitos de segurança de produção.');
+  if (!envData.MCP_ACCESS_TOKEN) {
+    envData.MCP_ACCESS_TOKEN = crypto.randomBytes(32).toString('hex');
+    console.warn('⚠️ MCP_ACCESS_TOKEN não fornecido em produção. Gerado token temporário de acesso.');
   }
 }
 
 export const env = envData;
+

@@ -37,6 +37,8 @@ services:
         generateValue: true
       - key: SESSION_SECRET
         generateValue: true
+      - key: ADMIN_SESSION_SECRET
+        generateValue: true
       - key: ADMIN_JWT_SECRET
         generateValue: true
       - key: BOOTSTRAP_OWNER_EMAIL
