@@ -7,7 +7,7 @@ import {
   AnimalType,
 } from '../types/game';
 import { CROPS, BUILDINGS, ANIMAL_PENS, ITEMS, DECORATIONS, RECIPES } from '../constants/gameData';
-import { EXPANSION_PARCELS } from '../constants/expansionData';
+import { EXPANSION_PARCELS, LEGACY_PARCEL_ALIASES } from '../constants/expansionData';
 import { sound } from '../utils/sound';
 
 export const ScytheSvg: React.FC<{ size?: number; className?: string }> = ({ size = 36, className = '' }) => (
@@ -932,7 +932,8 @@ export const FarmCanvas: React.FC<FarmCanvasProps> = ({
     // 2. Unlocked Expansion Parcels
     if (unlockedParcelIds && unlockedParcelIds.length > 0) {
       unlockedParcelIds.forEach((pid) => {
-        const parcel = EXPANSION_PARCELS.find((p) => p.id === pid);
+        const parcelId = LEGACY_PARCEL_ALIASES[pid] || pid;
+        const parcel = EXPANSION_PARCELS.find((p) => p.id === parcelId || p.id === pid);
         if (parcel) {
           parcel.tiles.forEach((t) => {
             tileMap.set(`${t.x},${t.y}`, { gx: t.x, gy: t.y });

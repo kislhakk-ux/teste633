@@ -491,6 +491,16 @@ export const LEGACY_PARCEL_ALIASES: Record<string, string> = {
   exp_south_west_grove: 'exp_east_valley',
   exp_south_pasture: 'exp_east_meadow',
   exp_south_riverbank: 'exp_far_east_terrace',
+  exp_lake_grove: 'exp_north_1',
+  exp_pine_slope: 'exp_north_2',
+  exp_sun_meadow: 'exp_east_meadow',
+  exp_apple_orchard: 'exp_south_valley',
+  exp_waterfront: 'exp_far_east_terrace',
+  exp_ancient_woods: 'exp_east_valley',
+  exp_mountain_plateau: 'exp_north_west_1',
+  exp_waterfall: 'exp_far_east_terrace',
+  exp_south_meadow_1: 'exp_south_grove',
+  exp_south_meadow_2: 'exp_far_east_plateau',
 };
 
 export function isTileInBaseFarm(x: number, y: number): boolean {
@@ -499,12 +509,12 @@ export function isTileInBaseFarm(x: number, y: number): boolean {
 
 export function isTileInParcel(parcel: ExpansionParcel, x: number, y: number): boolean {
   if (
-    x < parcel.bounds.minX ||
-    x >= parcel.bounds.maxX ||
-    y < parcel.bounds.minY ||
-    y >= parcel.bounds.maxY
+    x >= parcel.bounds.minX &&
+    x < parcel.bounds.maxX &&
+    y >= parcel.bounds.minY &&
+    y < parcel.bounds.maxY
   ) {
-    return false;
+    return true;
   }
   return parcel.tiles.some((t) => t.x === x && t.y === y);
 }

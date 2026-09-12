@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { EXPANSION_PARCELS } from '../../constants/expansionData';
+import { EXPANSION_PARCELS, LEGACY_PARCEL_ALIASES } from '../../constants/expansionData';
 import { getCachedForestForParcel } from '../../utils/forestGen';
 import {
   CartoonFoliageDefs,
@@ -49,7 +49,9 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
 
       {/* RENDER ALL EXPANSION PARCELS */}
       {EXPANSION_PARCELS.map((parcel) => {
-        const isUnlocked = unlockedParcelIds.includes(parcel.id);
+        const isUnlocked = unlockedParcelIds.some(
+          (id) => id === parcel.id || LEGACY_PARCEL_ALIASES[id] === parcel.id
+        );
 
         // Viewport Culling Optimization
         if (
