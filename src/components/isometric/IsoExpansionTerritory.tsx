@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState } from 'react';
 import { EXPANSION_PARCELS } from '../../constants/expansionData';
 import { getCachedForestForParcel } from '../../utils/forestGen';
 import {
@@ -24,24 +24,26 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
   viewportBoundingBox,
   playerLevel = 1,
 }) => {
+  const [hoveredParcelId, setHoveredParcelId] = useState<string | null>(null);
+
   return (
     <g id="iso-expansion-territory-layer" className="select-none">
       <CartoonFoliageDefs />
 
       <defs>
-        {/* Sunny Unified Farm Lawn Gradient - seamless natural grass under locked & unlocked terrain */}
-        <linearGradient id="hd-natural-lawn-grad" x1="15%" y1="0%" x2="85%" y2="100%">
-          <stop offset="0%" stopColor="#9DE83B" />
-          <stop offset="35%" stopColor="#86D628" />
-          <stop offset="70%" stopColor="#6DBF1B" />
-          <stop offset="100%" stopColor="#55A412" />
+        {/* Hay Day Wild Untamed Pasture Gradient */}
+        <linearGradient id="hd-wild-pasture-grad" x1="20%" y1="0%" x2="80%" y2="100%">
+          <stop offset="0%" stopColor="#C9DD55" />
+          <stop offset="35%" stopColor="#B3CD3F" />
+          <stop offset="75%" stopColor="#9AB82C" />
+          <stop offset="100%" stopColor="#81A01B" />
         </linearGradient>
 
-        {/* Golden Expansion Banner Radial Glow */}
-        <radialGradient id="hd-expand-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#FFF176" stopOpacity="0.8" />
-          <stop offset="60%" stopColor="#FBC02D" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#F57F17" stopOpacity="0" />
+        {/* Subtle Parcel Hover Golden Glow */}
+        <radialGradient id="hd-parcel-hover-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#FFF59D" stopOpacity="0.45" />
+          <stop offset="70%" stopColor="#FFEE58" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="#FBC02D" stopOpacity="0" />
         </radialGradient>
       </defs>
 
@@ -62,6 +64,7 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
 
         const centerIso = gridToIso(parcel.center.x, parcel.center.y);
         const canAffordLevel = playerLevel >= parcel.requiredLevel;
+        const isHovered = hoveredParcelId === parcel.id;
 
         // 1. UNLOCKED TERRITORY: Seamless ground, render persistent scenery features like lakes if present
         if (isUnlocked) {
@@ -81,22 +84,56 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
           return null;
         }
 
-        // 2. LOCKED WILDERNESS TERRITORY:
-        // Use cached forest props for high-performance mobile rendering
+        // 2. LOCKED WILDERNESS TERRITORY (Hay Day Format)
         const forestItems = getCachedForestForParcel(parcel);
         const hash = parcel.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+
+        // Calculate polygon points in isometric space for the parcel ground
+        const polyIsoPoints = parcel.stakePoints.map((pt) => {
+          const iso = gridToIso(pt.x, pt.y);
+          return `${iso.x},${iso.y}`;
+        }).join(' ');
+
+        // Sort foliage items by isometric Y for correct rendering depth
+        const sortedForestItems = [...forestItems].sort((a, b) => {
+          const isoA = gridToIso(a.x, a.y);
+          const isoB = gridToIso(b.x, b.y);
+          return isoA.y - isoB.y;
+        });
 
         return (
           <g
             key={`locked_${parcel.id}`}
             id={`parcel-${parcel.id}`}
-            className="cursor-pointer pointer-events-auto transition-transform duration-200 hover:brightness-105"
+            className="cursor-pointer pointer-events-auto transition-all duration-200"
+            onMouseEnter={() => setHoveredParcelId(parcel.id)}
+            onMouseLeave={() => setHoveredParcelId(null)}
             onClick={(e) => {
               e.stopPropagation();
               onOpenExpansionModal?.(parcel.id);
             }}
           >
-            {/* A. Natural Forest Lake (if parcel has one) */}
+            {/* A. Wild Golden-Green Pasture Base Ground Polygon */}
+            {polyIsoPoints && (
+              <polygon
+                points={polyIsoPoints}
+                fill="url(#hd-wild-pasture-grad)"
+                stroke={isHovered ? '#FFF59D' : 'rgba(90,120,30,0.4)'}
+                strokeWidth={isHovered ? 2.5 : 1}
+                className="transition-all duration-200"
+              />
+            )}
+
+            {/* Hover Sunlight Glow */}
+            {isHovered && polyIsoPoints && (
+              <polygon
+                points={polyIsoPoints}
+                fill="url(#hd-parcel-hover-glow)"
+                className="pointer-events-none"
+              />
+            )}
+
+            {/* B. Natural Forest Lake (if parcel has one) */}
             {parcel.lake && (
               <Detailed3DForestLake
                 x={gridToIso(parcel.lake.x, parcel.lake.y).x}
@@ -107,7 +144,7 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
               />
             )}
 
-            {/* B. Cobblestone / River Stone Border Segments circulating the perimeter */}
+            {/* C. Continuous Hay Day Stacked Cobblestone Wall Border around perimeter */}
             {parcel.stakePoints.map((pt, idx) => {
               const nextPt = parcel.stakePoints[(idx + 1) % parcel.stakePoints.length];
               const iso1 = gridToIso(pt.x, pt.y);
@@ -124,22 +161,22 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
               );
             })}
 
-            {/* C. Boundary Survey Stakes along Natural Perimeter Corners */}
+            {/* D. Natural Corner Stones / Corner Markers */}
             {parcel.stakePoints.map((pt, idx) => {
               const stakeIso = gridToIso(pt.x, pt.y);
               return (
-                <Detailed3DSurveyStake
-                  key={`stake_${parcel.id}_${idx}`}
-                  x={stakeIso.x}
-                  y={stakeIso.y}
-                  scale={0.9}
-                  hasFlag={true}
-                />
+                <g key={`corner_${parcel.id}_${idx}`} transform={`translate(${stakeIso.x}, ${stakeIso.y})`}>
+                  {/* Small whitewashed corner stone cap */}
+                  <ellipse cx="0" cy="1.2" rx="6" ry="3.5" fill="rgba(0,0,0,0.3)" />
+                  <ellipse cx="0" cy="0" rx="5.5" ry="3.2" fill="#B0BEC5" stroke="#455A64" strokeWidth="0.8" />
+                  <ellipse cx="0" cy="-1.5" rx="4.8" ry="2.8" fill="#ECEFF1" stroke="#78909C" strokeWidth="0.7" />
+                  <circle cx="-1" cy="-2.2" r="1.2" fill="#FFFFFF" />
+                </g>
               );
             })}
 
-            {/* D. Dense, Lush 3D Cartoon Flora, Wildflowers, Rocks, and Boulders */}
-            {forestItems.map((item, idx) => {
+            {/* E. Dense Natural Trees, Rocks, Pines, and Swamp Puddles (Sorted by Depth) */}
+            {sortedForestItems.map((item, idx) => {
               const itemIso = gridToIso(item.x, item.y);
               return (
                 <g key={`flora_${parcel.id}_${idx}`}>
@@ -154,94 +191,47 @@ export const IsoExpansionTerritory: React.FC<IsoExpansionTerritoryProps> = React
               );
             })}
 
-            {/* D. Interactive 3D Wooden Expansion Signpost at Center */}
+            {/* F. Clean Hay Day Survey Stake & Compact Level Lock Badge */}
+            {/* Shows a clean survey marker at center, with subtle star level badge on hover or if locked */}
             <g
               transform={`translate(${centerIso.x}, ${centerIso.y})`}
-              className="pointer-events-none filter drop-shadow-md"
+              className={`transition-all duration-200 pointer-events-none ${
+                isHovered ? 'scale-110 opacity-100' : 'opacity-85'
+              }`}
             >
-              {/* Soft Sunlit Ground Shadow */}
-              <ellipse
-                cx="0"
-                cy="8"
-                rx="46"
-                ry="22"
-                fill="url(#hd-expand-glow)"
-                className="opacity-30"
-              />
+              {/* Ground Shadow */}
+              <ellipse cx="0" cy="8" rx="14" ry="5.5" fill="rgba(0,0,0,0.35)" />
 
-              {/* Wooden Signpost Assembly */}
-              <g>
-                {/* Ground Shadow */}
-                <ellipse cx="0" cy="12" rx="20" ry="8" fill="rgba(0,0,0,0.35)" />
+              {/* Slender Wooden Survey Stake with Red Ribbon (Iconic Hay Day Stake) */}
+              <Detailed3DSurveyStake x={0} y={6} scale={0.85} hasFlag={true} />
 
-                {/* Vertical Wooden Post */}
-                <polygon
-                  points="-3,12 3,12 2,-28 -2,-28"
-                  fill="url(#bark-trunk-3d)"
-                  stroke="#271610"
-                  strokeWidth="1"
-                />
-
-                {/* Carved Wooden Directional Plaque */}
-                <path
-                  d="M -54 -28 L 54 -28 Q 62 -28 62 -36 L 62 -52 Q 62 -60 54 -60 L -54 -60 Q -62 -60 -62 -52 L -62 -36 Q -62 -28 -54 -28 Z"
-                  fill="#FFF8E1"
-                  stroke="#8D6E63"
-                  strokeWidth="2.5"
-                  filter="drop-shadow(0 4px 6px rgba(0,0,0,0.3))"
-                />
-                <path
-                  d="M -52 -30 L 52 -30 Q 58 -30 58 -36 L 58 -50 Q 58 -58 52 -58 L -52 -58 Q -58 -58 -58 -50 L -58 -36 Q -58 -30 -52 -30 Z"
-                  fill="#FFE082"
-                  stroke="#FFA000"
-                  strokeWidth="1.2"
-                />
-
-                {/* Brass Corner Rivets */}
-                <circle cx="-54" cy="-35" r="1.8" fill="#FFB300" stroke="#795548" strokeWidth="0.6" />
-                <circle cx="54" cy="-35" r="1.8" fill="#FFB300" stroke="#795548" strokeWidth="0.6" />
-                <circle cx="-54" cy="-53" r="1.8" fill="#FFB300" stroke="#795548" strokeWidth="0.6" />
-                <circle cx="54" cy="-53" r="1.8" fill="#FFB300" stroke="#795548" strokeWidth="0.6" />
-
-                {/* Plaque Title */}
-                <text
-                  x="0"
-                  y="-46"
-                  fontSize="11"
-                  fontWeight="900"
-                  fill="#4E342E"
-                  textAnchor="middle"
-                  letterSpacing="0.3"
-                  fontFamily="system-ui, sans-serif"
-                >
-                  {parcel.name}
-                </text>
-
-                {/* Subtitle / Level Badge */}
-                <g transform="translate(0, -34)">
+              {/* Compact Floating Level Pill on Hover or if level requirement not yet met */}
+              {(!canAffordLevel || isHovered) && (
+                <g transform="translate(0, -26)">
                   <rect
-                    x="-42"
-                    y="-5"
-                    width="84"
-                    height="13"
-                    rx="6.5"
-                    fill={canAffordLevel ? '#2E7D32' : '#C62828'}
+                    x="-34"
+                    y="-9"
+                    width="68"
+                    height="18"
+                    rx="9"
+                    fill={canAffordLevel ? 'rgba(46, 125, 50, 0.95)' : 'rgba(198, 40, 40, 0.95)'}
                     stroke="#FFFFFF"
-                    strokeWidth="1"
+                    strokeWidth="1.2"
+                    filter="drop-shadow(0 2px 4px rgba(0,0,0,0.35))"
                   />
                   <text
                     x="0"
-                    y="5"
-                    fontSize="8.5"
+                    y="3.5"
+                    fontSize="9.5"
                     fontWeight="800"
                     fill="#FFFFFF"
                     textAnchor="middle"
                     fontFamily="system-ui, sans-serif"
                   >
-                    ⭐ Nível {parcel.requiredLevel} • EXPANDIR
+                    ⭐ Nível {parcel.requiredLevel}
                   </text>
                 </g>
-              </g>
+              )}
             </g>
           </g>
         );

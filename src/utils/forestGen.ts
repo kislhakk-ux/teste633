@@ -78,41 +78,45 @@ export const generateForestForParcel = (
         const biome = ('biome' in parcel && parcel.biome) || 'woodland';
 
         if (biome === 'pine_hill' || biome === 'highland') {
-          // Pine hill: High rocks, alpine pines, granite crags
+          // Pine hill: High rocks, alpine pines, granite crags, swamp puddles
           if (typeRoll < 0.32) type = 'pine';
-          else if (typeRoll < 0.50) type = 'medium_rock';
-          else if (typeRoll < 0.65) type = 'rock';
-          else if (typeRoll < 0.78) type = 'rock_cluster';
-          else if (typeRoll < 0.88) type = 'cypress';
-          else if (typeRoll < 0.94) type = 'log';
+          else if (typeRoll < 0.48) type = 'medium_rock';
+          else if (typeRoll < 0.62) type = 'rock';
+          else if (typeRoll < 0.74) type = 'rock_cluster';
+          else if (typeRoll < 0.84) type = 'oak';
+          else if (typeRoll < 0.92) type = 'swamp_puddle';
+          else if (typeRoll < 0.96) type = 'log';
           else type = 'bush';
         } else if (biome === 'fruit_meadow') {
           // Fruit meadow: Apples/oranges, blossoms, smooth boulders, wildflowers
           if (typeRoll < 0.28) type = 'fruit_tree';
           else if (typeRoll < 0.44) type = 'oak';
-          else if (typeRoll < 0.60) type = 'rock_cluster';
-          else if (typeRoll < 0.72) type = 'medium_rock';
-          else if (typeRoll < 0.84) type = 'blossom';
-          else if (typeRoll < 0.92) type = 'bush';
+          else if (typeRoll < 0.58) type = 'rock_cluster';
+          else if (typeRoll < 0.70) type = 'medium_rock';
+          else if (typeRoll < 0.80) type = 'blossom';
+          else if (typeRoll < 0.88) type = 'swamp_puddle';
+          else if (typeRoll < 0.94) type = 'bush';
           else type = 'wildflowers';
         } else if (biome === 'ancient_grove' || biome === 'waterfall_terrace') {
           // Dense ancient rocks & oaks
           if (typeRoll < 0.28) type = 'oak';
-          else if (typeRoll < 0.45) type = 'rock';
-          else if (typeRoll < 0.60) type = 'medium_rock';
-          else if (typeRoll < 0.72) type = 'rock_cluster';
-          else if (typeRoll < 0.84) type = 'blossom';
-          else if (typeRoll < 0.92) type = 'log';
+          else if (typeRoll < 0.44) type = 'rock';
+          else if (typeRoll < 0.58) type = 'medium_rock';
+          else if (typeRoll < 0.70) type = 'rock_cluster';
+          else if (typeRoll < 0.80) type = 'pine';
+          else if (typeRoll < 0.88) type = 'swamp_puddle';
+          else if (typeRoll < 0.94) type = 'log';
           else type = 'bush';
         } else {
           // Standard vibrant woodland with high rock and tree richness
-          if (typeRoll < 0.28) type = 'oak';
-          else if (typeRoll < 0.45) type = 'rock';
-          else if (typeRoll < 0.60) type = 'medium_rock';
-          else if (typeRoll < 0.72) type = 'pine';
-          else if (typeRoll < 0.82) type = 'rock_cluster';
-          else if (typeRoll < 0.90) type = 'bush';
-          else if (typeRoll < 0.95) type = 'wildflowers';
+          if (typeRoll < 0.26) type = 'oak';
+          else if (typeRoll < 0.42) type = 'pine';
+          else if (typeRoll < 0.56) type = 'rock';
+          else if (typeRoll < 0.68) type = 'medium_rock';
+          else if (typeRoll < 0.78) type = 'rock_cluster';
+          else if (typeRoll < 0.86) type = 'swamp_puddle';
+          else if (typeRoll < 0.92) type = 'bush';
+          else if (typeRoll < 0.96) type = 'wildflowers';
           else type = 'log';
         }
 

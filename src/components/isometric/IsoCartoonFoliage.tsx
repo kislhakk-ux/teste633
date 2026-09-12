@@ -690,8 +690,8 @@ export const Detailed3DStoneCluster: React.FC<{
   );
 };
 
-// 13. 3D COBBLESTONE BORDER SEGMENT ("umas pedrinha em volta da area bloqueada")
-// Placed along parcel frontiers to enclose locked territory with smooth river stones
+// 13. 3D HAY DAY CONTINUOUS RUSTIC STONE WALL BORDER ("Mureta de Pedras Contínua do Hay Day")
+// Renders an authentic continuous cobblestone wall bordering expansion plots with volumetric stacked whitewashed stones
 export const DetailedCobblestoneBorderSegment: React.FC<{
   x1: number;
   y1: number;
@@ -699,48 +699,179 @@ export const DetailedCobblestoneBorderSegment: React.FC<{
   y2: number;
   seed?: number;
 }> = React.memo(({ x1, y1, x2, y2, seed = 0 }) => {
-  // Generate 5 smooth river pebbles along the segment line
-  const pebbles = [0.12, 0.32, 0.52, 0.72, 0.90].map((t, idx) => {
-    const px = x1 + (x2 - x1) * t;
-    const py = y1 + (y2 - y1) * t;
-    const pseudo = (seed * 17 + idx * 31) % 100;
-    const rx = 3.5 + (pseudo % 3);
-    const ry = 2.2 + (pseudo % 2);
-    const isWarm = pseudo % 2 === 0;
-    return { px, py, rx, ry, isWarm, idx };
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const length = Math.hypot(dx, dy);
+  
+  // Dense placement: stone every 6.5px to 8px to create an unbroken stacked stone wall
+  const stoneSpacing = 7.5;
+  const count = Math.max(3, Math.round(length / stoneSpacing));
+  
+  const stones = Array.from({ length: count }, (_, i) => {
+    const t = (i + 0.5) / count;
+    const px = x1 + dx * t;
+    const py = y1 + dy * t;
+    const pseudo = Math.abs(Math.sin(seed * 23.7 + i * 19.3) * 10000) % 100;
+    
+    const rx = 4.2 + (pseudo % 2.6); // 4.2px - 6.8px width
+    const ry = 2.6 + (pseudo % 1.5); // 2.6px - 4.1px height
+    const jitterX = ((pseudo % 10) - 5) * 0.4;
+    const jitterY = (((pseudo * 3) % 10) - 5) * 0.3;
+    const isLightGrey = pseudo % 3 !== 0; // majority light limestone grey
+    const hasGrassTuft = pseudo > 72; // small green moss/grass tuft between rocks
+    
+    return {
+      i,
+      px: px + jitterX,
+      py: py + jitterY,
+      rx,
+      ry,
+      isLightGrey,
+      hasGrassTuft,
+    };
   });
 
   return (
-    <g className="pointer-events-none">
-      {pebbles.map((p) => (
-        <g key={`pebble_${p.idx}`} transform={`translate(${p.px}, ${p.py})`}>
-          {/* Contact Shadow */}
-          <ellipse cx="0" cy="1.5" rx={p.rx + 1} ry={p.ry} fill="rgba(0,0,0,0.25)" />
-          {/* Pebble Body */}
-          <ellipse
-            cx="0"
-            cy="0"
-            rx={p.rx}
-            ry={p.ry}
-            fill={p.isWarm ? 'url(#pebble-warm-side)' : 'url(#pebble-cool-side)'}
-            stroke={p.isWarm ? '#4E342E' : '#37474F'}
-            strokeWidth="0.5"
+    <g className="pointer-events-none select-none">
+      {/* 1. Underlying Continuous Ambient Contact Shadow along the entire wall */}
+      <line
+        x1={x1}
+        y1={y1 + 1.5}
+        x2={x2}
+        y2={y2 + 1.5}
+        stroke="rgba(10,30,10,0.38)"
+        strokeWidth="6"
+        strokeLinecap="round"
+      />
+
+      {/* 2. Stacked Volumetric Cobblestones */}
+      {stones.map((s) => (
+        <g key={`hd_stone_${s.i}`} transform={`translate(${s.px}, ${s.py})`}>
+          {/* Contact Base Shadow */}
+          <ellipse cx="0" cy="1.2" rx={s.rx + 1} ry={s.ry * 0.8} fill="rgba(0,0,0,0.22)" />
+          
+          {/* Lower Stone Body (Stacked Base) */}
+          <path
+            d={`M ${-s.rx} 0 Q 0 ${s.ry * 1.3} ${s.rx} 0 Q 0 ${-s.ry * 0.9} ${-s.rx} 0 Z`}
+            fill={s.isLightGrey ? '#CFD8DC' : '#B0BEC5'}
+            stroke="#546E7A"
+            strokeWidth="0.8"
           />
-          {/* Top Sunlit Plane */}
+
+          {/* Upper Stacked Capstone (Layered Volume) */}
+          <ellipse
+            cx="0.2"
+            cy="-1.2"
+            rx={s.rx * 0.92}
+            ry={s.ry * 0.82}
+            fill={s.isLightGrey ? '#ECEFF1' : '#E0E0E0'}
+            stroke="#78909C"
+            strokeWidth="0.7"
+          />
+
+          {/* Top Sunlit Highlight Plane */}
           <ellipse
             cx="-0.6"
-            cy="-0.7"
-            rx={p.rx * 0.7}
-            ry={p.ry * 0.65}
-            fill={p.isWarm ? 'url(#pebble-warm-top)' : 'url(#pebble-cool-top)'}
+            cy="-2.0"
+            rx={s.rx * 0.65}
+            ry={s.ry * 0.52}
+            fill="#FFFFFF"
+            opacity="0.85"
           />
-          {/* White Specular Glint */}
-          <circle cx={-p.rx * 0.3} cy={-p.ry * 0.4} r="0.8" fill="#FFFFFF" opacity="0.8" />
+
+          {/* Crevice Shading Mortar Line */}
+          <path
+            d={`M ${-s.rx * 0.7} 0 Q 0 0.8 ${s.rx * 0.7} 0`}
+            stroke="#37474F"
+            strokeWidth="0.6"
+            fill="none"
+            opacity="0.6"
+          />
+
+          {/* Occasional Moss or Grass Blade in Wall Joint */}
+          {s.hasGrassTuft && (
+            <g transform="translate(0, -1)">
+              <path d="M -1 1 Q -3 -3 -2 -5" stroke="#7CB342" strokeWidth="1" fill="none" strokeLinecap="round" />
+              <path d="M 0 1 Q 2 -4 3 -6" stroke="#8BC34A" strokeWidth="0.9" fill="none" strokeLinecap="round" />
+            </g>
+          )}
         </g>
       ))}
     </g>
   );
 });
+
+// 13.5. 3D HAY DAY SWAMP / MARSH PUDDLE WITH FALLEN HOLLOW LOG ("Poça com Tronco Caído")
+export const Detailed3DMarshPuddleWithLog: React.FC<{
+  x?: number;
+  y?: number;
+  scale?: number;
+}> = ({ x = 0, y = 0, scale = 1 }) => {
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+      {/* 1. Wet Muddy Shoreline Border */}
+      <ellipse cx="0" cy="2" rx="28" ry="16" fill="#4E342E" opacity="0.35" />
+      <ellipse cx="0" cy="1" rx="26" ry="14.5" fill="#33691E" opacity="0.5" />
+      
+      {/* 2. Marsh Water Body (Dark Green Wetland Water) */}
+      <ellipse
+        cx="0"
+        cy="0"
+        rx="24"
+        ry="13"
+        fill="#33691E"
+        stroke="#1B5E20"
+        strokeWidth="1"
+      />
+      
+      {/* 3. Deep Water Core */}
+      <ellipse cx="-2" cy="0" rx="19" ry="9.5" fill="#2E7D32" opacity="0.9" />
+      <ellipse cx="-3" cy="-1" rx="14" ry="6.5" fill="#1B5E20" opacity="0.95" />
+
+      {/* 4. Water Surface Shimmer */}
+      <ellipse cx="6" cy="3" rx="10" ry="4.5" fill="#81C784" opacity="0.4" />
+      <ellipse cx="-4" cy="-2" rx="7" ry="2.8" fill="#C8E6C9" opacity="0.6" />
+
+      {/* 5. Reeds / Cattails at Pond Shore */}
+      <g transform="translate(-16, 2)">
+        <path d="M 0 0 Q -2 -7 -1 -12" stroke="#558B2F" strokeWidth="1.2" fill="none" />
+        <path d="M 3 1 Q 5 -6 6 -14" stroke="#689F38" strokeWidth="1.2" fill="none" />
+        <rect x="-2" y="-12" width="2" height="4.5" rx="1" fill="#4E342E" />
+      </g>
+
+      {/* 6. Iconic Hay Day Fallen Hollow Log resting across the puddle */}
+      <g transform="translate(2, -2) rotate(-18)">
+        {/* Log Shadow */}
+        <ellipse cx="0" cy="5" rx="18" ry="5.5" fill="rgba(0,0,0,0.4)" />
+        
+        {/* Log Wooden Trunk Body */}
+        <path
+          d="M -16 -4 L 16 -4 Q 18 0 16 4 L -16 4 Q -18 0 -16 -4 Z"
+          fill="url(#bark-trunk-3d)"
+          stroke="#271610"
+          strokeWidth="1"
+        />
+
+        {/* Bark Highlights and Ridge Lines */}
+        <line x1="-14" y1="-1" x2="14" y2="-1" stroke="#A1887F" strokeWidth="0.8" opacity="0.75" />
+        <line x1="-12" y1="2" x2="13" y2="2" stroke="#3E2723" strokeWidth="0.8" opacity="0.9" />
+
+        {/* Hollow Log Opening on the Left End */}
+        <ellipse cx="-16" cy="0" rx="3.2" ry="4.2" fill="#1B0F0B" stroke="#4E342E" strokeWidth="0.9" />
+        <ellipse cx="-16" cy="0" rx="2" ry="2.8" fill="#000000" />
+
+        {/* Moss Patch on Log Top */}
+        <path d="M -4 -4 Q 2 -6 8 -4 Q 5 -2 -2 -3 Z" fill="#7CB342" opacity="0.9" />
+      </g>
+
+      {/* 7. Floating Water Lily */}
+      <g transform="translate(13, 5)">
+        <circle cx="0" cy="0" r="3.2" fill="#4CAF50" stroke="#2E7D32" strokeWidth="0.5" />
+        <circle cx="0.5" cy="-0.5" r="1.5" fill="#F48FB1" />
+      </g>
+    </g>
+  );
+};
 
 // 14. 3D CARTOON FOREST WILDERNESS LAKE ("e lagos tbm")
 // A picturesque natural lake nestled inside locked expansion parcels with lily pads and river stones
@@ -906,6 +1037,7 @@ export type FoliagePropType =
   | 'medium_rock'
   | 'rock_cluster'
   | 'log'
+  | 'swamp_puddle'
   | 'wildflowers';
 
 export const ProceduralFoliageProp: React.FC<{
@@ -947,6 +1079,8 @@ export const ProceduralFoliageProp: React.FC<{
       return <Detailed3DStoneCluster x={x} y={y} scale={finalScale} seed={seed} />;
     case 'log':
       return <Detailed3DFallenLog x={x} y={y} scale={finalScale} />;
+    case 'swamp_puddle':
+      return <Detailed3DMarshPuddleWithLog x={x} y={y} scale={finalScale} />;
     case 'wildflowers':
       return <Detailed3DWildflowers x={x} y={y} scale={finalScale} />;
     default:
