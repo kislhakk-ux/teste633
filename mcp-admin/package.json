@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/**/*.test.ts",
     "test:mcp": "tsx scripts/test-mcp-client.ts",
+    "test:production": "tsx scripts/test-production-mcp.ts",
     "create-owner": "tsx scripts/create-owner.ts"
   },
   "dependencies": {

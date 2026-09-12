@@ -158,6 +158,32 @@ let globalOffers: MultiplayerOffer[] = NEIGHBORHOOD_OFFERS.map((o, idx) => ({
   createdAt: Date.now() - idx * 60000,
 }));
 
+// Pre-seed NPC farms for immediate discovery and diagnostics
+NEIGHBORHOOD_OFFERS.forEach((o) => {
+  if (!farms.has(o.sellerFarmId)) {
+    farms.set(o.sellerFarmId, {
+      farmId: o.sellerFarmId,
+      farmName: o.sellerFarmName,
+      level: o.sellerLevel,
+      avatar: o.sellerAvatar,
+      isOnline: true,
+      lastSeen: Date.now(),
+      likes: 12,
+      offersCount: 1,
+      roadsideBoxes: [
+        {
+          id: o.boxId,
+          itemId: o.itemId,
+          count: o.count,
+          price: o.price,
+          advertised: o.advertised,
+          isSold: o.isSold,
+        },
+      ],
+    });
+  }
+});
+
 function broadcast(message: any, excludeWs?: WebSocket) {
   const data = JSON.stringify(message);
   for (const client of clientSockets.values()) {

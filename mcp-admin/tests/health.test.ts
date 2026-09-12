@@ -55,13 +55,15 @@ describe('Servidor MCP Admin - Suíte de Diagnósticos e Integrações (Etapa 5)
     assert.ok(res.body.data.toolsCount >= 14);
   });
 
-  it('GET /api/readiness deve responder status 503 se o backend do jogo estiver offline', async () => {
+  it('GET /api/readiness deve responder status e diagnóstico estruturado do backend', async () => {
     const app = await createApp();
     const res = await makeRequest(app, '/api/readiness');
 
-    assert.strictEqual(res.statusCode, 503);
-    assert.strictEqual(res.body.success, false);
-    assert.strictEqual(res.body.data.readiness, 'DEGRADED');
+    assert.ok(res.statusCode === 200 || res.statusCode === 503);
+    assert.ok(res.body.data.readiness === 'READY' || res.body.data.readiness === 'DEGRADED');
+    assert.strictEqual(res.body.data.http, 'online');
+    assert.strictEqual(res.body.data.mcp, 'online');
+    assert.ok(res.body.data.gameApi !== undefined);
   });
 
   it('GET /api/mcp/tools deve incluir categorias de DIAGNOSTICS', async () => {

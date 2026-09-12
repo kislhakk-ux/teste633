@@ -41,7 +41,18 @@ export function createMcpServer(): McpServer {
             content: [
               {
                 type: 'text' as const,
-                text: `Erro ao executar ferramenta '${fullTool.name}': ${err.message}`,
+                text: JSON.stringify(
+                  {
+                    success: false,
+                    error: {
+                      code: err.code || 'TOOL_EXECUTION_ERROR',
+                      message: `Erro ao executar ferramenta '${fullTool.name}': ${err.message}`,
+                      details: err.details || null,
+                    },
+                  },
+                  null,
+                  2
+                ),
               },
             ],
             isError: true,
