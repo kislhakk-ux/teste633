@@ -45,18 +45,20 @@ export const IsoMineEntrance: React.FC<IsoMineEntranceProps> = React.memo(({
       style={{ pointerEvents: 'auto' }}
     >
       <defs>
-        {/* Mountain Rock Cliff Gradient */}
+        {/* Mountain Rock Cliff Gradient (Hay Day Golden Limestone) */}
         <linearGradient id="mine-rock-face" x1="0%" y1="0%" x2="70%" y2="100%">
-          <stop offset="0%" stopColor="#78716C" />
-          <stop offset="35%" stopColor="#57534E" />
-          <stop offset="70%" stopColor="#44403C" />
-          <stop offset="100%" stopColor="#292524" />
+          <stop offset="0%" stopColor="#E9D5B8" />
+          <stop offset="25%" stopColor="#D4A373" />
+          <stop offset="60%" stopColor="#B5824B" />
+          <stop offset="85%" stopColor="#8C5828" />
+          <stop offset="100%" stopColor="#5A3311" />
         </linearGradient>
 
         <linearGradient id="mine-rock-highlight" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#A8A29E" />
-          <stop offset="50%" stopColor="#78716C" />
-          <stop offset="100%" stopColor="#44403C" />
+          <stop offset="0%" stopColor="#F7EDE2" />
+          <stop offset="45%" stopColor="#E9D5B8" />
+          <stop offset="80%" stopColor="#D4A373" />
+          <stop offset="100%" stopColor="#B5824B" />
         </linearGradient>
 
         {/* Cavern Interior Shaft Void */}

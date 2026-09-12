@@ -115,12 +115,26 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
           <stop offset="100%" stopColor="#FFD54F" />
         </linearGradient>
 
-        {/* 3D Mountain Bedrock Terrace Gradient */}
+        {/* 3D Mountain Bedrock Terrace Gradient (Hay Day Limestone Rock Face) */}
         <linearGradient id="mine-terrace-bedrock" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#78716C" />
-          <stop offset="40%" stopColor="#57534E" />
-          <stop offset="85%" stopColor="#44403C" />
-          <stop offset="100%" stopColor="#292524" />
+          <stop offset="0%" stopColor="#E9D5B8" />
+          <stop offset="25%" stopColor="#D4A373" />
+          <stop offset="60%" stopColor="#B5824B" />
+          <stop offset="85%" stopColor="#8C5828" />
+          <stop offset="100%" stopColor="#5A3311" />
+        </linearGradient>
+
+        <linearGradient id="hd-cliff-highlight" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#F7EDE2" />
+          <stop offset="45%" stopColor="#E9D5B8" />
+          <stop offset="80%" stopColor="#D4A373" />
+          <stop offset="100%" stopColor="#B5824B" />
+        </linearGradient>
+
+        <linearGradient id="hd-cliff-crag" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#B5824B" />
+          <stop offset="50%" stopColor="#8C5828" />
+          <stop offset="100%" stopColor="#5A3311" />
         </linearGradient>
 
         {/* Mountain Terrace Alpine Meadow Grass */}
@@ -475,79 +489,135 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
         <ButterflyCartoon x={pBottom.x + 30} y={pBottom.y + 18} wingColor="#76FF03" />
       </g>
 
-      {/* 10. AUTHENTIC 3D CARTOON MINE ENTRANCE (Firmly Situated ON the Mountain Terrain) */}
+      {/* 10. AUTHENTIC 3D CARTOON MOUNTAIN CLIFF RIDGE & MINE ENTRANCE (Hay Day Formation) */}
       {(() => {
-        const mx = pTop.x - 135;
-        const my = pTop.y - 70;
+        const mx = pTop.x - 90;
+        const my = pTop.y - 65;
         return (
-          <g id="farm-mine-area">
-            {/* 1. SOLID 3D VOLUMETRIC MOUNTAIN BEDROCK CLIFF BASE (Underneath the Mine) */}
-            {/* Lower Bedrock Wall Facing South-East */}
+          <g id="farm-mine-mountain-formation" className="select-none">
+            {/* 1. DISTANT UPPER MOUNTAIN RIDGE & ALPINE SKYLINE */}
+            {/* Upper Plateau Mountain Crest */}
             <polygon
               points={`
-                ${mx - 105},${my + 42}
-                ${mx + 95},${my + 28}
-                ${mx + 95},${my + 58}
-                ${mx - 105},${my + 72}
-              `}
-              fill="url(#mine-terrace-bedrock)"
-              stroke="#292524"
-              strokeWidth="2"
-            />
-            {/* Bedrock Strata Horizontal Texture Lines */}
-            <line x1={mx - 95} y1={my + 54} x2={mx + 85} y2={my + 40} stroke="#1C1917" strokeWidth="2.5" opacity="0.75" />
-            <line x1={mx - 80} y1={my + 64} x2={mx + 70} y2={my + 50} stroke="#44403C" strokeWidth="1.8" opacity="0.8" />
-
-            {/* 2. ELEVATED MOUNTAIN PLATEAU SURFACE (Solid ground the mine rests upon) */}
-            <polygon
-              points={`
-                ${mx - 120},${my - 30}
-                ${mx},${my - 75}
-                ${mx + 115},${my - 20}
-                ${mx + 95},${my + 28}
-                ${mx - 105},${my + 42}
+                ${pTop.x - 300},${pTop.y - 120}
+                ${pTop.x - 220},${pTop.y - 165}
+                ${pTop.x - 120},${pTop.y - 175}
+                ${pTop.x - 10},${pTop.y - 150}
+                ${pTop.x + 110},${pTop.y - 125}
+                ${pTop.x + 180},${pTop.y - 85}
+                ${pTop.x + 160},${pTop.y - 45}
+                ${pTop.x - 280},${pTop.y - 75}
               `}
               fill="url(#mine-terrace-grass)"
               stroke="#365314"
+              strokeWidth="2"
+            />
+
+            {/* Alpine Pines perching on the High Mountain Crest */}
+            <Detailed3DPine x={pTop.x - 250} y={pTop.y - 140} scale={1.25} />
+            <Detailed3DPine x={pTop.x - 200} y={pTop.y - 160} scale={1.4} />
+            <Detailed3DPine x={pTop.x - 155} y={pTop.y - 165} scale={1.15} />
+            <Detailed3DPine x={pTop.x - 95} y={pTop.y - 170} scale={1.35} />
+            <Detailed3DPine x={pTop.x - 45} y={pTop.y - 155} scale={1.1} />
+            <Detailed3DPine x={pTop.x + 25} y={pTop.y - 145} scale={1.3} />
+            <Detailed3DPine x={pTop.x + 85} y={pTop.y - 120} scale={1.15} />
+            <Detailed3DPine x={pTop.x + 145} y={pTop.y - 95} scale={1.2} />
+
+            {/* 2. CONTINUOUS 3D GOLDEN LIMESTONE CLIFF FACE (Hay Day Rock Face) */}
+            {/* Main Cliff Wall Dropping Down to Farm Lawn */}
+            <polygon
+              points={`
+                ${pTop.x - 280},${pTop.y - 75}
+                ${pTop.x - 200},${pTop.y - 110}
+                ${pTop.x - 100},${pTop.y - 118}
+                ${pTop.x + 20},${pTop.y - 95}
+                ${pTop.x + 160},${pTop.y - 45}
+                ${pTop.x + 150},${pTop.y - 15}
+                ${pTop.x + 30},${pTop.y - 45}
+                ${pTop.x - 70},${pTop.y - 48}
+                ${pTop.x - 180},${pTop.y - 25}
+                ${pTop.x - 270},${pTop.y - 15}
+              `}
+              fill="url(#mine-terrace-bedrock)"
+              stroke="#5A3311"
               strokeWidth="2.5"
             />
 
-            {/* Mountain Moss & Alpine Grass Tufts on the Plateau */}
-            <ellipse cx={mx - 75} cy={my + 15} rx="18" ry="9" fill="#84CC16" opacity="0.8" />
-            <ellipse cx={mx + 65} cy={my + 5} rx="20" ry="10" fill="#84CC16" opacity="0.8" />
-            <ellipse cx={mx - 40} cy={my - 45} rx="22" ry="11" fill="#4D7C0F" opacity="0.9" />
-            <ellipse cx={mx + 50} cy={my - 40} rx="24" ry="12" fill="#4D7C0F" opacity="0.9" />
-
-            {/* Natural Alpine Boulders Anchoring the Mountain Shelf */}
-            {/* Left Boulder */}
-            <polygon points={`${mx - 110},${my + 22} ${mx - 90},${my + 8} ${mx - 75},${my + 25} ${mx - 95},${my + 38}`} fill="#78716C" stroke="#44403C" strokeWidth="1.8" />
-            <polygon points={`${mx - 110},${my + 22} ${mx - 90},${my + 8} ${mx - 84},${my + 14} ${mx - 102},${my + 28}`} fill="#A8A29E" />
-            {/* Right Boulder */}
-            <polygon points={`${mx + 75},${my + 12} ${mx + 95},${my - 2} ${mx + 105},${my + 15} ${mx + 85},${my + 26}`} fill="#78716C" stroke="#44403C" strokeWidth="1.8" />
-            <polygon points={`${mx + 75},${my + 12} ${mx + 95},${my - 2} ${mx + 92},${my + 5} ${mx + 80},${my + 18}`} fill="#A8A29E" />
-
-            {/* 3. WIDE CRUSHED-STONE GRAVEL RAIL YARD & BALLAST BED (Connecting Mine to Road) */}
+            {/* Cliff Rock Facets, Strata & Light Highlights */}
             <polygon
               points={`
-                ${mx - 38},${my + 18}
-                ${mx + 38},${my + 18}
-                ${pTop.x - 65},${pTop.y - 14}
-                ${pTop.x - 118},${pTop.y - 2}
+                ${pTop.x - 275},${pTop.y - 70}
+                ${pTop.x - 195},${pTop.y - 105}
+                ${pTop.x - 130},${pTop.y - 80}
+                ${pTop.x - 210},${pTop.y - 45}
+              `}
+              fill="url(#hd-cliff-highlight)"
+              opacity="0.85"
+            />
+            <polygon
+              points={`
+                ${pTop.x - 90},${pTop.y - 112}
+                ${pTop.x + 15},${pTop.y - 90}
+                ${pTop.x + 5},${pTop.y - 65}
+                ${pTop.x - 75},${pTop.y - 75}
+              `}
+              fill="url(#hd-cliff-highlight)"
+              opacity="0.85"
+            />
+            <polygon
+              points={`
+                ${pTop.x + 25},${pTop.y - 88}
+                ${pTop.x + 155},${pTop.y - 40}
+                ${pTop.x + 140},${pTop.y - 20}
+                ${pTop.x + 20},${pTop.y - 55}
+              `}
+              fill="url(#hd-cliff-highlight)"
+              opacity="0.85"
+            />
+
+            {/* Deep Rock Crevices & Crags */}
+            <path
+              d={`
+                M ${pTop.x - 210} ${pTop.y - 100} L ${pTop.x - 200} ${pTop.y - 60} L ${pTop.x - 190} ${pTop.y - 35}
+                M ${pTop.x - 140} ${pTop.y - 110} L ${pTop.x - 145} ${pTop.y - 70} L ${pTop.x - 135} ${pTop.y - 45}
+                M ${pTop.x - 30} ${pTop.y - 105} L ${pTop.x - 25} ${pTop.y - 65} L ${pTop.x - 35} ${pTop.y - 45}
+                M ${pTop.x + 60} ${pTop.y - 85} L ${pTop.x + 65} ${pTop.y - 50} L ${pTop.x + 55} ${pTop.y - 30}
+              `}
+              stroke="#5A3311"
+              strokeWidth="2.5"
+              fill="none"
+              opacity="0.85"
+              strokeLinecap="round"
+            />
+
+            {/* Alpine Moss & Hanging Ivy Patches on the Cliff */}
+            <ellipse cx={pTop.x - 220} cy={pTop.y - 55} rx="16" ry="8" fill="#65A30D" opacity="0.9" />
+            <ellipse cx={pTop.x - 160} cy={pTop.y - 65} rx="14" ry="7" fill="#4D7C0F" opacity="0.95" />
+            <ellipse cx={pTop.x - 20} cy={pTop.y - 68} rx="18" ry="9" fill="#65A30D" opacity="0.9" />
+            <ellipse cx={pTop.x + 90} cy={pTop.y - 50} rx="15" ry="7.5" fill="#4D7C0F" opacity="0.95" />
+
+            {/* 3. WIDE CRUSHED-STONE GRAVEL RAIL YARD & BALLAST APRON (Leading to Road) */}
+            <polygon
+              points={`
+                ${mx - 42},${my + 20}
+                ${mx + 42},${my + 20}
+                ${pTop.x - 45},${pTop.y - 10}
+                ${pTop.x - 95},${pTop.y - 5}
               `}
               fill="url(#mine-ballast-gravel)"
               stroke="#44403C"
               strokeWidth="2"
             />
-            {/* Gravel Border Pebbles & Textured Rim */}
-            <line x1={mx - 38} y1={my + 18} x2={pTop.x - 118} y2={pTop.y - 2} stroke="#78716C" strokeWidth="3.5" strokeDasharray="5 3" opacity="0.85" />
-            <line x1={mx + 38} y1={my + 18} x2={pTop.x - 65} y2={pTop.y - 14} stroke="#78716C" strokeWidth="3.5" strokeDasharray="5 3" opacity="0.85" />
+            {/* Gravel Border Texture Rim */}
+            <line x1={mx - 42} y1={my + 20} x2={pTop.x - 95} y2={pTop.y - 5} stroke="#78716C" strokeWidth="3" strokeDasharray="5 3" opacity="0.85" />
+            <line x1={mx + 42} y1={my + 20} x2={pTop.x - 45} y2={pTop.y - 10} stroke="#78716C" strokeWidth="3" strokeDasharray="5 3" opacity="0.85" />
 
-            {/* 4. RAILWAY TIES & STEEL TRACKS EXTENDING OUTWARD ACROSS THE TERRAIN */}
+            {/* 4. EXTENDED STEEL RAILWAY TIES & RAILS REACHING TOWARDS FARM ROAD */}
             {[
-              { x1: mx - 22, y1: my + 28, x2: mx + 22, y2: my + 28, w: 4 },
-              { x1: mx - 15, y1: my + 42, x2: mx + 29, y2: my + 42, w: 4 },
-              { x1: pTop.x - 108, y1: pTop.y + 4, x2: pTop.x - 72, y2: pTop.y - 4, w: 4 },
-              { x1: pTop.x - 100, y1: pTop.y + 16, x2: pTop.x - 64, y2: pTop.y + 8, w: 4.5 },
+              { x1: mx - 20, y1: my + 28, x2: mx + 20, y2: my + 28, w: 4 },
+              { x1: mx - 15, y1: my + 38, x2: mx + 25, y2: my + 38, w: 4 },
+              { x1: pTop.x - 85, y1: pTop.y + 4, x2: pTop.x - 55, y2: pTop.y + 0, w: 4 },
+              { x1: pTop.x - 78, y1: pTop.y + 14, x2: pTop.x - 48, y2: pTop.y + 10, w: 4.5 },
             ].map((tie, idx) => (
               <line
                 key={`scenery_mine_tie_${idx}`}
@@ -562,15 +632,32 @@ export const IsoScenery: React.FC<IsoSceneryProps> = React.memo(({
             ))}
 
             {/* Steel Tracks Running Down across the Mountain Rail Bed */}
-            {/* Left Rail */}
-            <line x1={mx - 14} y1={my + 22} x2={pTop.x - 96} y2={pTop.y + 18} stroke="#94A3B8" strokeWidth="3" strokeLinecap="round" />
-            <line x1={mx - 14} y1={my + 22} x2={pTop.x - 96} y2={pTop.y + 18} stroke="#FFFFFF" strokeWidth="1" opacity="0.8" />
-            {/* Right Rail */}
-            <line x1={mx + 14} y1={my + 22} x2={pTop.x - 76} y2={pTop.y + 10} stroke="#94A3B8" strokeWidth="3" strokeLinecap="round" />
-            <line x1={mx + 14} y1={my + 22} x2={pTop.x - 76} y2={pTop.y + 10} stroke="#FFFFFF" strokeWidth="1" opacity="0.8" />
+            <line x1={mx - 12} y1={my + 22} x2={pTop.x - 75} y2={pTop.y + 15} stroke="#94A3B8" strokeWidth="3" strokeLinecap="round" />
+            <line x1={mx - 12} y1={my + 22} x2={pTop.x - 75} y2={pTop.y + 15} stroke="#FFFFFF" strokeWidth="1" opacity="0.85" />
+            <line x1={mx + 12} y1={my + 22} x2={pTop.x - 58} y2={pTop.y + 9} stroke="#94A3B8" strokeWidth="3" strokeLinecap="round" />
+            <line x1={mx + 12} y1={my + 22} x2={pTop.x - 58} y2={pTop.y + 9} stroke="#FFFFFF" strokeWidth="1" opacity="0.85" />
 
-            {/* 5. THE MAJESTIC 3D IsoMineEntrance (Resting Securely on the Mountain Plateau) */}
-            <g transform={`translate(${mx}, ${my})`}>
+            {/* 5. NATURAL ALPINE PINES & BOULDERS FRAMING THE MINE ENTRANCE */}
+            {/* Left Pine Cluster */}
+            <Detailed3DPine x={mx - 80} y={my + 5} scale={1.25} />
+            <Detailed3DPine x={mx - 110} y={my - 15} scale={1.05} />
+            {/* Right Pine Cluster */}
+            <Detailed3DPine x={mx + 80} y={my - 5} scale={1.2} />
+            <Detailed3DPine x={mx + 115} y={my + 10} scale={1.0} />
+
+            {/* Natural Limestone Boulders */}
+            <polygon points={`${mx - 55},${my + 18} ${mx - 42},${my + 10} ${mx - 32},${my + 22} ${mx - 46},${my + 30}`} fill="#D4A373" stroke="#8C5828" strokeWidth="1.5" />
+            <polygon points={`${mx - 55},${my + 18} ${mx - 42},${my + 10} ${mx - 38},${my + 14} ${mx - 50},${my + 24}`} fill="#F7EDE2" />
+            <polygon points={`${mx + 45},${my + 16} ${mx + 58},${my + 8} ${mx + 68},${my + 20} ${mx + 54},${my + 26}`} fill="#D4A373" stroke="#8C5828" strokeWidth="1.5" />
+            <polygon points={`${mx + 45},${my + 16} ${mx + 58},${my + 8} ${mx + 56},${my + 12} ${mx + 48},${my + 20}`} fill="#F7EDE2" />
+
+            {/* 6. THE MAJESTIC 3D IsoMineEntrance (Carved Directly into the Mountain Wall) */}
+            <g
+              id="interactive-mine-entrance"
+              transform={`translate(${mx}, ${my})`}
+              className="pointer-events-auto cursor-pointer"
+              style={{ pointerEvents: 'auto' }}
+            >
               <IsoMineEntrance
                 status={mineStatus}
                 repairStartedAt={mineRepairStartedAt}
